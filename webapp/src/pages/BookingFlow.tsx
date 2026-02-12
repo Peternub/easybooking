@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Placeholder } from '@telegram-apps/telegram-ui';
 import { SelectService } from '../components/SelectService';
 import { SelectMaster } from '../components/SelectMaster';
 import { SelectDateTime } from '../components/SelectDateTime';

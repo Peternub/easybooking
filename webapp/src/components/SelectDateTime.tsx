@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Button, Title, Text, Spinner, Placeholder } from '@telegram-apps/telegram-ui';
-import { supabase } from '../services/supabase';
 import { format, addDays, startOfDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -45,7 +44,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
     }
   }
 
-  async function loadAvailableSlots(date: string) {
+  async function loadAvailableSlots(_date: string) {
     try {
       // Здесь должна быть логика получения свободных слотов
       // Для примера генерируем слоты с 10:00 до 18:00 каждые 30 минут

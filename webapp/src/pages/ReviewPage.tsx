@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Button, Input, Placeholder, Title, Text } from '@telegram-apps/telegram-ui';
+import { Button, Input, Title, Text } from '@telegram-apps/telegram-ui';
 
 export function ReviewPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -30,9 +30,10 @@ export function ReviewPage() {
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.BackButton.show();
-      window.Telegram.WebApp.BackButton.onClick(() => {
-        window.Telegram.WebApp.close();
+      const webApp = window.Telegram.WebApp;
+      webApp.BackButton.show();
+      webApp.BackButton.onClick(() => {
+        webApp.close();
       });
     }
   }, []);

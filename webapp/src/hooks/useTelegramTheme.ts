@@ -5,19 +5,20 @@ export function useTelegramTheme() {
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
-      const colorScheme = window.Telegram.WebApp.colorScheme;
+      const webApp = window.Telegram.WebApp;
+      const colorScheme = webApp.colorScheme;
       setTheme(colorScheme === 'dark' ? 'dark' : 'light');
 
       // Слушаем изменения темы
       const handleThemeChange = () => {
-        const newColorScheme = window.Telegram.WebApp.colorScheme;
+        const newColorScheme = webApp.colorScheme;
         setTheme(newColorScheme === 'dark' ? 'dark' : 'light');
       };
 
-      window.Telegram.WebApp.onEvent('themeChanged', handleThemeChange);
+      webApp.onEvent('themeChanged', handleThemeChange);
 
       return () => {
-        window.Telegram.WebApp.offEvent('themeChanged', handleThemeChange);
+        webApp.offEvent('themeChanged', handleThemeChange);
       };
     }
   }, []);
