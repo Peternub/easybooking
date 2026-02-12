@@ -1,0 +1,70 @@
+import { useState } from 'react';
+import { Placeholder } from '@telegram-apps/telegram-ui';
+import { SelectService } from '../components/SelectService';
+import { SelectMaster } from '../components/SelectMaster';
+import { SelectDateTime } from '../components/SelectDateTime';
+import { BookingConfirmation } from '../components/BookingConfirmation';
+
+type Step = 'service' | 'master' | 'datetime' | 'confirmation';
+
+export function BookingFlow() {
+  const [step, setStep] = useState<Step>('service');
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [selectedMaster, setSelectedMaster] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
+  const handleServiceSelect = (serviceId: string) => {
+    setSelectedService(serviceId);
+    setStep('master');
+  };
+
+  const handleMasterSelect = (masterId: string) => {
+    setSelectedMaster(masterId);
+    setStep('datetime');
+  };
+
+  const handleDateTimeSelect = (date: string, time: string) => {
+    setSelectedDate(date);
+    setSelectedTime(time);
+    setStep('confirmation');
+  };
+
+  const handleBack = () => {
+    if (step === 'master') {
+      setStep('service');
+      setSelectedService(null);
+    } else if (step === 'datetime') {
+      setStep('master');
+      setSelectedMaster(null);
+    } else if (step === 'confirmation') {
+      setStep('datetime');
+      setSelectedDate(null);
+      setSelectedTime(null);
+    }
+  };
+
+  return (
+    <div style={{ padding: '16px' }}>
+      {step === 'service' && <SelectService onSelect={handleServiceSelect} />}
+
+      {step === 'master' && selectedService && (
+        <SelectMaster serviceId={selectedService} onSelect={handleMasterSelect} onBack={handleBack} />
+      )}
+
+      {step === 'datetime' && selectedMaster && (
+        <SelectDateTime masterId={selectedMaster} onSelect={handleDateTimeSelect} onBack={handleBack} />
+      )}
+
+      {step === 'confirmation' && selectedService && selectedMaster && selectedDate && selectedTime && (
+        <BookingConfirmation
+          serviceId={selectedService}
+          masterId={selectedMaster}
+          date={selectedDate}
+          time={selectedTime}
+          onBack={handleBack}
+        />
+      )}
+    </div>
+  );
+}

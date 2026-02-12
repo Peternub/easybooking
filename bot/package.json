@@ -1,0 +1,22 @@
+{
+  "name": "booking-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch --env-file=.env src/index.ts",
+    "start": "bun --env-file=.env src/index.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
+    "grammy": "^1.32.0",
+    "googleapis": "^144.0.0",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
