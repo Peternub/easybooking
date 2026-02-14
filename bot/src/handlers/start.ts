@@ -14,14 +14,16 @@ export async function handleStart(ctx: CommandContext<Context>) {
   let message = `Добро пожаловать в систему бронирования! 👋\n\n` +
     `Здесь вы можете:\n` +
     `• Записаться на услугу\n` +
-    `• Просмотреть свои записи (команда /mybookings)\n` +
+    `• Просмотреть свои записи\n` +
     `• Отменить запись\n` +
-    `• Оставить отзыв после посещения\n\n` +
-    `🌐 Веб-приложение: ${config.app.webappUrl}`;
+    `• Оставить отзыв после посещения`;
+
+  const keyboard = new InlineKeyboard()
+    .webApp('📱 Открыть приложение', config.app.webappUrl);
 
   if (userIsAdmin) {
-    message += `\n\n⚙️ Админ-панель: ${config.app.webappUrl}/admin`;
+    keyboard.row().webApp('⚙️ Админ-панель', `${config.app.webappUrl}/admin`);
   }
 
-  await ctx.reply(message);
+  await ctx.reply(message, { reply_markup: keyboard });
 }

@@ -50,8 +50,22 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       time,
     };
 
+    console.log('Отправка данных:', data);
+    console.log('Telegram WebApp доступен:', !!window.Telegram?.WebApp);
+
     if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.sendData(JSON.stringify(data));
+      try {
+        window.Telegram.WebApp.sendData(JSON.stringify(data));
+        console.log('Данные отправлены успешно');
+      } catch (error) {
+        console.error('Ошибка отправки данных:', error);
+        setSubmitting(false);
+        alert('Ошибка отправки данных. Попробуйте еще раз.');
+      }
+    } else {
+      console.error('Telegram WebApp недоступен');
+      setSubmitting(false);
+      alert('Приложение должно быть открыто в Telegram');
     }
   };
 
