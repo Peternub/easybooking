@@ -113,8 +113,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
       // Отправляем уведомления через API бота
       try {
-        // В продакшене используем тот же домен, в разработке - localhost
-        const botApiUrl = import.meta.env.VITE_BOT_API_URL || window.location.origin;
+        const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
         console.log('📧 Отправка уведомлений через бота:', botApiUrl);
 
         const notifyResponse = await fetch(`${botApiUrl}/api/notify-booking`, {
@@ -140,11 +139,17 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           console.warn('⚠️ Не удалось отправить уведомления:', await notifyResponse.text());
         }
       } catch (notifyError) {
-        console.warn('⚠️ Ошибка отправки уведомлений:', notifyError);
+        console.warn('⚠️ Ошибка отправки уведомлений (бот может быть не запущен):', notifyError);
+        // Не блокируем создание записи, если бот недоступен
       }
 
-      // Закрываем Mini App (уведомления придут от бота)
-      window.Telegram?.WebApp?.close();
+      // Показываем успешное сообщение перед закрытием
+      alert('✅ Запись успешно создана!\n\nУведомления будут отправлены ботом.');
+
+      // Закрываем Mini App
+      setTimeout(() => {
+        window.Telegram?.WebApp?.close();
+      }, 500);
     } catch (error) {
       console.error('❌ Ошибка:', error);
       alert('Произошла ошибка. Попробуйте еще раз.');

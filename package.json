@@ -6,8 +6,6 @@
   "scripts": {
     "bot:dev": "bun --watch bot/src/index.ts",
     "webapp:dev": "cd webapp && bun run dev",
-    "start": "bun run server.ts",
-    "build": "cd webapp && bun install && bun run build",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write ."

@@ -115,9 +115,11 @@ bun run dev
 - **Не загружаются данные**: Проверьте `webapp/.env`
 - **Ошибки БД**: Проверьте миграции в Supabase
 
-## 📚 Полная документация
+## 📚 Полная документация Petr_3006201
 
 - [Установка](./docs/INSTALLATION.md)
 - [Настройка](./docs/SETUP.md)
 - [Google Calendar](./docs/GOOGLE_CALENDAR.md)
 - [README](./README.md)
+
+
