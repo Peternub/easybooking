@@ -68,9 +68,8 @@ export function SelectService({ onSelect }: Props) {
             {service.description && (
               <Text style={{ marginTop: '8px', marginBottom: '12px' }}>{service.description}</Text>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+            <div style={{ marginTop: '8px' }}>
               <Text weight="2">{service.price} ₽</Text>
-              <Text>{service.duration_minutes} мин</Text>
             </div>
           </Card>
         ))}
