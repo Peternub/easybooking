@@ -17,41 +17,11 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   const [master, setMaster] = useState<Master | null>(null);
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadData();
   }, [serviceId, masterId]);
-
-  useEffect(() => {
-    // Настраиваем MainButton Telegram
-    if (window.Telegram?.WebApp && master && service) {
-      const webApp = window.Telegram.WebApp;
-      
-      webApp.MainButton.setText('Записаться');
-      webApp.MainButton.show();
-      webApp.MainButton.enable();
-
-      const handleClick = () => {
-        const data = {
-          type: 'booking',
-          serviceId,
-          masterId,
-          date,
-          time,
-        };
-
-        console.log('Отправка данных:', data);
-        webApp.sendData(JSON.stringify(data));
-      };
-
-      webApp.MainButton.onClick(handleClick);
-
-      return () => {
-        webApp.MainButton.offClick(handleClick);
-        webApp.MainButton.hide();
-      };
-    }
-  }, [master, service, serviceId, masterId, date, time]);
 
   async function loadData() {
     try {
@@ -68,6 +38,36 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       setLoading(false);
     }
   }
+
+  const handleConfirm = () => {
+    setSubmitting(true);
+
+    const data = {
+      type: 'booking',
+      serviceId,
+      masterId,
+      date,
+      time,
+    };
+
+    console.log('Отправка данных:', data);
+    console.log('Telegram WebApp доступен:', !!window.Telegram?.WebApp);
+
+    if (window.Telegram?.WebApp) {
+      try {
+        window.Telegram.WebApp.sendData(JSON.stringify(data));
+        console.log('Данные отправлены успешно');
+      } catch (error) {
+        console.error('Ошибка отправки данных:', error);
+        setSubmitting(false);
+        alert('Ошибка отправки данных. Попробуйте еще раз.');
+      }
+    } else {
+      console.error('Telegram WebApp недоступен');
+      setSubmitting(false);
+      alert('Приложение должно быть открыто в Telegram');
+    }
+  };
 
   if (loading) {
     return (
@@ -129,9 +129,9 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         </div>
       </Card>
 
-      <Text style={{ fontSize: '14px', opacity: 0.6, textAlign: 'center' }}>
-        Нажмите кнопку "Записаться" внизу экрана
-      </Text>
+      <Button size="l" stretched onClick={handleConfirm} disabled={submitting}>
+        {submitting ? 'Создание записи...' : 'Записаться'}
+      </Button>
     </div>
   );
 }
