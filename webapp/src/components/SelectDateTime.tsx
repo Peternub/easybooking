@@ -55,11 +55,10 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
   async function loadAvailableSlots(date: string) {
     setLoadingSlots(true);
     try {
-      // Генерируем все возможные слоты с 10:00 до 18:00 каждые 30 минут
+      // Генерируем все возможные слоты с 10:00 до 18:00 каждый час
       const allSlots: string[] = [];
       for (let hour = 10; hour < 18; hour++) {
         allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-        allSlots.push(`${hour.toString().padStart(2, '0')}:30`);
       }
 
       // Получаем занятые слоты из базы данных
