@@ -113,7 +113,8 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
       // Отправляем уведомления через API бота
       try {
-        const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+        // В продакшене используем тот же домен, в разработке - localhost
+        const botApiUrl = import.meta.env.VITE_BOT_API_URL || window.location.origin;
         console.log('📧 Отправка уведомлений через бота:', botApiUrl);
 
         const notifyResponse = await fetch(`${botApiUrl}/api/notify-booking`, {
