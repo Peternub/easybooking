@@ -39,49 +39,83 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     }
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setSubmitting(true);
 
-    const data = {
-      type: 'booking',
-      serviceId,
-      masterId,
-      date,
-      time,
-    };
+    console.log('=== СОЗДАНИЕ ЗАПИСИ ===');
+    console.log('Telegram WebApp:', window.Telegram?.WebApp);
+    console.log('User:', window.Telegram?.WebApp?.initDataUnsafe?.user);
 
-    console.log('=== ОТПРАВКА ДАННЫХ ===');
-    console.log('Данные для отправки:', data);
-    console.log('Telegram WebApp объект:', window.Telegram?.WebApp);
-    console.log('initData:', window.Telegram?.WebApp?.initData);
-    console.log('initDataUnsafe:', window.Telegram?.WebApp?.initDataUnsafe);
-
-    if (!window.Telegram?.WebApp) {
-      console.error('❌ Telegram WebApp недоступен');
+    if (!window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      console.error('❌ Нет данных пользователя Telegram');
+      alert('Ошибка: не удалось получить данные пользователя');
       setSubmitting(false);
-      alert('Приложение должно быть открыто в Telegram');
       return;
     }
 
+    const user = window.Telegram.WebApp.initDataUnsafe.user;
+    const clientTelegramId = user.id;
+    const clientName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+    const clientUsername = user.username || null;
+
+    console.log('Клиент:', { clientTelegramId, clientName, clientUsername });
+    console.log('Запись:', { serviceId, masterId, date, time });
+
     try {
-      const jsonData = JSON.stringify(data);
-      console.log('JSON строка:', jsonData);
+      // Создаем запись напрямую в Supabase
+      const { data: booking, error } = await supabase
+        .from('bookings')
+        .insert({
+          client_telegram_id: clientTelegramId,
+          client_name: clientName,
+          client_username: clientUsername,
+          master_id: masterId,
+          service_id: serviceId,
+          booking_date: date,
+          booking_time: time,
+          status: 'active',
+          cancellation_reason: null,
+          google_event_id: null,
+        })
+        .select()
+        .single();
 
-      if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.sendData(jsonData);
-        console.log('✅ sendData() вызван успешно');
-
-        // После успешной отправки Mini App должен закрыться автоматически
-        // Если этого не происходит, закрываем вручную через 1 секунду
-        setTimeout(() => {
-          console.log('Закрытие Mini App...');
-          window.Telegram?.WebApp?.close();
-        }, 1000);
+      if (error) {
+        console.error('❌ Ошибка создания записи:', error);
+        alert('Ошибка создания записи. Попробуйте еще раз.');
+        setSubmitting(false);
+        return;
       }
+
+      console.log('✅ Запись создана:', booking);
+
+      // Отправляем уведомление боту (опционально)
+      try {
+        // Можно добавить вызов API бота для уведомлений
+        // Пока просто логируем
+        console.log('📧 Уведомления будут отправлены ботом автоматически');
+      } catch (notifyError) {
+        console.warn('⚠️ Не удалось отправить уведомление:', notifyError);
+      }
+
+      // Показываем успешное сообщение
+      alert(
+        `✅ Запись успешно создана!\n\n` +
+          `Дата: ${format(new Date(date), 'd MMMM yyyy', { locale: ru })}\n` +
+          `Время: ${time}\n` +
+          `Мастер: ${master?.name}\n` +
+          `Услуга: ${service?.name}\n\n` +
+          `Мы отправим вам напоминание за 24 часа и за 1 час до визита.`
+      );
+
+      // Закрываем Mini App
+      setTimeout(() => {
+        window.Telegram?.WebApp?.close();
+      }, 500);
     } catch (error) {
-      console.error('❌ Ошибка отправки данных:', error);
+      console.error('❌ Ошибка:', error);
+      alert('Произошла ошибка. Попробуйте еще раз.');
       setSubmitting(false);
-      alert('Ошибка отправки данных. Попробуйте еще раз.');
     }
   };
 
