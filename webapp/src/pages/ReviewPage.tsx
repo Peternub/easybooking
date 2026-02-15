@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { Button, Input, Text, Title } from '@telegram-apps/telegram-ui';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Button, Input, Title, Text } from '@telegram-apps/telegram-ui';
 
 export function ReviewPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -44,9 +44,7 @@ export function ReviewPage() {
         Оцените услугу
       </Title>
 
-      <Text style={{ marginBottom: '24px' }}>
-        Ваше мнение поможет нам стать лучше!
-      </Text>
+      <Text style={{ marginBottom: '24px' }}>Ваше мнение поможет нам стать лучше!</Text>
 
       <div style={{ marginBottom: '24px' }}>
         <Text weight="2" style={{ marginBottom: '12px', display: 'block' }}>
@@ -84,12 +82,7 @@ export function ReviewPage() {
         />
       </div>
 
-      <Button
-        size="l"
-        stretched
-        onClick={handleSubmit}
-        disabled={isSubmitting || rating === 0}
-      >
+      <Button size="l" stretched onClick={handleSubmit} disabled={isSubmitting || rating === 0}>
         {isSubmitting ? 'Отправка...' : 'Отправить отзыв'}
       </Button>
     </div>

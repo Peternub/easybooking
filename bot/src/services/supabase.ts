@@ -1,16 +1,16 @@
 // Сервис для работы с Supabase
 
 import { createClient } from '@supabase/supabase-js';
-import { config } from '../config.js';
 import type {
-  Master,
-  Service,
   Booking,
-  Review,
+  BookingWithDetails,
+  Master,
   MasterSchedule,
   MasterScheduleException,
-  BookingWithDetails,
+  Review,
+  Service,
 } from '../../../shared/types.js';
+import { config } from '../config.js';
 
 export const supabase = createClient(config.supabase.url, config.supabase.serviceKey);
 
@@ -162,9 +162,7 @@ export async function completeBooking(id: string) {
 }
 
 // Отзывы
-export async function createReview(
-  review: Omit<Review, 'id' | 'created_at'>
-) {
+export async function createReview(review: Omit<Review, 'id' | 'created_at'>) {
   const { data, error } = await supabase.from('reviews').insert(review).select().single();
 
   if (error) throw error;

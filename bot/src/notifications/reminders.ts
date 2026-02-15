@@ -1,11 +1,11 @@
 // Отправка напоминаний и запросов на отзывы
 
+import { differenceInHours, differenceInMinutes, format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import type { Bot } from 'grammy';
 import { InlineKeyboard } from 'grammy';
-import { getUpcomingBookings, hasReview } from '../services/supabase.js';
-import { format, differenceInHours, differenceInMinutes } from 'date-fns';
-import { ru } from 'date-fns/locale';
 import { config } from '../config.js';
+import { getUpcomingBookings, hasReview } from '../services/supabase.js';
 
 // Напоминание за 24 часа
 export async function sendReminders24h(bot: Bot) {
@@ -22,20 +22,13 @@ export async function sendReminders24h(bot: Bot) {
 
         const keyboard = new InlineKeyboard().text(
           '❌ Отменить запись',
-          `cancel_booking:${booking.id}`
+          `cancel_booking:${booking.id}`,
         );
 
         await bot.api.sendMessage(
           booking.client_telegram_id,
-          `⏰ Напоминание о записи!\n\n` +
-            `Завтра у вас запись:\n` +
-            `📅 ${dateFormatted}\n` +
-            `⏰ Время: ${booking.booking_time}\n` +
-            `👤 Мастер: ${booking.master.name}\n` +
-            `💇 Услуга: ${booking.service.name}\n` +
-            `💰 Стоимость: ${booking.service.price} ₽\n\n` +
-            `Ждем вас! Если планы изменились, вы можете отменить запись.`,
-          { reply_markup: keyboard }
+          `⏰ Напоминание о записи!\n\nЗавтра у вас запись:\n📅 ${dateFormatted}\n⏰ Время: ${booking.booking_time}\n👤 Мастер: ${booking.master.name}\n💇 Услуга: ${booking.service.name}\n💰 Стоимость: ${booking.service.price} ₽\n\nЖдем вас! Если планы изменились, вы можете отменить запись.`,
+          { reply_markup: keyboard },
         );
 
         console.log(`📬 Отправлено напоминание за 24ч клиенту ${booking.client_telegram_id}`);
@@ -59,18 +52,13 @@ export async function sendReminders1h(bot: Bot) {
       if (minutesUntil >= 55 && minutesUntil <= 65) {
         const keyboard = new InlineKeyboard().text(
           '❌ Отменить запись',
-          `cancel_booking:${booking.id}`
+          `cancel_booking:${booking.id}`,
         );
 
         await bot.api.sendMessage(
           booking.client_telegram_id,
-          `⏰ Напоминание!\n\n` +
-            `Через час у вас запись:\n` +
-            `⏰ Время: ${booking.booking_time}\n` +
-            `👤 Мастер: ${booking.master.name}\n` +
-            `💇 Услуга: ${booking.service.name}\n\n` +
-            `До встречи!`,
-          { reply_markup: keyboard }
+          `⏰ Напоминание!\n\nЧерез час у вас запись:\n⏰ Время: ${booking.booking_time}\n👤 Мастер: ${booking.master.name}\n💇 Услуга: ${booking.service.name}\n\nДо встречи!`,
+          { reply_markup: keyboard },
         );
 
         console.log(`📬 Отправлено напоминание за 1ч клиенту ${booking.client_telegram_id}`);
@@ -98,16 +86,16 @@ export async function sendReviewRequests(bot: Bot) {
 
         const keyboard = new InlineKeyboard().webApp(
           '⭐️ Оставить отзыв',
-          `${config.app.webappUrl}/review/${booking.id}`
+          `${config.app.webappUrl}/review/${booking.id}`,
         );
 
         await bot.api.sendMessage(
           booking.client_telegram_id,
-          `Спасибо, что посетили нас! 🙏\n\n` +
-            `Надеемся, вам понравилось!\n` +
-            `Пожалуйста, оцените качество услуги и работу мастера.\n\n` +
-            `Ваше мнение очень важно для нас! ⭐️`,
-          { reply_markup: keyboard }
+          'Спасибо, что посетили нас! 🙏\n\n' +
+            'Надеемся, вам понравилось!\n' +
+            'Пожалуйста, оцените качество услуги и работу мастера.\n\n' +
+            'Ваше мнение очень важно для нас! ⭐️',
+          { reply_markup: keyboard },
         );
 
         console.log(`📬 Отправлен запрос на отзыв клиенту ${booking.client_telegram_id}`);

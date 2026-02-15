@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { SelectService } from '../components/SelectService';
-import { SelectMaster } from '../components/SelectMaster';
-import { SelectDateTime } from '../components/SelectDateTime';
 import { BookingConfirmation } from '../components/BookingConfirmation';
+import { SelectDateTime } from '../components/SelectDateTime';
+import { SelectMaster } from '../components/SelectMaster';
+import { SelectService } from '../components/SelectService';
 
 type Step = 'service' | 'master' | 'datetime' | 'confirmation';
 
@@ -48,22 +48,34 @@ export function BookingFlow() {
       {step === 'service' && <SelectService onSelect={handleServiceSelect} />}
 
       {step === 'master' && selectedService && (
-        <SelectMaster serviceId={selectedService} onSelect={handleMasterSelect} onBack={handleBack} />
-      )}
-
-      {step === 'datetime' && selectedMaster && (
-        <SelectDateTime masterId={selectedMaster} onSelect={handleDateTimeSelect} onBack={handleBack} />
-      )}
-
-      {step === 'confirmation' && selectedService && selectedMaster && selectedDate && selectedTime && (
-        <BookingConfirmation
+        <SelectMaster
           serviceId={selectedService}
-          masterId={selectedMaster}
-          date={selectedDate}
-          time={selectedTime}
+          onSelect={handleMasterSelect}
           onBack={handleBack}
         />
       )}
+
+      {step === 'datetime' && selectedMaster && (
+        <SelectDateTime
+          masterId={selectedMaster}
+          onSelect={handleDateTimeSelect}
+          onBack={handleBack}
+        />
+      )}
+
+      {step === 'confirmation' &&
+        selectedService &&
+        selectedMaster &&
+        selectedDate &&
+        selectedTime && (
+          <BookingConfirmation
+            serviceId={selectedService}
+            masterId={selectedMaster}
+            date={selectedDate}
+            time={selectedTime}
+            onBack={handleBack}
+          />
+        )}
     </div>
   );
 }

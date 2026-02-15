@@ -1,9 +1,9 @@
 // Регистрация всех обработчиков бота
 
 import type { Bot } from 'grammy';
-import { handleStart } from './start.js';
 import { handleMyBookings } from './bookings.js';
 import { handleCancelBooking } from './cancel.js';
+import { handleStart } from './start.js';
 import { handleWebApp } from './webapp.js';
 
 export function setupHandlers(bot: Bot) {
@@ -21,9 +21,7 @@ export function setupHandlers(bot: Bot) {
   // Обработка неизвестных команд
   bot.on('message:text', async (ctx) => {
     await ctx.reply(
-      'Используйте команды:\n' +
-        '/start - Главное меню\n' +
-        '/mybookings - Мои записи'
+      'Используйте команды:\n' + '/start - Главное меню\n' + '/mybookings - Мои записи',
     );
   });
 }

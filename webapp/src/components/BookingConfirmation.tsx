@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Button, Title, Text, Spinner, Card } from '@telegram-apps/telegram-ui';
-import { supabase } from '../services/supabase';
+import { Button, Card, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { useEffect, useState } from 'react';
 import type { Master, Service } from '../../../shared/types';
+import { supabase } from '../services/supabase';
 
 interface Props {
   serviceId: string;
@@ -66,11 +66,11 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     try {
       const jsonData = JSON.stringify(data);
       console.log('JSON строка:', jsonData);
-      
+
       if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.sendData(jsonData);
         console.log('✅ sendData() вызван успешно');
-        
+
         // После успешной отправки Mini App должен закрыться автоматически
         // Если этого не происходит, закрываем вручную через 1 секунду
         setTimeout(() => {
@@ -78,7 +78,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           window.Telegram?.WebApp?.close();
         }, 1000);
       }
-      
     } catch (error) {
       console.error('❌ Ошибка отправки данных:', error);
       setSubmitting(false);

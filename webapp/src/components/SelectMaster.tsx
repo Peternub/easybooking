@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Card, Title, Text, Spinner, Placeholder, Button } from '@telegram-apps/telegram-ui';
-import { supabase } from '../services/supabase';
+import { Button, Card, Placeholder, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
+import { useEffect, useState } from 'react';
 import type { Master } from '../../../shared/types';
+import { supabase } from '../services/supabase';
 
 interface Props {
   serviceId: string;
@@ -29,7 +29,7 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
 
       const mastersData = data
         .map((item: any) => item.masters)
-        .filter((master: Master) => master && master.is_active);
+        .filter((master: Master) => master?.is_active);
 
       setMasters(mastersData);
     } catch (err) {

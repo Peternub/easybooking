@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Card, Title, Text, Spinner, Placeholder } from '@telegram-apps/telegram-ui';
-import { supabase } from '../services/supabase';
+import { Card, Placeholder, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
+import { useEffect, useState } from 'react';
 import type { Service } from '../../../shared/types';
+import { supabase } from '../services/supabase';
 
 interface Props {
   onSelect: (serviceId: string) => void;

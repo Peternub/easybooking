@@ -44,11 +44,7 @@ export interface MasterScheduleException {
   created_at: string;
 }
 
-export type BookingStatus =
-  | 'active'
-  | 'completed'
-  | 'cancelled_by_client'
-  | 'cancelled_by_admin';
+export type BookingStatus = 'active' | 'completed' | 'cancelled_by_client' | 'cancelled_by_admin';
 
 export interface Booking {
   id: string;

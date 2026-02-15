@@ -1,13 +1,13 @@
 // Сервис для работы с Google Calendar API
 
 import { google } from 'googleapis';
-import { config } from '../config.js';
 import type { Booking, Master } from '../../../shared/types.js';
+import { config } from '../config.js';
 
 const oauth2Client = new google.auth.OAuth2(
   config.google.clientId,
   config.google.clientSecret,
-  config.google.redirectUri
+  config.google.redirectUri,
 );
 
 // Устанавливаем refresh token
@@ -37,12 +37,12 @@ export interface CalendarEvent {
 export async function createCalendarEvent(
   calendarId: string,
   booking: Booking,
-  serviceDuration: number
+  serviceDuration: number,
 ): Promise<string> {
   try {
     const startDateTime = `${booking.booking_date}T${booking.booking_time}`;
     const endDateTime = new Date(
-      new Date(startDateTime).getTime() + serviceDuration * 60 * 1000
+      new Date(startDateTime).getTime() + serviceDuration * 60 * 1000,
     ).toISOString();
 
     const event: CalendarEvent = {
@@ -71,10 +71,7 @@ export async function createCalendarEvent(
 }
 
 // Удалить событие из календаря
-export async function deleteCalendarEvent(
-  calendarId: string,
-  eventId: string
-): Promise<void> {
+export async function deleteCalendarEvent(calendarId: string, eventId: string): Promise<void> {
   try {
     await calendar.events.delete({
       calendarId,
@@ -89,7 +86,7 @@ export async function deleteCalendarEvent(
 // Получить занятые слоты на дату
 export async function getBusySlots(
   calendarId: string,
-  date: string
+  date: string,
 ): Promise<Array<{ start: string; end: string }>> {
   try {
     const timeMin = `${date}T00:00:00`;
@@ -109,8 +106,8 @@ export async function getBusySlots(
     return events
       .filter((event) => event.start?.dateTime && event.end?.dateTime)
       .map((event) => ({
-        start: event.start!.dateTime!,
-        end: event.end!.dateTime!,
+        start: event.start?.dateTime!,
+        end: event.end?.dateTime!,
       }));
   } catch (error) {
     console.error('Ошибка получения занятых слотов:', error);
@@ -124,7 +121,7 @@ export async function isSlotAvailable(
   calendarId: string,
   date: string,
   time: string,
-  durationMinutes: number
+  durationMinutes: number,
 ): Promise<boolean> {
   try {
     const busySlots = await getBusySlots(calendarId, date);

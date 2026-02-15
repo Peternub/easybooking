@@ -2,11 +2,7 @@
   "name": "telegram-booking-app",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "bot",
-    "webapp",
-    "shared"
-  ],
+  "workspaces": ["bot", "webapp", "shared"],
   "scripts": {
     "bot:dev": "bun --watch bot/src/index.ts",
     "webapp:dev": "cd webapp && bun run dev",

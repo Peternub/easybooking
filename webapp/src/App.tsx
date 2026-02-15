@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppRoot } from '@telegram-apps/telegram-ui';
+import { useEffect } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useTelegramTheme } from './hooks/useTelegramTheme';
+import { AdminPanel } from './pages/AdminPanel';
 import { BookingFlow } from './pages/BookingFlow';
 import { ReviewPage } from './pages/ReviewPage';
-import { AdminPanel } from './pages/AdminPanel';
 
 export function App() {
   const theme = useTelegramTheme();

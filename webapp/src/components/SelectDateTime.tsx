@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Button, Title, Text, Spinner, Placeholder } from '@telegram-apps/telegram-ui';
-import { format, addDays, startOfDay } from 'date-fns';
+import { Button, Placeholder, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
+import { addDays, format, startOfDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { useEffect, useState } from 'react';
 
 interface Props {
   masterId: string;
@@ -114,10 +114,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
           </Text>
 
           {availableSlots.length === 0 ? (
-            <Placeholder
-              header="Нет свободных слотов"
-              description="На эту дату все время занято"
-            />
+            <Placeholder header="Нет свободных слотов" description="На эту дату все время занято" />
           ) : (
             <>
               <Text style={{ marginBottom: '16px' }}>Выберите время:</Text>

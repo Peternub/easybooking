@@ -1,10 +1,10 @@
 // Обработчик просмотра записей
 
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import type { CommandContext, Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
 import { getClientBookings } from '../services/supabase.js';
-import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
 
 export async function handleMyBookings(ctx: CommandContext<Context>) {
   const userId = ctx.from?.id;
@@ -14,7 +14,9 @@ export async function handleMyBookings(ctx: CommandContext<Context>) {
     const bookings = await getClientBookings(userId);
 
     if (bookings.length === 0) {
-      await ctx.reply('У вас пока нет записей. Нажмите "Записаться на услугу" чтобы создать запись.');
+      await ctx.reply(
+        'У вас пока нет записей. Нажмите "Записаться на услугу" чтобы создать запись.',
+      );
       return;
     }
 
@@ -39,11 +41,12 @@ export async function handleMyBookings(ctx: CommandContext<Context>) {
       message += '\n📜 История:\n\n';
       for (const booking of pastBookings.slice(0, 5)) {
         const date = format(new Date(booking.booking_date), 'd MMMM yyyy', { locale: ru });
-        const statusEmoji = {
-          completed: '✅',
-          cancelled_by_client: '❌',
-          cancelled_by_admin: '🚫',
-        }[booking.status] || '❓';
+        const statusEmoji =
+          {
+            completed: '✅',
+            cancelled_by_client: '❌',
+            cancelled_by_admin: '🚫',
+          }[booking.status] || '❓';
 
         message += `${statusEmoji} ${date} - ${booking.service.name}\n`;
       }
@@ -52,9 +55,7 @@ export async function handleMyBookings(ctx: CommandContext<Context>) {
     const keyboard = new InlineKeyboard();
     for (const booking of activeBookings) {
       const date = format(new Date(booking.booking_date), 'd MMM', { locale: ru });
-      keyboard
-        .text(`❌ Отменить запись ${date}`, `cancel_booking:${booking.id}`)
-        .row();
+      keyboard.text(`❌ Отменить запись ${date}`, `cancel_booking:${booking.id}`).row();
     }
 
     await ctx.reply(message, { reply_markup: keyboard });

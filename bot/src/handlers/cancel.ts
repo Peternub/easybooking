@@ -1,12 +1,12 @@
 // Обработчик отмены записи
 
-import type { CallbackQueryContext, Context } from 'grammy';
-import { InlineKeyboard } from 'grammy';
-import { getBookingById, cancelBooking, getMasterById } from '../services/supabase.js';
-import { deleteCalendarEvent } from '../services/google-calendar.js';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import type { CallbackQueryContext, Context } from 'grammy';
+import { InlineKeyboard } from 'grammy';
 import { config } from '../config.js';
+import { deleteCalendarEvent } from '../services/google-calendar.js';
+import { cancelBooking, getBookingById, getMasterById } from '../services/supabase.js';
 
 export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
   const data = ctx.callbackQuery.data;
@@ -38,12 +38,8 @@ export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
         .text('❌ Нет, оставить', 'cancel_action');
 
       await ctx.editMessageText(
-        `Вы уверены, что хотите отменить запись?\n\n` +
-          `📅 Дата: ${date}\n` +
-          `⏰ Время: ${booking.booking_time}\n` +
-          `👤 Мастер: ${booking.master.name}\n` +
-          `💇 Услуга: ${booking.service.name}`,
-        { reply_markup: keyboard }
+        `Вы уверены, что хотите отменить запись?\n\n📅 Дата: ${date}\n⏰ Время: ${booking.booking_time}\n👤 Мастер: ${booking.master.name}\n💇 Услуга: ${booking.service.name}`,
+        { reply_markup: keyboard },
       );
 
       await ctx.answerCallbackQuery();
@@ -79,12 +75,7 @@ export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
         const date = format(new Date(booking.booking_date), 'd MMMM yyyy', { locale: ru });
         await ctx.api.sendMessage(
           config.telegram.adminId,
-          `❌ Клиент отменил запись:\n\n` +
-            `👤 Клиент: ${booking.client_name}\n` +
-            `📅 Дата: ${date}\n` +
-            `⏰ Время: ${booking.booking_time}\n` +
-            `💇 Услуга: ${booking.service.name}\n` +
-            `👨‍💼 Мастер: ${booking.master.name}`
+          `❌ Клиент отменил запись:\n\n👤 Клиент: ${booking.client_name}\n📅 Дата: ${date}\n⏰ Время: ${booking.booking_time}\n💇 Услуга: ${booking.service.name}\n👨‍💼 Мастер: ${booking.master.name}`,
         );
       } catch (error) {
         console.error('Ошибка уведомления администратора:', error);
@@ -92,7 +83,7 @@ export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
 
       await ctx.editMessageText(
         '✅ Запись успешно отменена.\n\n' +
-          'Если хотите записаться снова, используйте кнопку "Записаться на услугу".'
+          'Если хотите записаться снова, используйте кнопку "Записаться на услугу".',
       );
 
       await ctx.answerCallbackQuery('Запись отменена');
