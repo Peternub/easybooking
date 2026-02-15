@@ -206,11 +206,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           </Title>
         </div>
 
-        <div style={{ marginBottom: '16px' }}>
-          <Text style={{ fontSize: '14px', opacity: 0.6 }}>Длительность</Text>
-          <Text weight="2">{service.duration_minutes} минут</Text>
-        </div>
-
         <div>
           <Text style={{ fontSize: '14px', opacity: 0.6 }}>Стоимость</Text>
           <Title level="2">{service.price} ₽</Title>
