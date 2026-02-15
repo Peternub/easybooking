@@ -63,6 +63,18 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
     try {
       // Создаем запись напрямую в Supabase
+      console.log('📝 Отправка данных в Supabase...');
+      console.log('Данные для вставки:', {
+        client_telegram_id: clientTelegramId,
+        client_name: clientName,
+        client_username: clientUsername,
+        master_id: masterId,
+        service_id: serviceId,
+        booking_date: date,
+        booking_time: time,
+        status: 'active',
+      });
+
       const { data: booking, error } = await supabase
         .from('bookings')
         .insert({
@@ -80,14 +92,24 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         .select()
         .single();
 
+      console.log('📊 Ответ от Supabase:', { data: booking, error });
+
       if (error) {
         console.error('❌ Ошибка создания записи:', error);
-        alert('Ошибка создания записи. Попробуйте еще раз.');
+        console.error('Детали ошибки:', JSON.stringify(error, null, 2));
+        alert(`Ошибка создания записи: ${error.message}\n\nПроверьте консоль для деталей.`);
         setSubmitting(false);
         return;
       }
 
-      console.log('✅ Запись создана:', booking);
+      if (!booking) {
+        console.error('❌ Запись не создана (нет данных)');
+        alert('Ошибка: запись не создана');
+        setSubmitting(false);
+        return;
+      }
+
+      console.log('✅ Запись успешно создана в Supabase:', booking);
 
       // Отправляем уведомления через API бота
       try {
