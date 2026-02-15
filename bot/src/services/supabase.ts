@@ -33,6 +33,13 @@ export async function getMasterById(id: string) {
   return data as Master;
 }
 
+export async function getServiceById(id: string) {
+  const { data, error } = await supabase.from('services').select('*').eq('id', id).single();
+
+  if (error) throw error;
+  return data as Service;
+}
+
 // Услуги
 export async function getServices() {
   const { data, error } = await supabase
@@ -53,7 +60,7 @@ export async function getServicesByMaster(masterId: string) {
     .eq('master_id', masterId);
 
   if (error) throw error;
-  return data.map((item) => item.services).filter(Boolean) as Service[];
+  return (data?.map((item: any) => item.services).filter(Boolean) || []) as Service[];
 }
 
 // График работы

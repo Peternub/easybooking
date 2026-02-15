@@ -18,8 +18,9 @@ export async function handleStart(ctx: CommandContext<Context>) {
     `• Отменить запись\n` +
     `• Оставить отзыв после посещения`;
 
+  // Используем webApp кнопку для получения данных через sendData()
   const keyboard = new InlineKeyboard()
-    .webApp('📱 Открыть приложение', config.app.webappUrl);
+    .webApp('📱 Записаться на услугу', config.app.webappUrl);
 
   if (userIsAdmin) {
     keyboard.row().webApp('⚙️ Админ-панель', `${config.app.webappUrl}/admin`);

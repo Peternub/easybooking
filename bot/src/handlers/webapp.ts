@@ -1,7 +1,7 @@
 // Обработчик данных из Web App
 
 import type { Context } from 'grammy';
-import { createBooking, getMasterById, getServiceById, createReview } from '../services/supabase.js';
+import { createBooking, getMasterById, getServiceById, createReview, getBookingById } from '../services/supabase.js';
 import { createCalendarEvent } from '../services/google-calendar.js';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -23,28 +23,48 @@ interface ReviewData {
 }
 
 export async function handleWebApp(ctx: Context) {
+  console.log('=== ПОЛУЧЕНЫ ДАННЫЕ ИЗ WEB APP ===');
+  console.log('Полный контекст сообщения:', JSON.stringify(ctx.message, null, 2));
+  
   const webAppData = ctx.message?.web_app_data?.data;
-  if (!webAppData) return;
+  console.log('web_app_data:', webAppData);
+  
+  if (!webAppData) {
+    console.error('❌ Нет данных web_app_data');
+    return;
+  }
 
   const userId = ctx.from?.id;
   const userName = ctx.from?.first_name || 'Клиент';
   const username = ctx.from?.username;
 
-  if (!userId) return;
+  console.log('User ID:', userId);
+  console.log('User Name:', userName);
+
+  if (!userId) {
+    console.error('❌ Нет userId');
+    return;
+  }
 
   try {
     const data = JSON.parse(webAppData) as BookingData | ReviewData;
+    console.log('✅ Распарсенные данные:', data);
 
     // Обработка создания записи
     if (data.type === 'booking') {
+      console.log('📝 Обработка создания записи...');
       const { serviceId, masterId, date, time } = data;
 
+      console.log('Получение данных мастера и услуги...');
       // Получаем данные мастера и услуги
       const [master, service] = await Promise.all([
         getMasterById(masterId),
         getServiceById(serviceId),
       ]);
+      console.log('✅ Мастер:', master.name);
+      console.log('✅ Услуга:', service.name);
 
+      console.log('Создание записи в БД...');
       // Создаем запись в базе данных
       const booking = await createBooking({
         client_telegram_id: userId,
@@ -58,28 +78,33 @@ export async function handleWebApp(ctx: Context) {
         cancellation_reason: null,
         google_event_id: null,
       });
+      console.log('✅ Запись создана:', booking.id);
 
       // Создаем событие в Google Calendar
       let eventId: string | null = null;
       try {
+        console.log('Создание события в Google Calendar...');
         eventId = await createCalendarEvent(
           master.google_calendar_id,
           booking,
           service.duration_minutes
         );
+        console.log('✅ Событие создано:', eventId);
 
         // Обновляем запись с ID события
+        const { supabase } = await import('../services/supabase.js');
         await supabase
           .from('bookings')
           .update({ google_event_id: eventId })
           .eq('id', booking.id);
       } catch (error) {
-        console.error('Ошибка создания события в календаре:', error);
+        console.error('⚠️ Ошибка создания события в календаре:', error);
         // Продолжаем даже если не удалось создать событие
       }
 
       const dateFormatted = format(new Date(date), 'd MMMM yyyy', { locale: ru });
 
+      console.log('Отправка подтверждения клиенту...');
       // Отправляем подтверждение клиенту
       await ctx.reply(
         `✅ Запись успешно создана!\n\n` +
@@ -91,9 +116,11 @@ export async function handleWebApp(ctx: Context) {
           `⏱ Длительность: ${service.duration_minutes} мин\n\n` +
           `Мы отправим вам напоминание за 24 часа и за 1 час до визита.`
       );
+      console.log('✅ Подтверждение отправлено клиенту');
 
       // Уведомляем администратора
       try {
+        console.log('Отправка уведомления администратору...');
         await ctx.api.sendMessage(
           config.telegram.adminId,
           `✅ Новая запись!\n\n` +
@@ -104,8 +131,9 @@ export async function handleWebApp(ctx: Context) {
             `👨‍💼 Мастер: ${master.name}\n` +
             `💰 Стоимость: ${service.price} ₽`
         );
+        console.log('✅ Уведомление администратору отправлено');
       } catch (error) {
-        console.error('Ошибка уведомления администратора:', error);
+        console.error('⚠️ Ошибка уведомления администратора:', error);
       }
     }
 
@@ -152,15 +180,8 @@ export async function handleWebApp(ctx: Context) {
       }
     }
   } catch (error) {
-    console.error('Ошибка обработки данных Web App:', error);
-    await ctx.reply('Произошла ошибка. Попробуйте еще раз.');
+    console.error('❌ ОШИБКА ОБРАБОТКИ ДАННЫХ WEB APP:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
+    await ctx.reply('Произошла ошибка при создании записи. Попробуйте еще раз или обратитесь к администратору.');
   }
-}
-
-// Добавляем недостающую функцию
-async function getServiceById(id: string) {
-  const { supabase } = await import('../services/supabase.js');
-  const { data, error } = await supabase.from('services').select('*').eq('id', id).single();
-  if (error) throw error;
-  return data;
 }

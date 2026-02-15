@@ -50,22 +50,39 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       time,
     };
 
-    console.log('Отправка данных:', data);
-    console.log('Telegram WebApp доступен:', !!window.Telegram?.WebApp);
+    console.log('=== ОТПРАВКА ДАННЫХ ===');
+    console.log('Данные для отправки:', data);
+    console.log('Telegram WebApp объект:', window.Telegram?.WebApp);
+    console.log('initData:', window.Telegram?.WebApp?.initData);
+    console.log('initDataUnsafe:', window.Telegram?.WebApp?.initDataUnsafe);
 
-    if (window.Telegram?.WebApp) {
-      try {
-        window.Telegram.WebApp.sendData(JSON.stringify(data));
-        console.log('Данные отправлены успешно');
-      } catch (error) {
-        console.error('Ошибка отправки данных:', error);
-        setSubmitting(false);
-        alert('Ошибка отправки данных. Попробуйте еще раз.');
-      }
-    } else {
-      console.error('Telegram WebApp недоступен');
+    if (!window.Telegram?.WebApp) {
+      console.error('❌ Telegram WebApp недоступен');
       setSubmitting(false);
       alert('Приложение должно быть открыто в Telegram');
+      return;
+    }
+
+    try {
+      const jsonData = JSON.stringify(data);
+      console.log('JSON строка:', jsonData);
+      
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.sendData(jsonData);
+        console.log('✅ sendData() вызван успешно');
+        
+        // После успешной отправки Mini App должен закрыться автоматически
+        // Если этого не происходит, закрываем вручную через 1 секунду
+        setTimeout(() => {
+          console.log('Закрытие Mini App...');
+          window.Telegram?.WebApp?.close();
+        }, 1000);
+      }
+      
+    } catch (error) {
+      console.error('❌ Ошибка отправки данных:', error);
+      setSubmitting(false);
+      alert('Ошибка отправки данных. Попробуйте еще раз.');
     }
   };
 
