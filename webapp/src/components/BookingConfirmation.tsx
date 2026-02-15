@@ -55,7 +55,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
     const user = window.Telegram.WebApp.initDataUnsafe.user;
     const clientTelegramId = user.id;
-    const clientName = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+    const clientName = `${user.first_name}${user.last_name ? ` ${user.last_name}` : ''}`;
     const clientUsername = user.username || null;
 
     console.log('Клиент:', { clientTelegramId, clientName, clientUsername });
@@ -89,29 +89,39 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
       console.log('✅ Запись создана:', booking);
 
-      // Отправляем уведомление боту (опционально)
+      // Отправляем уведомления через API бота
       try {
-        // Можно добавить вызов API бота для уведомлений
-        // Пока просто логируем
-        console.log('📧 Уведомления будут отправлены ботом автоматически');
+        const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+        console.log('📧 Отправка уведомлений через бота:', botApiUrl);
+
+        const notifyResponse = await fetch(`${botApiUrl}/api/notify-booking`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bookingId: booking.id,
+            clientTelegramId: clientTelegramId,
+            clientName: clientName,
+            clientUsername: clientUsername,
+            masterId: masterId,
+            serviceId: serviceId,
+            bookingDate: date,
+            bookingTime: time,
+          }),
+        });
+
+        if (notifyResponse.ok) {
+          console.log('✅ Уведомления отправлены');
+        } else {
+          console.warn('⚠️ Не удалось отправить уведомления:', await notifyResponse.text());
+        }
       } catch (notifyError) {
-        console.warn('⚠️ Не удалось отправить уведомление:', notifyError);
+        console.warn('⚠️ Ошибка отправки уведомлений:', notifyError);
       }
 
-      // Показываем успешное сообщение
-      alert(
-        `✅ Запись успешно создана!\n\n` +
-          `Дата: ${format(new Date(date), 'd MMMM yyyy', { locale: ru })}\n` +
-          `Время: ${time}\n` +
-          `Мастер: ${master?.name}\n` +
-          `Услуга: ${service?.name}\n\n` +
-          `Мы отправим вам напоминание за 24 часа и за 1 час до визита.`
-      );
-
-      // Закрываем Mini App
-      setTimeout(() => {
-        window.Telegram?.WebApp?.close();
-      }, 500);
+      // Закрываем Mini App (уведомления придут от бота)
+      window.Telegram?.WebApp?.close();
     } catch (error) {
       console.error('❌ Ошибка:', error);
       alert('Произошла ошибка. Попробуйте еще раз.');
