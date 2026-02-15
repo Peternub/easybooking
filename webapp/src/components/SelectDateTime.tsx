@@ -1,7 +1,8 @@
 import { Button, Placeholder, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
-import { addDays, format, startOfDay } from 'date-fns';
+import { addDays, format, isPast, parse, startOfDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
+import { supabase } from '../services/supabase';
 
 interface Props {
   masterId: string;
@@ -9,11 +10,18 @@ interface Props {
   onBack: () => void;
 }
 
+interface TimeSlot {
+  time: string;
+  isAvailable: boolean;
+  isPast: boolean;
+}
+
 export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
     loadAvailableDates();
@@ -23,7 +31,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
     if (selectedDate) {
       loadAvailableSlots(selectedDate);
     }
-  }, [selectedDate]);
+  }, [selectedDate, masterId]);
 
   async function loadAvailableDates() {
     try {
@@ -44,20 +52,49 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
     }
   }
 
-  async function loadAvailableSlots(_date: string) {
+  async function loadAvailableSlots(date: string) {
+    setLoadingSlots(true);
     try {
-      // Здесь должна быть логика получения свободных слотов
-      // Для примера генерируем слоты с 10:00 до 18:00 каждые 30 минут
-      const slots: string[] = [];
+      // Генерируем все возможные слоты с 10:00 до 18:00 каждые 30 минут
+      const allSlots: string[] = [];
       for (let hour = 10; hour < 18; hour++) {
-        slots.push(`${hour.toString().padStart(2, '0')}:00`);
-        slots.push(`${hour.toString().padStart(2, '0')}:30`);
+        allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+        allSlots.push(`${hour.toString().padStart(2, '0')}:30`);
       }
 
-      setAvailableSlots(slots);
+      // Получаем занятые слоты из базы данных
+      const { data: bookings, error } = await supabase
+        .from('bookings')
+        .select('booking_time')
+        .eq('master_id', masterId)
+        .eq('booking_date', date)
+        .in('status', ['active', 'completed']);
+
+      if (error) {
+        console.error('Ошибка загрузки записей:', error);
+      }
+
+      const bookedTimes = new Set(bookings?.map((b) => b.booking_time.substring(0, 5)) || []);
+
+      // Проверяем каждый слот
+      const slots: TimeSlot[] = allSlots.map((time) => {
+        const slotDateTime = parse(`${date} ${time}`, 'yyyy-MM-dd HH:mm', new Date());
+        const isBooked = bookedTimes.has(time);
+        const isTimePast = isPast(slotDateTime);
+
+        return {
+          time,
+          isAvailable: !isBooked && !isTimePast,
+          isPast: isTimePast,
+        };
+      });
+
+      setTimeSlots(slots);
     } catch (err) {
       console.error('Ошибка загрузки слотов:', err);
-      setAvailableSlots([]);
+      setTimeSlots([]);
+    } finally {
+      setLoadingSlots(false);
     }
   }
 
@@ -102,7 +139,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
             mode="plain"
             onClick={() => {
               setSelectedDate(null);
-              setAvailableSlots([]);
+              setTimeSlots([]);
             }}
             style={{ marginBottom: '16px' }}
           >
@@ -113,20 +150,35 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
             Дата: {format(new Date(selectedDate), 'd MMMM yyyy', { locale: ru })}
           </Text>
 
-          {availableSlots.length === 0 ? (
-            <Placeholder header="Нет свободных слотов" description="На эту дату все время занято" />
+          {loadingSlots ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+              <Spinner size="m" />
+            </div>
+          ) : timeSlots.filter((slot) => slot.isAvailable).length === 0 ? (
+            <Placeholder
+              header="Нет свободных слотов"
+              description="На эту дату все время занято или прошло"
+            />
           ) : (
             <>
               <Text style={{ marginBottom: '16px' }}>Выберите время:</Text>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                {availableSlots.map((time) => (
+                {timeSlots.map((slot) => (
                   <Button
-                    key={time}
+                    key={slot.time}
                     mode="outline"
                     size="s"
-                    onClick={() => onSelect(selectedDate, time)}
+                    onClick={() => slot.isAvailable && onSelect(selectedDate, slot.time)}
+                    disabled={!slot.isAvailable}
+                    style={{
+                      opacity: slot.isAvailable ? 1 : 0.4,
+                      cursor: slot.isAvailable ? 'pointer' : 'not-allowed',
+                      backgroundColor: slot.isAvailable
+                        ? undefined
+                        : 'var(--tgui--secondary_bg_color)',
+                    }}
                   >
-                    {time}
+                    {slot.time}
                   </Button>
                 ))}
               </div>
