@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Bot } from 'grammy';
 import { config } from '../config.js';
+import { createCalendarEvent } from '../services/google-calendar.js';
 import { getMasterById, getServiceById } from '../services/supabase.js';
 
 interface NotifyBookingRequest {
@@ -30,6 +31,40 @@ export async function handleNotifyBooking(bot: Bot, data: NotifyBookingRequest) 
     const dateFormatted = format(new Date(data.bookingDate), 'd MMMM yyyy', {
       locale: ru,
     });
+
+    // Создаем событие в Google Calendar мастера
+    if (master.google_calendar_id) {
+      try {
+        console.log('📅 Создание события в Google Calendar:', master.google_calendar_id);
+
+        const eventId = await createCalendarEvent(
+          master.google_calendar_id,
+          {
+            id: data.bookingId,
+            client_telegram_id: data.clientTelegramId,
+            client_name: data.clientName,
+            client_username: data.clientUsername,
+            master_id: data.masterId,
+            service_id: data.serviceId,
+            booking_date: data.bookingDate,
+            booking_time: data.bookingTime,
+            status: 'active',
+            cancellation_reason: null,
+            google_event_id: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          service.duration_minutes,
+        );
+
+        console.log('✅ Событие создано в календаре:', eventId);
+      } catch (calendarError) {
+        console.error('⚠️ Ошибка создания события в календаре:', calendarError);
+        // Не блокируем отправку уведомлений если календарь не работает
+      }
+    } else {
+      console.log('ℹ️ У мастера нет настроенного календаря');
+    }
 
     // Отправляем уведомление клиенту
     try {

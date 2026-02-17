@@ -9,13 +9,12 @@ DELETE FROM services;
 DELETE FROM masters;
 
 -- 2. Добавление трех мастеров-парикмахеров
-INSERT INTO masters (name, photo_url, description, specialization, google_calendar_id, is_active)
+INSERT INTO masters (name, photo_url, description, google_calendar_id, is_active)
 VALUES 
   (
     'Анна Иванова',
     'https://i.pravatar.cc/150?img=5',
     'Опытный мастер с 5-летним стажем работы',
-    'Парикмахер',
     'primary',
     true
   ),
@@ -23,7 +22,6 @@ VALUES
     'Мария Петрова',
     'https://i.pravatar.cc/150?img=9',
     'Профессиональный мастер, специалист по окрашиванию',
-    'Парикмахер',
     null,
     true
   ),
@@ -31,7 +29,6 @@ VALUES
     'Елена Сидорова',
     'https://i.pravatar.cc/150?img=10',
     'Мастер с опытом работы более 7 лет',
-    'Парикмахер',
     null,
     true
   );
