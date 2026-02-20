@@ -12,9 +12,16 @@ const oauth2Client = new google.auth.OAuth2(
 
 // Устанавливаем refresh token
 if (config.google.refreshToken) {
+  console.log('🔑 Google Calendar credentials загружены');
+  console.log('Client ID:', config.google.clientId ? '✅ Есть' : '❌ Отсутствует');
+  console.log('Client Secret:', config.google.clientSecret ? '✅ Есть' : '❌ Отсутствует');
+  console.log('Refresh Token:', config.google.refreshToken ? '✅ Есть' : '❌ Отсутствует');
+  
   oauth2Client.setCredentials({
     refresh_token: config.google.refreshToken,
   });
+} else {
+  console.warn('⚠️ Google Calendar не настроен - refresh token отсутствует');
 }
 
 const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
