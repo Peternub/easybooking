@@ -19,6 +19,9 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [clientName, setClientName] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoError, setPromoError] = useState('');
 
   useEffect(() => {
     loadData();
@@ -40,6 +43,50 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       setLoading(false);
     }
   }
+
+  const handlePromoCodeCheck = async () => {
+    if (!promoCode.trim()) {
+      setPromoDiscount(0);
+      setPromoError('');
+      return;
+    }
+
+    if (!window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      setPromoError('Ошибка: не удалось получить данные пользователя');
+      return;
+    }
+
+    const user = window.Telegram.WebApp.initDataUnsafe.user;
+    const clientTelegramId = user.id;
+
+    try {
+      const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${botApiUrl}/api/validate-promo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: promoCode.toUpperCase(),
+          clientTelegramId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.valid) {
+        setPromoDiscount(result.discount);
+        setPromoError('');
+      } else {
+        setPromoDiscount(0);
+        setPromoError(result.message || 'Промокод недействителен');
+      }
+    } catch (error) {
+      console.error('Ошибка проверки промокода:', error);
+      setPromoError('Не удалось проверить промокод');
+      setPromoDiscount(0);
+    }
+  };
 
   const handleConfirm = async () => {
     if (!clientName.trim()) {
@@ -70,6 +117,11 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     try {
       // Создаем запись напрямую в Supabase
       console.log('📝 Отправка данных в Supabase...');
+
+      const originalPrice = service.price;
+      const discountAmount = Math.round((originalPrice * promoDiscount) / 100);
+      const finalPrice = originalPrice - discountAmount;
+
       console.log('Данные для вставки:', {
         client_telegram_id: clientTelegramId,
         client_name: clientName,
@@ -79,6 +131,10 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         booking_date: date,
         booking_time: time,
         status: 'active',
+        original_price: originalPrice,
+        discount_amount: discountAmount,
+        final_price: finalPrice,
+        promo_code: promoCode.toUpperCase() || null,
       });
 
       const { data: booking, error } = await supabase
@@ -94,6 +150,10 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           status: 'active',
           cancellation_reason: null,
           google_event_id: null,
+          original_price: originalPrice,
+          discount_amount: discountAmount,
+          final_price: finalPrice,
+          promo_code: promoCode.toUpperCase() || null,
         })
         .select()
         .single();
@@ -136,6 +196,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
             serviceId: serviceId,
             bookingDate: date,
             bookingTime: time,
+            promoCode: promoCode.toUpperCase() || undefined,
           }),
         });
 
@@ -239,6 +300,99 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           }}
         />
       </Card>
+
+      <Card style={{ padding: '16px', marginBottom: '16px' }}>
+        <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
+          Промокод (необязательно)
+        </Text>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            value={promoCode}
+            onChange={(e) => {
+              setPromoCode(e.target.value.toUpperCase());
+              setPromoError('');
+              setPromoDiscount(0);
+            }}
+            placeholder="Введите промокод"
+            style={{
+              flex: 1,
+              padding: '12px',
+              fontSize: '16px',
+              border: '1px solid var(--tgui--divider_color)',
+              borderRadius: '8px',
+              backgroundColor: 'var(--tgui--secondary_bg_color)',
+              color: 'var(--tgui--text_color)',
+              outline: 'none',
+              textTransform: 'uppercase',
+            }}
+          />
+          <Button mode="outline" onClick={handlePromoCodeCheck} disabled={!promoCode.trim()}>
+            Применить
+          </Button>
+        </div>
+        {promoError && (
+          <Text
+            style={{
+              color: 'var(--tgui--destructive_text_color)',
+              fontSize: '14px',
+              marginTop: '8px',
+            }}
+          >
+            {promoError}
+          </Text>
+        )}
+        {promoDiscount > 0 && (
+          <Text style={{ color: 'var(--tgui--link_color)', fontSize: '14px', marginTop: '8px' }}>
+            ✅ Скидка {promoDiscount}% применена!
+          </Text>
+        )}
+      </Card>
+
+      {promoDiscount > 0 && (
+        <Card style={{ padding: '16px', marginBottom: '16px' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '8px',
+            }}
+          >
+            <Text style={{ fontSize: '14px' }}>Исходная цена:</Text>
+            <Text style={{ fontSize: '14px', textDecoration: 'line-through', opacity: 0.6 }}>
+              {service.price} ₽
+            </Text>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '8px',
+            }}
+          >
+            <Text style={{ fontSize: '14px' }}>Скидка ({promoDiscount}%):</Text>
+            <Text style={{ fontSize: '14px', color: 'var(--tgui--link_color)' }}>
+              -{Math.round((service.price * promoDiscount) / 100)} ₽
+            </Text>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingTop: '8px',
+              borderTop: '1px solid var(--tgui--divider_color)',
+            }}
+          >
+            <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>Итого:</Text>
+            <Title level="2" style={{ margin: 0 }}>
+              {service.price - Math.round((service.price * promoDiscount) / 100)} ₽
+            </Title>
+          </div>
+        </Card>
+      )}
 
       <Button
         size="l"

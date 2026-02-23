@@ -5,6 +5,7 @@ import { ru } from 'date-fns/locale';
 import type { Bot } from 'grammy';
 import { config } from '../config.js';
 import { createCalendarEvent } from '../services/google-calendar.js';
+import { usePromoCode } from '../services/promo-codes.js';
 import { getMasterById, getServiceById } from '../services/supabase.js';
 
 interface NotifyBookingRequest {
@@ -16,6 +17,7 @@ interface NotifyBookingRequest {
   serviceId: string;
   bookingDate: string;
   bookingTime: string;
+  promoCode?: string;
 }
 
 export async function handleNotifyBooking(bot: Bot, data: NotifyBookingRequest) {
@@ -66,6 +68,16 @@ export async function handleNotifyBooking(bot: Bot, data: NotifyBookingRequest) 
       }
     } else {
       console.log('ℹ️ У мастера нет настроенного календаря');
+    }
+
+    // Используем промокод если он был применён
+    if (data.promoCode) {
+      try {
+        await usePromoCode(data.promoCode, data.bookingId);
+        console.log('✅ Промокод использован:', data.promoCode);
+      } catch (error) {
+        console.error('⚠️ Ошибка использования промокода:', error);
+      }
     }
 
     // Отправляем уведомление клиенту
