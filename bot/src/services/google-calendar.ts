@@ -1,30 +1,33 @@
 // Сервис для работы с Google Calendar API
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { google } from 'googleapis';
+import type { calendar_v3 } from 'googleapis';
 import type { Booking, Master } from '../../../shared/types.js';
 import { config } from '../config.js';
 
-const oauth2Client = new google.auth.OAuth2(
-  config.google.clientId,
-  config.google.clientSecret,
-  config.google.redirectUri,
-);
+// Используем Service Account вместо OAuth
+let auth: ReturnType<typeof google.auth.GoogleAuth> | undefined;
+let calendar: calendar_v3.Calendar | undefined;
 
-// Устанавливаем refresh token
-if (config.google.refreshToken) {
-  console.log('🔑 Google Calendar credentials загружены');
-  console.log('Client ID:', config.google.clientId ? '✅ Есть' : '❌ Отсутствует');
-  console.log('Client Secret:', config.google.clientSecret ? '✅ Есть' : '❌ Отсутствует');
-  console.log('Refresh Token:', config.google.refreshToken ? '✅ Есть' : '❌ Отсутствует');
-  
-  oauth2Client.setCredentials({
-    refresh_token: config.google.refreshToken,
+try {
+  const serviceAccountPath = join(process.cwd(), 'google-service-account.json');
+  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));
+
+  auth = new google.auth.GoogleAuth({
+    credentials: serviceAccount,
+    scopes: ['https://www.googleapis.com/auth/calendar'],
   });
-} else {
-  console.warn('⚠️ Google Calendar не настроен - refresh token отсутствует');
-}
 
-const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+  calendar = google.calendar({ version: 'v3', auth });
+
+  console.log('🔑 Google Calendar Service Account загружен');
+  console.log('📧 Service Account:', serviceAccount.client_email);
+} catch (error) {
+  console.error('❌ Ошибка загрузки Service Account:', error);
+  console.warn('⚠️ Google Calendar не будет работать');
+}
 
 export interface CalendarEvent {
   id?: string;
@@ -45,16 +48,36 @@ export async function createCalendarEvent(
   calendarId: string,
   booking: Booking,
   serviceDuration: number,
+  masterName: string,
 ): Promise<string> {
   try {
-    const startDateTime = `${booking.booking_date}T${booking.booking_time}`;
-    const endDateTime = new Date(
-      new Date(startDateTime).getTime() + serviceDuration * 60 * 1000,
-    ).toISOString();
+    // Формат: 2026-02-21T14:00:00
+    const startDateTime = `${booking.booking_date}T${booking.booking_time}:00`;
+
+    // Вычисляем время окончания
+    const startDate = new Date(`${booking.booking_date}T${booking.booking_time}:00`);
+    const endDate = new Date(startDate.getTime() + serviceDuration * 60 * 1000);
+
+    // Форматируем время окончания в локальном формате
+    const year = endDate.getFullYear();
+    const month = String(endDate.getMonth() + 1).padStart(2, '0');
+    const day = String(endDate.getDate()).padStart(2, '0');
+    const hours = String(endDate.getHours()).padStart(2, '0');
+    const minutes = String(endDate.getMinutes()).padStart(2, '0');
+    const seconds = String(endDate.getSeconds()).padStart(2, '0');
+    const endDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+
+    // Цвета для разных мастеров
+    // Google Calendar color IDs: https://developers.google.com/calendar/api/v3/reference/colors
+    const masterColors: Record<string, string> = {
+      'Анна Иванова': '9', // Синий
+      'Мария Петрова': '10', // Зелёный
+      'Елена Сидорова': '11', // Красный
+    };
 
     const event: CalendarEvent = {
-      summary: `Запись: ${booking.client_name}`,
-      description: `Клиент: ${booking.client_name}\nTelegram: @${booking.client_username || 'не указан'}`,
+      summary: `${masterName}: ${booking.client_name}`,
+      description: `Мастер: ${masterName}\nКлиент: ${booking.client_name}\nTelegram: @${booking.client_username || 'не указан'}`,
       start: {
         dateTime: startDateTime,
         timeZone: config.app.timezone,
@@ -69,6 +92,17 @@ export async function createCalendarEvent(
       calendarId,
       requestBody: event,
     });
+
+    // Устанавливаем цвет события после создания
+    if (response.data.id && masterColors[masterName]) {
+      await calendar.events.patch({
+        calendarId,
+        eventId: response.data.id,
+        requestBody: {
+          colorId: masterColors[masterName],
+        },
+      });
+    }
 
     return response.data.id || '';
   } catch (error) {
@@ -113,8 +147,8 @@ export async function getBusySlots(
     return events
       .filter((event) => event.start?.dateTime && event.end?.dateTime)
       .map((event) => ({
-        start: event.start?.dateTime!,
-        end: event.end?.dateTime!,
+        start: event.start?.dateTime as string,
+        end: event.end?.dateTime as string,
       }));
   } catch (error) {
     console.error('Ошибка получения занятых слотов:', error);

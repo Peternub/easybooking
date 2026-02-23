@@ -18,10 +18,12 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [clientName, setClientName] = useState('');
 
   useEffect(() => {
     loadData();
-  }, [serviceId, masterId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadData() {
     try {
@@ -40,6 +42,11 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   }
 
   const handleConfirm = async () => {
+    if (!clientName.trim()) {
+      alert('Пожалуйста, введите ваше имя');
+      return;
+    }
+
     setSubmitting(true);
 
     console.log('=== СОЗДАНИЕ ЗАПИСИ ===');
@@ -55,7 +62,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
     const user = window.Telegram.WebApp.initDataUnsafe.user;
     const clientTelegramId = user.id;
-    const clientName = `${user.first_name}${user.last_name ? ` ${user.last_name}` : ''}`;
     const clientUsername = user.username || null;
 
     console.log('Клиент:', { clientTelegramId, clientName, clientUsername });
@@ -212,7 +218,34 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         </div>
       </Card>
 
-      <Button size="l" stretched onClick={handleConfirm} disabled={submitting}>
+      <Card style={{ padding: '16px', marginBottom: '16px' }}>
+        <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
+          Ваше имя
+        </Text>
+        <input
+          type="text"
+          value={clientName}
+          onChange={(e) => setClientName(e.target.value)}
+          placeholder="Введите ваше имя"
+          style={{
+            width: '100%',
+            padding: '12px',
+            fontSize: '16px',
+            border: '1px solid var(--tgui--divider_color)',
+            borderRadius: '8px',
+            backgroundColor: 'var(--tgui--secondary_bg_color)',
+            color: 'var(--tgui--text_color)',
+            outline: 'none',
+          }}
+        />
+      </Card>
+
+      <Button
+        size="l"
+        stretched
+        onClick={handleConfirm}
+        disabled={submitting || !clientName.trim()}
+      >
         {submitting ? 'Создание записи...' : 'Записаться'}
       </Button>
     </div>

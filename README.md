@@ -33,52 +33,56 @@
 ## 📁 Структура проекта
 
 \`\`\`
-telegram-booking-app/
+EasyBooking/
 ├── bot/                    # Telegram Bot
 │   ├── src/
 │   │   ├── handlers/      # Обработчики команд
-│   │   ├── services/      # Бизнес-логика
+│   │   ├── services/      # Бизнес-логика (Supabase, Google Calendar)
 │   │   ├── notifications/ # Система уведомлений
+│   │   ├── api/           # API endpoints
 │   │   └── utils/         # Утилиты
-│   └── package.json
+│   ├── google-service-account.json  # Google Service Account ключ
+│   └── .env               # Переменные окружения
 ├── webapp/                 # React Mini App
 │   ├── src/
 │   │   ├── components/    # React компоненты
 │   │   ├── pages/         # Страницы
 │   │   ├── services/      # API клиенты
 │   │   └── hooks/         # Custom hooks
-│   └── package.json
-├── shared/                 # Общие типы
+│   └── .env               # Переменные окружения
+├── shared/                 # Общие типы TypeScript
 │   └── types.ts
-├── supabase/              # Миграции БД
-│   └── migrations/
+├── supabase/              # SQL скрипты
+│   └── migrations/        # Миграции БД
 ├── docs/                  # Документация
-│   ├── SETUP.md          # Инструкция по настройке
-│   └── GOOGLE_CALENDAR.md # Настройка Google Calendar
-└── tz.txt                # Техническое задание
+│   └── ARCHITECTURE.md    # Архитектура проекта
+├── SETUP_GUIDE.md         # 📚 Полная инструкция по настройке
+└── README.md              # Этот файл
 \`\`\`
 
 ## 🚀 Быстрый старт
+
+**📚 Полная инструкция по настройке проекта с нуля: [SETUP_GUIDE.md](./SETUP_GUIDE.md)**
+
+Краткая версия:
 
 ### 1. Установка зависимостей
 
 \`\`\`powershell
 bun install
+cd bot && bun install
+cd ../webapp && bun install
 \`\`\`
 
-### 2. Настройка переменных окружения
+### 2. Настройка
 
-Создайте файл \`.env\` в корне проекта (см. \`.env.example\`)
+1. Создай Telegram бота через @BotFather
+2. Создай проект в Supabase
+3. Настрой Google Calendar API
+4. Заполни `.env` файлы (см. `.env.example`)
+5. Выполни SQL миграции в Supabase
 
-### 3. Настройка Supabase
-
-См. [docs/SETUP.md](./docs/SETUP.md)
-
-### 4. Настройка Google Calendar
-
-См. [docs/GOOGLE_CALENDAR.md](./docs/GOOGLE_CALENDAR.md)
-
-### 5. Запуск в режиме разработки
+### 3. Запуск
 
 Терминал 1 (бот):
 \`\`\`powershell
@@ -176,8 +180,8 @@ vercel
 
 ## 📖 Документация
 
-- [Инструкция по настройке](./docs/SETUP.md)
-- [Настройка Google Calendar API](./docs/GOOGLE_CALENDAR.md)
+- **[Полная инструкция по настройке](./SETUP_GUIDE.md)** ⭐
+- [Архитектура проекта](./docs/ARCHITECTURE.md)
 - [Техническое задание](./tz.txt)
 
 ## 🐛 Troubleshooting

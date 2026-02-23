@@ -55,11 +55,13 @@ export async function handleNotifyBooking(bot: Bot, data: NotifyBookingRequest) 
             updated_at: new Date().toISOString(),
           },
           service.duration_minutes,
+          master.name,
         );
 
         console.log('✅ Событие создано в календаре:', eventId);
       } catch (calendarError) {
         console.error('⚠️ Ошибка создания события в календаре:', calendarError);
+        console.log('ℹ️ Запись сохранена в базе данных, но не добавлена в Google Calendar');
         // Не блокируем отправку уведомлений если календарь не работает
       }
     } else {
