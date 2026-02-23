@@ -114,6 +114,12 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     console.log('Клиент:', { clientTelegramId, clientName, clientUsername });
     console.log('Запись:', { serviceId, masterId, date, time });
 
+    if (!service || !master) {
+      alert('Ошибка: данные услуги или мастера не загружены');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       // Создаем запись напрямую в Supabase
       console.log('📝 Отправка данных в Supabase...');
