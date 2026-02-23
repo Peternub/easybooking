@@ -2,8 +2,10 @@
 
 import type { Bot } from 'grammy';
 import { sendReminders1h, sendReminders24h, sendReviewRequests } from './reminders.js';
+import { sendInactiveClientNotifications } from './inactive-clients.js';
 
 const CHECK_INTERVAL = 5 * 60 * 1000; // Проверка каждые 5 минут
+const INACTIVE_CHECK_INTERVAL = 24 * 60 * 60 * 1000; // Проверка неактивных клиентов раз в сутки
 
 export function startNotificationScheduler(bot: Bot) {
   console.log('📬 Запуск планировщика уведомлений...');
@@ -11,10 +13,20 @@ export function startNotificationScheduler(bot: Bot) {
   // Немедленная проверка при запуске
   checkAndSendNotifications(bot);
 
-  // Периодическая проверка
+  // Периодическая проверка уведомлений
   setInterval(() => {
     checkAndSendNotifications(bot);
   }, CHECK_INTERVAL);
+
+  // Проверка неактивных клиентов раз в сутки
+  setInterval(() => {
+    sendInactiveClientNotifications(bot);
+  }, INACTIVE_CHECK_INTERVAL);
+
+  // Первая проверка неактивных клиентов через 1 минуту после запуска
+  setTimeout(() => {
+    sendInactiveClientNotifications(bot);
+  }, 60 * 1000);
 }
 
 async function checkAndSendNotifications(bot: Bot) {
