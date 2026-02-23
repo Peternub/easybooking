@@ -349,7 +349,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         )}
       </Card>
 
-      {promoDiscount > 0 && (
+      {promoDiscount > 0 && service && (
         <Card style={{ padding: '16px', marginBottom: '16px' }}>
           <div
             style={{
