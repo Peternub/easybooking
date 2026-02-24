@@ -53,9 +53,18 @@ export function SelectService({ onSelect }: Props) {
 
   return (
     <div>
-      <Title level="1" style={{ marginBottom: '16px' }}>
-        Выберите услугу
-      </Title>
+      <div
+        style={{
+          backgroundColor: '#6C757D',
+          padding: '16px',
+          borderRadius: '12px',
+          marginBottom: '16px',
+        }}
+      >
+        <Title level="1" style={{ margin: 0, color: '#FFFFFF' }}>
+          Выберите услугу
+        </Title>
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {services.map((service) => (

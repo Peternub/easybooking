@@ -16,7 +16,7 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
 
   useEffect(() => {
     loadMasters();
-  }, [serviceId]);
+  }, []);
 
   async function loadMasters() {
     try {
@@ -28,7 +28,7 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
       if (error) throw error;
 
       const mastersData = data
-        .map((item: any) => item.masters)
+        .map((item: { masters: Master }) => item.masters)
         .filter((master: Master) => master?.is_active);
 
       setMasters(mastersData);
@@ -79,9 +79,18 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
         ← Назад
       </Button>
 
-      <Title level="1" style={{ marginBottom: '16px' }}>
-        Выберите мастера
-      </Title>
+      <div
+        style={{
+          backgroundColor: '#6C757D',
+          padding: '16px',
+          borderRadius: '12px',
+          marginBottom: '16px',
+        }}
+      >
+        <Title level="1" style={{ margin: 0, color: '#FFFFFF' }}>
+          Выберите мастера
+        </Title>
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {masters.map((master) => (

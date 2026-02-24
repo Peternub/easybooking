@@ -111,9 +111,18 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
         ← Назад
       </Button>
 
-      <Title level="1" style={{ marginBottom: '16px' }}>
-        Выберите дату и время
-      </Title>
+      <div
+        style={{
+          backgroundColor: '#6C757D',
+          padding: '16px',
+          borderRadius: '12px',
+          marginBottom: '16px',
+        }}
+      >
+        <Title level="1" style={{ margin: 0, color: '#FFFFFF' }}>
+          Выберите дату и время
+        </Title>
+      </div>
 
       {!selectedDate ? (
         <>
