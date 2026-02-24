@@ -25,13 +25,13 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
 
   useEffect(() => {
     loadAvailableDates();
-  }, [masterId]);
+  }, []);
 
   useEffect(() => {
     if (selectedDate) {
       loadAvailableSlots(selectedDate);
     }
-  }, [selectedDate, masterId]);
+  }, [selectedDate]);
 
   async function loadAvailableDates() {
     try {
@@ -122,10 +122,15 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
             {availableDates.map((date) => (
               <Button
                 key={date}
-                mode="outline"
+                mode="filled"
                 size="m"
                 onClick={() => setSelectedDate(date)}
-                style={{ padding: '12px' }}
+                style={{
+                  padding: '12px',
+                  backgroundColor: '#007AFF',
+                  color: '#FFFFFF',
+                  border: 'none',
+                }}
               >
                 {format(new Date(date), 'd MMMM', { locale: ru })}
               </Button>
@@ -165,16 +170,16 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
                 {timeSlots.map((slot) => (
                   <Button
                     key={slot.time}
-                    mode="outline"
+                    mode={slot.isAvailable ? 'filled' : 'outline'}
                     size="s"
                     onClick={() => slot.isAvailable && onSelect(selectedDate, slot.time)}
                     disabled={!slot.isAvailable}
                     style={{
                       opacity: slot.isAvailable ? 1 : 0.4,
                       cursor: slot.isAvailable ? 'pointer' : 'not-allowed',
-                      backgroundColor: slot.isAvailable
-                        ? undefined
-                        : 'var(--tgui--secondary_bg_color)',
+                      backgroundColor: slot.isAvailable ? '#007AFF' : '#E5E5EA',
+                      color: slot.isAvailable ? '#FFFFFF' : '#8E8E93',
+                      border: 'none',
                     }}
                   >
                     {slot.time}
