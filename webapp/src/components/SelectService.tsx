@@ -55,7 +55,7 @@ export function SelectService({ onSelect }: Props) {
     <div>
       <div
         style={{
-          backgroundColor: '#6C757D',
+          backgroundColor: '#1C2833',
           padding: '16px',
           borderRadius: '12px',
           marginBottom: '16px',

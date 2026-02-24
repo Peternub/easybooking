@@ -113,7 +113,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
 
       <div
         style={{
-          backgroundColor: '#6C757D',
+          backgroundColor: '#1C2833',
           padding: '16px',
           borderRadius: '12px',
           marginBottom: '16px',
@@ -136,7 +136,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
                 onClick={() => setSelectedDate(date)}
                 style={{
                   padding: '12px',
-                  backgroundColor: '#6C757D',
+                  backgroundColor: '#1C2833',
                   color: '#FFFFFF',
                   border: 'none',
                 }}
@@ -186,7 +186,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
                     style={{
                       opacity: slot.isAvailable ? 1 : 0.4,
                       cursor: slot.isAvailable ? 'pointer' : 'not-allowed',
-                      backgroundColor: slot.isAvailable ? '#6C757D' : '#E5E5EA',
+                      backgroundColor: slot.isAvailable ? '#1C2833' : '#E5E5EA',
                       color: slot.isAvailable ? '#FFFFFF' : '#8E8E93',
                       border: 'none',
                     }}
