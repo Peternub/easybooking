@@ -1,8 +1,8 @@
 // Планировщик уведомлений
 
 import type { Bot } from 'grammy';
-import { sendReminders1h, sendReminders24h, sendReviewRequests } from './reminders.js';
 import { sendInactiveClientNotifications } from './inactive-clients.js';
+import { sendReminders1h, sendReminders24h, sendReviewRequests } from './reminders.js';
 
 const CHECK_INTERVAL = 5 * 60 * 1000; // Проверка каждые 5 минут
 const INACTIVE_CHECK_INTERVAL = 24 * 60 * 60 * 1000; // Проверка неактивных клиентов раз в сутки

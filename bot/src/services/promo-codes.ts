@@ -16,7 +16,7 @@ export function generatePromoCode(): string {
 export async function createPromoCode(
   clientTelegramId: number,
   discountPercent: number,
-  validDays: number = 7,
+  validDays = 7,
 ) {
   const code = generatePromoCode();
   const validUntil = new Date();
@@ -81,7 +81,7 @@ export async function usePromoCode(code: string, bookingId: string) {
 }
 
 // Получить неактивных клиентов (60+ дней без записи)
-export async function getInactiveClients(daysInactive: number = 60) {
+export async function getInactiveClients(daysInactive = 60) {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysInactive);
 

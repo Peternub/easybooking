@@ -60,7 +60,8 @@ export async function getServicesByMaster(masterId: string) {
     .eq('master_id', masterId);
 
   if (error) throw error;
-  return (data?.map((item: any) => item.services).filter(Boolean) || []) as Service[];
+  return (data?.map((item: { services: Service }) => item.services).filter(Boolean) ||
+    []) as Service[];
 }
 
 // График работы
@@ -181,6 +182,13 @@ export async function hasReview(bookingId: string) {
 
 // Проверка администратора
 export async function isAdmin(telegramId: number) {
+  // Проверяем по переменной окружения
+  const adminId = process.env.TELEGRAM_ADMIN_ID;
+  if (adminId && String(telegramId) === String(adminId)) {
+    return true;
+  }
+
+  // Дополнительно проверяем таблицу admins (если она существует)
   const { data, error } = await supabase
     .from('admins')
     .select('telegram_id')

@@ -30,16 +30,17 @@ export async function sendInactiveClientNotifications(bot: Bot) {
         // Отправляем сообщение с промокодом
         await bot.api.sendMessage(
           clientId,
-          `👋 Мы скучали по вам!\n\n` +
-            `Давно не виделись! Специально для вас мы подготовили персональную скидку 10% на любую услугу.\n\n` +
-            `🎁 Ваш промокод: <code>${promo.code}</code>\n` +
-            `⏰ Действует до ${validUntilFormatted}\n\n` +
-            `Нажмите "Записаться на услугу" и используйте промокод при оформлении записи!`,
+          `👋 Мы скучали по вам!\n\nДавно не виделись! Специально для вас мы подготовили персональную скидку 10% на любую услугу.\n\n🎁 Ваш промокод: <code>${promo.code}</code>\n⏰ Действует до ${validUntilFormatted}\n\nНажмите "Записаться на услугу" и используйте промокод при оформлении записи!`,
           {
             parse_mode: 'HTML',
             reply_markup: {
               inline_keyboard: [
-                [{ text: '📅 Записаться на услугу', web_app: { url: process.env.WEBAPP_URL || '' } }],
+                [
+                  {
+                    text: '📅 Записаться на услугу',
+                    web_app: { url: process.env.WEBAPP_URL || '' },
+                  },
+                ],
               ],
             },
           },
