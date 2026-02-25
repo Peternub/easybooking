@@ -285,44 +285,18 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         </div>
       </Card>
 
-      <Card style={{ padding: '16px', marginBottom: '16px' }}>
-        <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
-          Ваше имя
-        </Text>
-        <input
-          type="text"
-          value={clientName}
-          onChange={(e) => setClientName(e.target.value)}
-          placeholder="Введите ваше имя"
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: '16px',
-            border: '1px solid var(--tgui--divider_color)',
-            borderRadius: '8px',
-            backgroundColor: 'var(--tgui--secondary_bg_color)',
-            color: 'var(--tgui--text_color)',
-            outline: 'none',
-          }}
-        />
-      </Card>
-
-      <Card style={{ padding: '16px', marginBottom: '16px' }}>
-        <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
-          Промокод (необязательно)
-        </Text>
-        <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
+        <Card style={{ padding: '16px' }}>
+          <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
+            Ваше имя
+          </Text>
           <input
             type="text"
-            value={promoCode}
-            onChange={(e) => {
-              setPromoCode(e.target.value.toUpperCase());
-              setPromoError('');
-              setPromoDiscount(0);
-            }}
-            placeholder="Введите промокод"
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
+            placeholder="Введите ваше имя"
             style={{
-              flex: 1,
+              width: '100%',
               padding: '12px',
               fontSize: '16px',
               border: '1px solid var(--tgui--divider_color)',
@@ -330,30 +304,58 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
               backgroundColor: 'var(--tgui--secondary_bg_color)',
               color: 'var(--tgui--text_color)',
               outline: 'none',
-              textTransform: 'uppercase',
             }}
           />
-          <Button mode="outline" onClick={handlePromoCodeCheck} disabled={!promoCode.trim()}>
-            Применить
-          </Button>
-        </div>
-        {promoError && (
-          <Text
-            style={{
-              color: 'var(--tgui--destructive_text_color)',
-              fontSize: '14px',
-              marginTop: '8px',
-            }}
-          >
-            {promoError}
+        </Card>
+
+        <Card style={{ padding: '16px' }}>
+          <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
+            Промокод (необязательно)
           </Text>
-        )}
-        {promoDiscount > 0 && (
-          <Text style={{ color: 'var(--tgui--link_color)', fontSize: '14px', marginTop: '8px' }}>
-            ✅ Скидка {promoDiscount}% применена!
-          </Text>
-        )}
-      </Card>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => {
+                setPromoCode(e.target.value.toUpperCase());
+                setPromoError('');
+                setPromoDiscount(0);
+              }}
+              placeholder="Введите промокод"
+              style={{
+                flex: 1,
+                padding: '12px',
+                fontSize: '16px',
+                border: '1px solid var(--tgui--divider_color)',
+                borderRadius: '8px',
+                backgroundColor: 'var(--tgui--secondary_bg_color)',
+                color: 'var(--tgui--text_color)',
+                outline: 'none',
+                textTransform: 'uppercase',
+              }}
+            />
+            <Button mode="outline" onClick={handlePromoCodeCheck} disabled={!promoCode.trim()}>
+              Применить
+            </Button>
+          </div>
+          {promoError && (
+            <Text
+              style={{
+                color: 'var(--tgui--destructive_text_color)',
+                fontSize: '14px',
+                marginTop: '8px',
+              }}
+            >
+              {promoError}
+            </Text>
+          )}
+          {promoDiscount > 0 && (
+            <Text style={{ color: 'var(--tgui--link_color)', fontSize: '14px', marginTop: '8px' }}>
+              ✅ Скидка {promoDiscount}% применена!
+            </Text>
+          )}
+        </Card>
+      </div>
 
       {promoDiscount > 0 && service && (
         <Card style={{ padding: '16px', marginBottom: '16px' }}>
