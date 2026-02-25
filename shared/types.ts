@@ -3,23 +3,35 @@
 export interface Master {
   id: string;
   name: string;
-  photo_url: string;
-  description: string;
-  specialization: string;
-  google_calendar_id: string;
+  photo_url: string | null;
+  description: string | null;
+  specialization: string | null;
+  google_calendar_id: string | null;
+  phone: string | null;
   is_active: boolean;
+  work_schedule: {
+    monday?: string[];
+    tuesday?: string[];
+    wednesday?: string[];
+    thursday?: string[];
+    friday?: string[];
+    saturday?: string[];
+    sunday?: string[];
+  };
   created_at: string;
+  updated_at: string;
 }
 
 export interface Service {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   price: number;
   duration_minutes: number;
-  category: string;
+  category: string | null;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export interface MasterService {
@@ -44,22 +56,60 @@ export interface MasterScheduleException {
   created_at: string;
 }
 
-export type BookingStatus = 'active' | 'completed' | 'cancelled_by_client' | 'cancelled_by_admin';
+export type BookingStatus = 'pending' | 'active' | 'completed' | 'cancelled' | 'no_show';
+export type BookingSource = 'online' | 'manual' | 'phone' | 'walk_in';
 
 export interface Booking {
   id: string;
   client_telegram_id: number;
   client_name: string;
   client_username: string | null;
+  client_id: string | null;
   master_id: string;
   service_id: string;
   booking_date: string;
   booking_time: string;
   status: BookingStatus;
+  source: BookingSource;
   cancellation_reason: string | null;
   google_event_id: string | null;
+  original_price: number;
+  discount_amount: number;
+  final_price: number;
+  promo_code: string | null;
+  admin_notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Client {
+  id: string;
+  telegram_id: number | null;
+  name: string;
+  username: string | null;
+  phone: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BookingReadable {
+  id: string;
+  booking_date: string;
+  booking_time: string;
+  status: BookingStatus;
+  source: BookingSource;
+  client_name: string;
+  client_username: string | null;
+  client_phone: string | null;
+  client_notes: string | null;
+  master_name: string;
+  service_name: string;
+  service_price: number;
+  final_price: number;
+  promo_code: string | null;
+  admin_notes: string | null;
+  created_at: string;
 }
 
 export interface Review {
@@ -83,6 +133,15 @@ export interface Admin {
 export interface BookingWithDetails extends Booking {
   master: Master;
   service: Service;
+  client?: Client;
+}
+
+export interface ClientWithStats extends Client {
+  total_bookings: number;
+  completed_bookings: number;
+  cancelled_bookings: number;
+  total_spent: number;
+  last_visit: string | null;
 }
 
 export interface TimeSlot {
