@@ -139,21 +139,6 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
         </>
       ) : (
         <>
-          <Button
-            mode="plain"
-            onClick={() => {
-              setSelectedDate(null);
-              setTimeSlots([]);
-            }}
-            style={{ marginBottom: '16px' }}
-          >
-            ← Изменить дату
-          </Button>
-
-          <Text style={{ marginBottom: '16px' }}>
-            Дата: {format(new Date(selectedDate), 'd MMMM yyyy', { locale: ru })}
-          </Text>
-
           {loadingSlots ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
               <Spinner size="m" />
