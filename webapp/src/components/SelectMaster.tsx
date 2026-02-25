@@ -27,9 +27,12 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
 
       if (error) throw error;
 
-      const mastersData = data
-        .map((item: { masters: Master }) => item.masters)
-        .filter((master: Master) => master?.is_active);
+      const mastersData = (data || [])
+        .map((item: { masters: Master | Master[] }) => {
+          // Supabase может вернуть массив или объект
+          return Array.isArray(item.masters) ? item.masters[0] : item.masters;
+        })
+        .filter((master: Master | undefined) => master?.is_active) as Master[];
 
       setMasters(mastersData);
     } catch (err) {
