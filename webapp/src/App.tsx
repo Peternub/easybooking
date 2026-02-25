@@ -7,7 +7,8 @@ import { BookingFlow } from './pages/BookingFlow';
 import { ReviewPage } from './pages/ReviewPage';
 
 export function App() {
-  const theme = useTelegramTheme();
+  // Принудительно используем темную тему
+  const theme = 'dark';
 
   useEffect(() => {
     // Инициализация Telegram WebApp
