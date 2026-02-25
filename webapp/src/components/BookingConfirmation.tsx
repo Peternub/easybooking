@@ -257,18 +257,9 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         ← Назад
       </Button>
 
-      <div
-        style={{
-          backgroundColor: '#1C2833',
-          padding: '16px',
-          borderRadius: '12px',
-          marginBottom: '16px',
-        }}
-      >
-        <Title level="1" style={{ margin: 0, color: '#FFFFFF' }}>
-          Подтверждение записи
-        </Title>
-      </div>
+      <Title level="1" style={{ marginBottom: '16px' }}>
+        Подтверждение записи
+      </Title>
 
       <Card style={{ padding: '16px', marginBottom: '16px' }}>
         <div style={{ marginBottom: '16px' }}>

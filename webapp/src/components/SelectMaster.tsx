@@ -82,18 +82,9 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
         ← Назад
       </Button>
 
-      <div
-        style={{
-          backgroundColor: '#1C2833',
-          padding: '16px',
-          borderRadius: '12px',
-          marginBottom: '16px',
-        }}
-      >
-        <Title level="1" style={{ margin: 0, color: '#FFFFFF' }}>
-          Выберите мастера
-        </Title>
-      </div>
+      <Title level="1" style={{ marginBottom: '16px' }}>
+        Выберите мастера
+      </Title>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {masters.map((master) => (
