@@ -16,6 +16,12 @@ export function AdminDashboard() {
     const adminTelegramId = import.meta.env.VITE_ADMIN_TELEGRAM_ID;
     const currentUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
+    console.log('Admin check:', {
+      adminTelegramId,
+      currentUserId,
+      match: String(currentUserId) === String(adminTelegramId),
+    });
+
     if (currentUserId && adminTelegramId && String(currentUserId) === String(adminTelegramId)) {
       setIsAdmin(true);
     }
@@ -33,6 +39,9 @@ export function AdminDashboard() {
       <div style={{ padding: '20px', textAlign: 'center' }}>
         <h2>Доступ запрещен</h2>
         <p>У вас нет прав для просмотра админ панели</p>
+        <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '20px' }}>
+          Откройте консоль браузера (F12) для отладки
+        </p>
       </div>
     );
   }
