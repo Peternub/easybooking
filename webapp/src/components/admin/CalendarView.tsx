@@ -10,7 +10,7 @@ export function CalendarView() {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [masters, setMasters] = useState<Master[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddBooking, setShowAddBooking] = useState(false);
+  // const [showAddBooking, setShowAddBooking] = useState(false); // TODO: будет использоваться позже
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedDate нужен для перезагрузки
   useEffect(() => {
@@ -137,7 +137,10 @@ export function CalendarView() {
       <Button
         size="l"
         stretched
-        onClick={() => setShowAddBooking(true)}
+        onClick={() => {
+          // TODO: setShowAddBooking(true);
+          alert('Функционал в разработке');
+        }}
         style={{ marginBottom: '16px' }}
       >
         + Добавить запись
