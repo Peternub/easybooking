@@ -22,9 +22,10 @@ export async function handleStart(ctx: CommandContext<Context>) {
   // Используем webApp кнопку для получения данных через sendData()
   const keyboard = new InlineKeyboard().webApp('📱 Записаться на услугу', config.app.webappUrl);
 
-  if (userIsAdmin) {
-    keyboard.row().webApp('⚙️ Админ-панель', `${config.app.webappUrl}/admin-dashboard`);
-  }
+  // TODO: Админ панель временно отключена
+  // if (userIsAdmin) {
+  //   keyboard.row().webApp('⚙️ Админ-панель', `${config.app.webappUrl}/admin-dashboard`);
+  // }
 
   await ctx.reply(message, { reply_markup: keyboard });
 }
