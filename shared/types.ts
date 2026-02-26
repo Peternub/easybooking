@@ -144,6 +144,19 @@ export interface ClientWithStats extends Client {
   last_visit: string | null;
 }
 
+export type AbsenceReason = 'vacation' | 'sick_leave' | 'other';
+
+export interface MasterAbsence {
+  id: string;
+  master_id: string;
+  start_date: string;
+  end_date: string;
+  reason: AbsenceReason;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TimeSlot {
   time: string;
   available: boolean;
