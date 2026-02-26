@@ -23,9 +23,10 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: masterId нужен для перезагрузки при смене мастера
   useEffect(() => {
     loadAvailableDates();
-  }, []);
+  }, [masterId]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -44,7 +45,29 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
         dates.push(format(date, 'yyyy-MM-dd'));
       }
 
-      setAvailableDates(dates);
+      // Получаем отпуска мастера
+      const { data: absences, error } = await supabase
+        .from('master_absences')
+        .select('start_date, end_date')
+        .eq('master_id', masterId);
+
+      if (error) {
+        console.error('Ошибка загрузки отпусков:', error);
+      }
+
+      // Фильтруем даты, исключая те, что попадают в отпуск
+      const availableDatesFiltered = dates.filter((date) => {
+        if (!absences) return true;
+
+        return !absences.some((absence) => {
+          const checkDate = new Date(date);
+          const startDate = new Date(absence.start_date);
+          const endDate = new Date(absence.end_date);
+          return checkDate >= startDate && checkDate <= endDate;
+        });
+      });
+
+      setAvailableDates(availableDatesFiltered);
       setLoading(false);
     } catch (err) {
       console.error('Ошибка загрузки дат:', err);
@@ -117,25 +140,34 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
 
       {!selectedDate ? (
         <>
-          <Text style={{ marginBottom: '16px' }}>Выберите дату:</Text>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-            {availableDates.map((date) => (
-              <Button
-                key={date}
-                mode="filled"
-                size="m"
-                onClick={() => setSelectedDate(date)}
-                style={{
-                  padding: '12px',
-                  backgroundColor: '#1C2833',
-                  color: '#FFFFFF',
-                  border: 'none',
-                }}
-              >
-                {format(new Date(date), 'd MMMM', { locale: ru })}
-              </Button>
-            ))}
-          </div>
+          {availableDates.length === 0 ? (
+            <Placeholder
+              header="Мастер недоступен"
+              description="К сожалению, мастер находится в отпуске или на больничном в ближайшие 14 дней"
+            />
+          ) : (
+            <>
+              <Text style={{ marginBottom: '16px' }}>Выберите дату:</Text>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                {availableDates.map((date) => (
+                  <Button
+                    key={date}
+                    mode="filled"
+                    size="m"
+                    onClick={() => setSelectedDate(date)}
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#1C2833',
+                      color: '#FFFFFF',
+                      border: 'none',
+                    }}
+                  >
+                    {format(new Date(date), 'd MMMM', { locale: ru })}
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
         </>
       ) : (
         <>
