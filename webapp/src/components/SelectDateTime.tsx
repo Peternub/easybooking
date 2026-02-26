@@ -28,11 +28,12 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
     loadAvailableDates();
   }, [masterId]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedDate и masterId нужны для перезагрузки
   useEffect(() => {
     if (selectedDate) {
       loadAvailableSlots(selectedDate);
     }
-  }, [selectedDate]);
+  }, [selectedDate, masterId]);
 
   async function loadAvailableDates() {
     try {
@@ -78,10 +79,60 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
   async function loadAvailableSlots(date: string) {
     setLoadingSlots(true);
     try {
-      // Генерируем все возможные слоты с 10:00 до 18:00 каждый час
+      // Получаем информацию о мастере и его графике работы
+      const { data: master, error: masterError } = await supabase
+        .from('masters')
+        .select('work_schedule')
+        .eq('id', masterId)
+        .single();
+
+      if (masterError) {
+        console.error('Ошибка загрузки мастера:', masterError);
+        setTimeSlots([]);
+        setLoadingSlots(false);
+        return;
+      }
+
+      // Определяем день недели (0 = воскресенье, 1 = понедельник, ...)
+      const dateObj = new Date(date);
+      const dayOfWeek = dateObj.getDay();
+      const dayNames = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+      ];
+      const dayName = dayNames[dayOfWeek];
+
+      // Получаем расписание для этого дня
+      const workSchedule = master?.work_schedule || {};
+      const daySchedule = workSchedule[dayName] || [];
+
+      // Если нет расписания на этот день - выходной
+      if (daySchedule.length === 0) {
+        setTimeSlots([]);
+        setLoadingSlots(false);
+        return;
+      }
+
+      // Генерируем слоты на основе графика работы
       const allSlots: string[] = [];
-      for (let hour = 10; hour < 18; hour++) {
-        allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+
+      for (const timeRange of daySchedule) {
+        // Парсим время вида "10:00-18:00"
+        const [startTime, endTime] = timeRange.split('-');
+        if (!startTime || !endTime) continue;
+
+        const [startHour] = startTime.split(':').map(Number);
+        const [endHour] = endTime.split(':').map(Number);
+
+        // Генерируем слоты каждый час
+        for (let hour = startHour; hour < endHour; hour++) {
+          allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+        }
       }
 
       // Получаем занятые слоты из базы данных
@@ -178,7 +229,11 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
           ) : timeSlots.filter((slot) => slot.isAvailable).length === 0 ? (
             <Placeholder
               header="Нет свободных слотов"
-              description="На эту дату все время занято или прошло"
+              description={
+                timeSlots.length === 0
+                  ? 'У мастера выходной в этот день'
+                  : 'На эту дату все время занято или прошло'
+              }
             />
           ) : (
             <>
