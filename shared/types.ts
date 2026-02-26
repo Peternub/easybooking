@@ -48,14 +48,6 @@ export interface MasterSchedule {
   is_working: boolean;
 }
 
-export interface MasterScheduleException {
-  id: string;
-  master_id: string;
-  date: string;
-  reason: string;
-  created_at: string;
-}
-
 export type BookingStatus = 'pending' | 'active' | 'completed' | 'cancelled' | 'no_show';
 export type BookingSource = 'online' | 'manual' | 'phone' | 'walk_in';
 

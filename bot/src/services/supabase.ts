@@ -6,7 +6,6 @@ import type {
   BookingWithDetails,
   Master,
   MasterSchedule,
-  MasterScheduleException,
   Review,
   Service,
 } from '../../../shared/types.js';
@@ -74,17 +73,6 @@ export async function getMasterSchedule(masterId: string) {
 
   if (error) throw error;
   return data as MasterSchedule[];
-}
-
-export async function getMasterExceptions(masterId: string, fromDate: string) {
-  const { data, error } = await supabase
-    .from('master_schedule_exceptions')
-    .select('*')
-    .eq('master_id', masterId)
-    .gte('date', fromDate);
-
-  if (error) throw error;
-  return data as MasterScheduleException[];
 }
 
 // Записи
