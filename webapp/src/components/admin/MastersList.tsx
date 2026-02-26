@@ -28,20 +28,47 @@ export function MastersList() {
   }
 
   async function handleDelete(masterId: string) {
-    if (!confirm('Вы уверены что хотите удалить этого мастера?')) {
+    if (!confirm('Вы уверены что хотите удалить этого мастера? Это действие нельзя отменить.')) {
       return;
     }
 
     try {
       const { error } = await supabase.from('masters').delete().eq('id', masterId);
 
-      if (error) throw error;
+      if (error) {
+        // Проверяем если ошибка из-за существующих записей
+        if (error.code === '23503') {
+          alert(
+            'Невозможно удалить мастера, так как у него есть записи клиентов. Вместо удаления рекомендуется деактивировать мастера (сделать неактивным).',
+          );
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       alert('Мастер удален');
       loadMasters();
     } catch (error) {
       console.error('Ошибка удаления мастера:', error);
       alert('Не удалось удалить мастера');
+    }
+  }
+
+  async function handleToggleActive(master: Master) {
+    try {
+      const { error } = await supabase
+        .from('masters')
+        .update({ is_active: !master.is_active })
+        .eq('id', master.id);
+
+      if (error) throw error;
+
+      alert(master.is_active ? 'Мастер деактивирован' : 'Мастер активирован');
+      loadMasters();
+    } catch (error) {
+      console.error('Ошибка изменения статуса:', error);
+      alert('Не удалось изменить статус мастера');
     }
   }
 
@@ -123,22 +150,34 @@ export function MastersList() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
               <Button
                 mode="outline"
                 size="s"
                 onClick={() => handleEdit(master)}
-                style={{ flex: 1 }}
+                style={{ flex: 1, minWidth: '120px' }}
               >
-                Редактировать
+                ✏️ Редактировать
+              </Button>
+              <Button
+                mode="outline"
+                size="s"
+                onClick={() => handleToggleActive(master)}
+                style={{
+                  flex: 1,
+                  minWidth: '120px',
+                  color: master.is_active ? '#FF9800' : '#4CAF50',
+                }}
+              >
+                {master.is_active ? '⏸️ Деактивировать' : '▶️ Активировать'}
               </Button>
               <Button
                 mode="outline"
                 size="s"
                 onClick={() => handleDelete(master.id)}
-                style={{ flex: 1, color: '#F44336' }}
+                style={{ flex: 1, minWidth: '120px', color: '#F44336' }}
               >
-                Удалить
+                🗑️ Удалить
               </Button>
             </div>
           </Card>
