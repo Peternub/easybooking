@@ -1,4 +1,4 @@
-import { Button, Card, Section, Text } from '@telegram-apps/telegram-ui';
+import { Button, Card, Input, Section, Text, Textarea } from '@telegram-apps/telegram-ui';
 import { useState } from 'react';
 import type { Master } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
@@ -112,21 +112,11 @@ export function MasterForm({ master, onClose }: Props) {
               <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>
                 Имя мастера *
               </Text>
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Анна Иванова"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                  outline: 'none',
-                }}
               />
             </Card>
 
@@ -134,82 +124,41 @@ export function MasterForm({ master, onClose }: Props) {
               <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>
                 Специализация
               </Text>
-              <input
+              <Input
                 type="text"
                 value={specialization}
                 onChange={(e) => setSpecialization(e.target.value)}
                 placeholder="Парикмахер-стилист"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                  outline: 'none',
-                }}
               />
             </Card>
 
             <Card style={{ padding: '16px', marginBottom: '12px' }}>
               <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>Описание</Text>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Опытный мастер с 5-летним стажем работы"
                 rows={3}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                  outline: 'none',
-                  resize: 'vertical',
-                }}
               />
             </Card>
 
             <Card style={{ padding: '16px', marginBottom: '12px' }}>
               <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>Телефон</Text>
-              <input
+              <Input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+7 (999) 123-45-67"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                  outline: 'none',
-                }}
               />
             </Card>
 
             <Card style={{ padding: '16px', marginBottom: '12px' }}>
               <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>URL фото</Text>
-              <input
+              <Input
                 type="url"
                 value={photoUrl}
                 onChange={(e) => setPhotoUrl(e.target.value)}
                 placeholder="https://example.com/photo.jpg"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                  outline: 'none',
-                }}
               />
             </Card>
 

@@ -1,4 +1,4 @@
-import { Button, Card, Section, Text } from '@telegram-apps/telegram-ui';
+import { Button, Card, Input, Section, Text } from '@telegram-apps/telegram-ui';
 import { useState } from 'react';
 import type { Master } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
@@ -88,21 +88,12 @@ export function MasterWorkSchedule({ master }: Props) {
                 key={`${day.key}-${index}`}
                 style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}
               >
-                <input
+                <Input
                   type="text"
                   value={timeSlot}
                   onChange={(e) => handleTimeChange(day.key, index, e.target.value)}
                   placeholder="10:00-18:00"
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    fontSize: '14px',
-                    border: '1px solid var(--tgui--divider_color)',
-                    borderRadius: '8px',
-                    backgroundColor: 'var(--tgui--secondary_bg_color)',
-                    color: 'var(--tgui--text_color)',
-                    outline: 'none',
-                  }}
+                  style={{ flex: 1 }}
                 />
                 <Button
                   mode="outline"

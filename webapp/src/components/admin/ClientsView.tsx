@@ -1,4 +1,4 @@
-import { Card, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
+import { Card, Input, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Client } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
@@ -77,22 +77,12 @@ export function ClientsView() {
       </Title>
 
       {/* Поиск */}
-      <input
+      <Input
         type="text"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         placeholder="Поиск по имени, нику или телефону"
-        style={{
-          width: '100%',
-          padding: '12px',
-          marginBottom: '16px',
-          fontSize: '16px',
-          border: '1px solid var(--tgui--divider_color)',
-          borderRadius: '8px',
-          backgroundColor: 'var(--tgui--secondary_bg_color)',
-          color: 'var(--tgui--text_color)',
-          outline: 'none',
-        }}
+        style={{ marginBottom: '16px' }}
       />
 
       {/* Статистика */}

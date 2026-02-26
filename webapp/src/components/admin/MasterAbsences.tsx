@@ -1,4 +1,4 @@
-import { Button, Card, Section, Spinner, Text } from '@telegram-apps/telegram-ui';
+import { Button, Card, Input, Section, Spinner, Text, Textarea } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
@@ -201,64 +201,25 @@ export function MasterAbsences({ master }: Props) {
               <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>
                 Дата начала
               </Text>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                  outline: 'none',
-                }}
-              />
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </Card>
 
             <Card style={{ padding: '16px', marginBottom: '12px' }}>
               <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>
                 Дата окончания
               </Text>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                  outline: 'none',
-                }}
-              />
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </Card>
 
             <Card style={{ padding: '16px', marginBottom: '12px' }}>
               <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>
                 Заметки (необязательно)
               </Text>
-              <textarea
+              <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Дополнительная информация"
                 rows={3}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                  outline: 'none',
-                  resize: 'vertical',
-                }}
               />
             </Card>
 
