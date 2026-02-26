@@ -37,9 +37,16 @@ export function MasterServices({ master }: Props) {
       if (masterServicesError) throw masterServicesError;
 
       setAllServices(services || []);
-      setMasterServices(
-        masterServicesData?.map((item: { services: Service }) => item.services) || [],
-      );
+
+      // Преобразуем данные - services может быть массивом или объектом
+      const masterServicesList = (masterServicesData || [])
+        .map((item: { services: Service | Service[] }) => {
+          const serviceData = item.services;
+          return Array.isArray(serviceData) ? serviceData[0] : serviceData;
+        })
+        .filter((service): service is Service => service !== null && service !== undefined);
+
+      setMasterServices(masterServicesList);
     } catch (error) {
       console.error('Ошибка загрузки услуг:', error);
     } finally {

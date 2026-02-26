@@ -28,7 +28,7 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
       if (error) throw error;
 
       const mastersData = (data || [])
-        .map((item: { masters: Master | Master[] }) => {
+        .map((item: { master_id: string; masters: Master | Master[] }) => {
           // Supabase может вернуть массив или объект
           return Array.isArray(item.masters) ? item.masters[0] : item.masters;
         })

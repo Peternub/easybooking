@@ -1,4 +1,4 @@
-import { Button, Spinner, Title } from '@telegram-apps/telegram-ui';
+import { Spinner, Title } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import { MastersList } from '../components/admin/MastersList';
 
