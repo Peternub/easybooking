@@ -16,10 +16,7 @@ export function MastersList() {
 
   async function loadMasters() {
     try {
-      const { data, error } = await supabase
-        .from('masters')
-        .select('*')
-        .order('name');
+      const { data, error } = await supabase.from('masters').select('*').order('name');
 
       if (error) throw error;
       setMasters(data || []);
@@ -127,7 +124,12 @@ export function MastersList() {
             </div>
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-              <Button mode="outline" size="s" onClick={() => handleEdit(master)} style={{ flex: 1 }}>
+              <Button
+                mode="outline"
+                size="s"
+                onClick={() => handleEdit(master)}
+                style={{ flex: 1 }}
+              >
                 Редактировать
               </Button>
               <Button
