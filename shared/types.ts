@@ -42,10 +42,11 @@ export interface MasterService {
 export interface MasterSchedule {
   id: string;
   master_id: string;
-  day_of_week: number; // 0 = Monday, 6 = Sunday
+  day_of_week: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   start_time: string;
   end_time: string;
-  is_working: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface MasterScheduleException {

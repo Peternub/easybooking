@@ -79,40 +79,26 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
   async function loadAvailableSlots(date: string) {
     setLoadingSlots(true);
     try {
-      // Получаем информацию о мастере и его графике работы
-      const { data: master, error: masterError } = await supabase
-        .from('masters')
-        .select('work_schedule')
-        .eq('id', masterId)
-        .single();
+      // Определяем день недели (0 = воскресенье, 1 = понедельник, ...)
+      const dateObj = new Date(date);
+      const dayOfWeek = dateObj.getDay();
 
-      if (masterError) {
-        console.error('Ошибка загрузки мастера:', masterError);
+      // Получаем расписание мастера на этот день из таблицы master_work_schedule
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('master_work_schedule')
+        .select('start_time, end_time')
+        .eq('master_id', masterId)
+        .eq('day_of_week', dayOfWeek);
+
+      if (scheduleError) {
+        console.error('Ошибка загрузки расписания:', scheduleError);
         setTimeSlots([]);
         setLoadingSlots(false);
         return;
       }
 
-      // Определяем день недели (0 = воскресенье, 1 = понедельник, ...)
-      const dateObj = new Date(date);
-      const dayOfWeek = dateObj.getDay();
-      const dayNames = [
-        'sunday',
-        'monday',
-        'tuesday',
-        'wednesday',
-        'thursday',
-        'friday',
-        'saturday',
-      ];
-      const dayName = dayNames[dayOfWeek];
-
-      // Получаем расписание для этого дня
-      const workSchedule = master?.work_schedule || {};
-      const daySchedule = workSchedule[dayName] || [];
-
       // Если нет расписания на этот день - выходной
-      if (daySchedule.length === 0) {
+      if (!scheduleData || scheduleData.length === 0) {
         setTimeSlots([]);
         setLoadingSlots(false);
         return;
@@ -121,19 +107,22 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
       // Генерируем слоты на основе графика работы
       const allSlots: string[] = [];
 
-      for (const timeRange of daySchedule) {
-        // Парсим время вида "10:00-18:00"
-        const [startTime, endTime] = timeRange.split('-');
-        if (!startTime || !endTime) continue;
-
-        const [startHour] = startTime.split(':').map(Number);
-        const [endHour] = endTime.split(':').map(Number);
+      for (const schedule of scheduleData) {
+        // Парсим время вида "10:00:00"
+        const startHour = Number.parseInt(schedule.start_time.split(':')[0]);
+        const endHour = Number.parseInt(schedule.end_time.split(':')[0]);
 
         // Генерируем слоты каждый час
         for (let hour = startHour; hour < endHour; hour++) {
-          allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+          const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
+          if (!allSlots.includes(timeSlot)) {
+            allSlots.push(timeSlot);
+          }
         }
       }
+
+      // Сортируем слоты по времени
+      allSlots.sort();
 
       // Получаем занятые слоты из базы данных
       const { data: bookings, error } = await supabase
