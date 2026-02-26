@@ -54,7 +54,17 @@ export function ServicesList() {
     try {
       const { error } = await supabase.from('services').delete().eq('id', serviceId);
 
-      if (error) throw error;
+      if (error) {
+        // Проверяем если ошибка из-за существующих записей
+        if (error.code === '23503') {
+          alert(
+            'Невозможно удалить услугу, так как есть записи клиентов с этой услугой. Вместо удаления рекомендуется деактивировать услугу.',
+          );
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       alert('Услуга удалена');
       loadServices();
