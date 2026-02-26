@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminMasters } from './pages/AdminMasters';
 import { AdminPanel } from './pages/AdminPanel';
+import { AdminServices } from './pages/AdminServices';
 import { BookingFlow } from './pages/BookingFlow';
 import { ReviewPage } from './pages/ReviewPage';
 
@@ -28,6 +29,7 @@ export function App() {
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-masters" element={<AdminMasters />} />
+          <Route path="/admin-services" element={<AdminServices />} />
         </Routes>
       </BrowserRouter>
     </AppRoot>

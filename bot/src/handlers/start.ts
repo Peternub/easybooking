@@ -23,7 +23,11 @@ export async function handleStart(ctx: CommandContext<Context>) {
   const keyboard = new InlineKeyboard().webApp('📱 Записаться на услугу', config.app.webappUrl);
 
   if (userIsAdmin) {
-    keyboard.row().webApp('⚙️ Админ-панель', `${config.app.webappUrl}/admin-masters`);
+    keyboard
+      .row()
+      .webApp('👥 Мастера', `${config.app.webappUrl}/admin-masters`)
+      .row()
+      .webApp('💼 Услуги', `${config.app.webappUrl}/admin-services`);
   }
 
   await ctx.reply(message, { reply_markup: keyboard });
