@@ -61,9 +61,8 @@ export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
 
       // Удаляем из Google Calendar
       if (booking.google_event_id) {
-        const master = await getMasterById(booking.master_id);
         try {
-          await deleteCalendarEvent(master.google_calendar_id, booking.google_event_id);
+          await deleteCalendarEvent(config.app.googleCalendarId, booking.google_event_id);
         } catch (error) {
           console.error('Ошибка удаления из календаря:', error);
           // Продолжаем даже если не удалось удалить из календаря

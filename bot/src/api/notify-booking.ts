@@ -34,40 +34,43 @@ export async function handleNotifyBooking(bot: Bot, data: NotifyBookingRequest) 
       locale: ru,
     });
 
-    // Создаем событие в Google Calendar мастера
-    if (master.google_calendar_id) {
-      try {
-        console.log('📅 Создание события в Google Calendar:', master.google_calendar_id);
+    // Создаем событие в Google Calendar
+    try {
+      console.log('📅 Создание события в Google Calendar:', config.app.googleCalendarId);
 
-        const eventId = await createCalendarEvent(
-          master.google_calendar_id,
-          {
-            id: data.bookingId,
-            client_telegram_id: data.clientTelegramId,
-            client_name: data.clientName,
-            client_username: data.clientUsername,
-            master_id: data.masterId,
-            service_id: data.serviceId,
-            booking_date: data.bookingDate,
-            booking_time: data.bookingTime,
-            status: 'active',
-            cancellation_reason: null,
-            google_event_id: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          service.duration_minutes,
-          master.name,
-        );
+      const eventId = await createCalendarEvent(
+        config.app.googleCalendarId,
+        {
+          id: data.bookingId,
+          client_telegram_id: data.clientTelegramId,
+          client_name: data.clientName,
+          client_username: data.clientUsername,
+          client_id: null,
+          master_id: data.masterId,
+          service_id: data.serviceId,
+          booking_date: data.bookingDate,
+          booking_time: data.bookingTime,
+          status: 'active',
+          source: 'online',
+          cancellation_reason: null,
+          google_event_id: null,
+          original_price: data.originalPrice,
+          discount_amount: data.discountAmount,
+          final_price: data.finalPrice,
+          promo_code: data.promoCode || null,
+          admin_notes: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        service.duration_minutes,
+        master.name,
+      );
 
-        console.log('✅ Событие создано в календаре:', eventId);
-      } catch (calendarError) {
-        console.error('⚠️ Ошибка создания события в календаре:', calendarError);
-        console.log('ℹ️ Запись сохранена в базе данных, но не добавлена в Google Calendar');
-        // Не блокируем отправку уведомлений если календарь не работает
-      }
-    } else {
-      console.log('ℹ️ У мастера нет настроенного календаря');
+      console.log('✅ Событие создано в календаре:', eventId);
+    } catch (calendarError) {
+      console.error('⚠️ Ошибка создания события в календаре:', calendarError);
+      console.log('ℹ️ Запись сохранена в базе данных, но не добавлена в Google Calendar');
+      // Не блокируем отправку уведомлений если календарь не работает
     }
 
     // Используем промокод если он был применён

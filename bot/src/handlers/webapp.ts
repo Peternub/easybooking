@@ -91,9 +91,10 @@ export async function handleWebApp(ctx: Context) {
       try {
         console.log('Создание события в Google Calendar...');
         eventId = await createCalendarEvent(
-          master.google_calendar_id,
+          config.app.googleCalendarId,
           booking,
           service.duration_minutes,
+          master.name,
         );
         console.log('✅ Событие создано:', eventId);
 

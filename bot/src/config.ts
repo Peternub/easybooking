@@ -19,6 +19,7 @@ export const config = {
   app: {
     webappUrl: process.env.WEBAPP_URL || '',
     timezone: process.env.TIMEZONE || 'Europe/Moscow',
+    googleCalendarId: process.env.GOOGLE_CALENDAR_ID || 'petrmolcanuk@gmail.com',
   },
 } as const;
 
