@@ -18,7 +18,7 @@ const DAYS = [
 ];
 
 export function MasterWorkSchedule({ master }: Props) {
-  const [schedule, setSchedule] = useState(master.work_schedule || {});
+  const [schedule, setSchedule] = useState<Record<string, string[]>>(master.work_schedule || {});
   const [saving, setSaving] = useState(false);
 
   function handleTimeChange(day: string, index: number, value: string) {
