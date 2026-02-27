@@ -23,14 +23,21 @@ export function BookingsList({ onAddBooking }: Props) {
 
   async function loadBookings() {
     try {
+      console.log('Загрузка записей, фильтр:', filter);
+
       let query = supabase.from('bookings_readable').select('*');
 
       const today = new Date().toISOString().split('T')[0];
+      console.log('Сегодня:', today);
 
       if (filter === 'upcoming') {
         query = query.gte('booking_date', today).in('status', ['active', 'pending']);
+        console.log('Фильтр: предстоящие записи (>= сегодня, статус active/pending)');
       } else if (filter === 'past') {
         query = query.lt('booking_date', today);
+        console.log('Фильтр: прошедшие записи (< сегодня)');
+      } else {
+        console.log('Фильтр: все записи');
       }
 
       const { data, error } = await query
@@ -38,7 +45,13 @@ export function BookingsList({ onAddBooking }: Props) {
         .order('booking_time', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка Supabase:', error);
+        throw error;
+      }
+
+      console.log('Загружено записей:', data?.length || 0);
+      console.log('Данные:', data);
 
       setBookings(data || []);
     } catch (error) {
