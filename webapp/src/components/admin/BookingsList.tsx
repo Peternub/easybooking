@@ -1,4 +1,4 @@
-import { Button, Card, Section, Spinner, Text } from '@telegram-apps/telegram-ui';
+import { Button, Card, Section, Spinner, Text, Textarea } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
@@ -13,6 +13,8 @@ export function BookingsList({ onAddBooking }: Props) {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: filter нужен для перезагрузки при смене фильтра
   useEffect(() => {
@@ -48,19 +50,70 @@ export function BookingsList({ onAddBooking }: Props) {
   }
 
   async function handleCancelBooking(bookingId: string) {
-    if (!confirm('Отменить эту запись?')) {
+    setCancellingBookingId(bookingId);
+  }
+
+  async function confirmCancelBooking() {
+    if (!cancellingBookingId) return;
+
+    if (!cancellationReason.trim()) {
+      alert('Укажите причину отмены');
       return;
     }
 
     try {
+      // Получаем полную информацию о записи
+      const booking = bookings.find((b) => b.id === cancellingBookingId);
+      if (!booking) return;
+
+      // Обновляем статус записи
       const { error } = await supabase
         .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', bookingId);
+        .update({
+          status: 'cancelled',
+          cancellation_reason: cancellationReason.trim(),
+        })
+        .eq('id', cancellingBookingId);
 
       if (error) throw error;
 
+      // Отправляем уведомление клиенту через бота (если это онлайн запись)
+      if (booking.source === 'online') {
+        try {
+          // Получаем telegram_id клиента из таблицы bookings
+          const { data: bookingData } = await supabase
+            .from('bookings')
+            .select('client_telegram_id')
+            .eq('id', cancellingBookingId)
+            .single();
+
+          if (bookingData?.client_telegram_id) {
+            await fetch(
+              `${import.meta.env.VITE_BOT_API_URL || 'http://localhost:3000'}/api/notify-cancellation`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  clientTelegramId: bookingData.client_telegram_id,
+                  bookingId: cancellingBookingId,
+                  reason: cancellationReason.trim(),
+                  bookingDate: booking.booking_date,
+                  bookingTime: booking.booking_time,
+                  masterName: booking.master_name,
+                  serviceName: booking.service_name,
+                }),
+              },
+            );
+          }
+        } catch (notifyError) {
+          console.error('Ошибка отправки уведомления:', notifyError);
+          // Продолжаем даже если не удалось отправить уведомление
+        }
+      }
+
       alert('Запись отменена');
+      setCancellingBookingId(null);
+      setCancellationReason('');
       loadBookings();
     } catch (error) {
       console.error('Ошибка отмены записи:', error);
@@ -137,6 +190,62 @@ export function BookingsList({ onAddBooking }: Props) {
           Все
         </Button>
       </div>
+
+      {/* Модальное окно для отмены записи */}
+      {cancellingBookingId && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '16px',
+          }}
+        >
+          <Card style={{ padding: '20px', maxWidth: '400px', width: '100%' }}>
+            <Text style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
+              Отмена записи
+            </Text>
+            <Text style={{ fontSize: '14px', marginBottom: '16px', opacity: 0.8 }}>
+              Укажите причину отмены. Клиент получит уведомление с этим сообщением.
+            </Text>
+            <Textarea
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              placeholder="Например: Мастер заболел, запись перенесена на другое время"
+              rows={4}
+              style={{ marginBottom: '16px' }}
+            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button
+                mode="filled"
+                size="m"
+                onClick={confirmCancelBooking}
+                style={{ flex: 1, backgroundColor: '#F44336' }}
+              >
+                Отменить запись
+              </Button>
+              <Button
+                mode="outline"
+                size="m"
+                onClick={() => {
+                  setCancellingBookingId(null);
+                  setCancellationReason('');
+                }}
+                style={{ flex: 1 }}
+              >
+                Назад
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       <Section header="Записи">
         {bookings.length === 0 ? (

@@ -2,6 +2,7 @@
 
 import { Bot, webhookCallback } from 'grammy';
 import { handleNotifyBooking } from './api/notify-booking.js';
+import { handleNotifyCancellation } from './api/notify-cancellation.js';
 import { handleValidatePromo } from './api/validate-promo.js';
 import { config, validateConfig } from './config.js';
 import { setupHandlers } from './handlers/index.js';
@@ -99,6 +100,27 @@ function startApiServer(bot: Bot) {
         } catch (error) {
           console.error('❌ Ошибка проверки промокода:', error);
           return new Response(JSON.stringify({ valid: false, message: 'Ошибка сервера' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
+      // Endpoint для уведомления об отмене записи
+      if (url.pathname === '/api/notify-cancellation' && req.method === 'POST') {
+        try {
+          const data = await req.json();
+          console.log('📢 Получен запрос на отправку уведомления об отмене');
+
+          await handleNotifyCancellation(bot, data);
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (error) {
+          console.error('❌ Ошибка отправки уведомления об отмене:', error);
+          return new Response(JSON.stringify({ success: false, error: String(error) }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
