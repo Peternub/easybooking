@@ -1,6 +1,7 @@
 import { AppRoot } from '@telegram-apps/telegram-ui';
 import { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { AdminBookings } from './pages/AdminBookings';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminMasters } from './pages/AdminMasters';
 import { AdminPanel } from './pages/AdminPanel';
@@ -30,6 +31,7 @@ export function App() {
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-masters" element={<AdminMasters />} />
           <Route path="/admin-services" element={<AdminServices />} />
+          <Route path="/admin-bookings" element={<AdminBookings />} />
         </Routes>
       </BrowserRouter>
     </AppRoot>

@@ -25,6 +25,8 @@ export async function handleStart(ctx: CommandContext<Context>) {
   if (userIsAdmin) {
     keyboard
       .row()
+      .webApp('📅 Записи', `${config.app.webappUrl}/admin-bookings`)
+      .row()
       .webApp('👥 Мастера', `${config.app.webappUrl}/admin-masters`)
       .row()
       .webApp('💼 Услуги', `${config.app.webappUrl}/admin-services`);
