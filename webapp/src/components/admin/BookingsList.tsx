@@ -56,6 +56,8 @@ export function BookingsList({ onAddBooking }: Props) {
   async function confirmCancelBooking() {
     if (!cancellingBookingId) return;
 
+    console.log('Начало отмены записи:', cancellingBookingId);
+
     if (!cancellationReason.trim()) {
       alert('Укажите причину отмены');
       return;
@@ -64,7 +66,12 @@ export function BookingsList({ onAddBooking }: Props) {
     try {
       // Получаем полную информацию о записи
       const booking = bookings.find((b) => b.id === cancellingBookingId);
-      if (!booking) return;
+      if (!booking) {
+        console.error('Запись не найдена:', cancellingBookingId);
+        return;
+      }
+
+      console.log('Найдена запись:', booking);
 
       // Обновляем статус записи
       const { error } = await supabase
@@ -75,40 +82,73 @@ export function BookingsList({ onAddBooking }: Props) {
         })
         .eq('id', cancellingBookingId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка обновления статуса:', error);
+        throw error;
+      }
+
+      console.log('Статус записи обновлен на cancelled');
 
       // Отправляем уведомление клиенту через бота (если это онлайн запись)
       if (booking.source === 'online') {
         try {
           // Получаем telegram_id клиента из таблицы bookings
-          const { data: bookingData } = await supabase
+          const { data: bookingData, error: bookingError } = await supabase
             .from('bookings')
             .select('client_telegram_id')
             .eq('id', cancellingBookingId)
             .single();
 
-          if (bookingData?.client_telegram_id) {
-            await fetch(
-              `${import.meta.env.VITE_BOT_API_URL || 'http://localhost:3000'}/api/notify-cancellation`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  clientTelegramId: bookingData.client_telegram_id,
-                  bookingId: cancellingBookingId,
-                  reason: cancellationReason.trim(),
-                  bookingDate: booking.booking_date,
-                  bookingTime: booking.booking_time,
-                  masterName: booking.master_name,
-                  serviceName: booking.service_name,
-                }),
-              },
-            );
+          if (bookingError) {
+            console.error('Ошибка получения данных записи:', bookingError);
+          }
+
+          console.log('Данные записи для уведомления:', bookingData);
+
+          if (bookingData?.client_telegram_id && bookingData.client_telegram_id !== 0) {
+            const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+            const notifyUrl = `${botApiUrl}/api/notify-cancellation`;
+
+            console.log('Отправка уведомления на:', notifyUrl);
+            console.log('Данные уведомления:', {
+              clientTelegramId: bookingData.client_telegram_id,
+              bookingId: cancellingBookingId,
+              reason: cancellationReason.trim(),
+            });
+
+            const response = await fetch(notifyUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                clientTelegramId: bookingData.client_telegram_id,
+                bookingId: cancellingBookingId,
+                reason: cancellationReason.trim(),
+                bookingDate: booking.booking_date,
+                bookingTime: booking.booking_time,
+                masterName: booking.master_name,
+                serviceName: booking.service_name,
+              }),
+            });
+
+            const result = await response.json();
+            console.log('Результат отправки уведомления:', result);
+
+            if (!response.ok) {
+              console.error('Ошибка API:', result);
+            }
+          } else {
+            console.log('Уведомление не отправлено: нет telegram_id клиента');
           }
         } catch (notifyError) {
           console.error('Ошибка отправки уведомления:', notifyError);
           // Продолжаем даже если не удалось отправить уведомление
         }
+      } else {
+        console.log(
+          'Уведомление не отправлено: запись создана не через бота (source:',
+          booking.source,
+          ')',
+        );
       }
 
       alert('Запись отменена');
