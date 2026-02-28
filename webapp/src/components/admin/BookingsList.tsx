@@ -1,4 +1,4 @@
-import { Button, Card, Section, Spinner, Text, Textarea } from '@telegram-apps/telegram-ui';
+import { Button, Card, Section, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
@@ -63,6 +63,7 @@ export function BookingsList({ onAddBooking }: Props) {
   }
 
   async function handleCancelBooking(bookingId: string) {
+    setCancellationReason(''); // Очищаем причину перед открытием модалки
     setCancellingBookingId(bookingId);
   }
 
@@ -276,12 +277,23 @@ export function BookingsList({ onAddBooking }: Props) {
             <Text style={{ fontSize: '14px', marginBottom: '16px', opacity: 0.8 }}>
               Укажите причину отмены. Клиент получит уведомление с этим сообщением.
             </Text>
-            <Textarea
+            <textarea
               value={cancellationReason}
               onChange={(e) => setCancellationReason(e.target.value)}
               placeholder="Например: Мастер заболел, запись перенесена на другое время"
               rows={4}
-              style={{ marginBottom: '16px' }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                marginBottom: '16px',
+                borderRadius: '8px',
+                border: '1px solid var(--tgui--secondary_bg_color)',
+                backgroundColor: 'var(--tgui--bg_color)',
+                color: 'var(--tgui--text_color)',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
             />
             <div style={{ display: 'flex', gap: '8px' }}>
               <Button
