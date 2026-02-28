@@ -6,7 +6,7 @@ import type { Bot } from 'grammy';
 import { config } from '../config.js';
 import { createCalendarEvent } from '../services/google-calendar.js';
 import { usePromoCode } from '../services/promo-codes.js';
-import { getMasterById, getServiceById } from '../services/supabase.js';
+import { getMasterById, getServiceById, supabase } from '../services/supabase.js';
 
 interface NotifyBookingRequest {
   bookingId: string;
@@ -17,6 +17,9 @@ interface NotifyBookingRequest {
   serviceId: string;
   bookingDate: string;
   bookingTime: string;
+  originalPrice: number;
+  discountAmount: number;
+  finalPrice: number;
   promoCode?: string;
 }
 
@@ -67,6 +70,17 @@ export async function handleNotifyBooking(bot: Bot, data: NotifyBookingRequest) 
       );
 
       console.log('✅ Событие создано в календаре:', eventId);
+
+      // Обновляем статус записи на 'active' и сохраняем event_id
+      await supabase
+        .from('bookings')
+        .update({
+          status: 'active',
+          google_event_id: eventId,
+        })
+        .eq('id', data.bookingId);
+
+      console.log('✅ Статус записи обновлен на active');
     } catch (calendarError) {
       console.error('⚠️ Ошибка создания события в календаре:', calendarError);
       console.log('ℹ️ Запись сохранена в базе данных, но не добавлена в Google Calendar');

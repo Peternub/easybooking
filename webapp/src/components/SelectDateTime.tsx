@@ -141,7 +141,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
         .select('booking_time')
         .eq('master_id', masterId)
         .eq('booking_date', date)
-        .in('status', ['active', 'completed']);
+        .in('status', ['pending', 'active', 'completed']);
 
       if (error) {
         console.error('Ошибка загрузки записей:', error);
