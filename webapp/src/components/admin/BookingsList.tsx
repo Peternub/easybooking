@@ -256,6 +256,7 @@ export function BookingsList({ onAddBooking }: Props) {
       {/* Модальное окно для отмены записи */}
       {cancellingBookingId && (
         <div
+          key={cancellingBookingId}
           style={{
             position: 'fixed',
             top: 0,
@@ -278,10 +279,12 @@ export function BookingsList({ onAddBooking }: Props) {
               Укажите причину отмены. Клиент получит уведомление с этим сообщением.
             </Text>
             <textarea
+              key={`cancel-reason-${cancellingBookingId}`}
               value={cancellationReason}
               onChange={(e) => setCancellationReason(e.target.value)}
               placeholder="Например: Мастер заболел, запись перенесена на другое время"
               rows={4}
+              autoFocus
               style={{
                 width: '100%',
                 padding: '12px',

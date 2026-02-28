@@ -219,6 +219,12 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       // Показываем успешное сообщение перед закрытием
       alert('✅ Запись успешно создана!\n\nУведомления будут отправлены ботом.');
 
+      // Очищаем форму
+      setClientName('');
+      setPromoCode('');
+      setPromoDiscount(0);
+      setPromoError('');
+
       // Закрываем Mini App
       setTimeout(() => {
         window.Telegram?.WebApp?.close();
