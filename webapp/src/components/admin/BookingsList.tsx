@@ -282,7 +282,10 @@ export function BookingsList({ onAddBooking }: Props) {
             padding: '16px',
           }}
         >
-          <Card style={{ padding: '20px', maxWidth: '400px', width: '100%' }}>
+          <Card
+            style={{ padding: '20px', maxWidth: '400px', width: '100%' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <Text style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
               Отмена записи
             </Text>
@@ -294,6 +297,10 @@ export function BookingsList({ onAddBooking }: Props) {
               key={`cancel-reason-${cancellingBookingId}`}
               value={cancellationReason}
               onChange={(e) => setCancellationReason(e.target.value)}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.currentTarget.focus();
+              }}
               placeholder="Например: Мастер заболел, запись перенесена на другое время"
               rows={4}
               style={{

@@ -12,6 +12,7 @@ export function BookingFlow() {
   const [selectedMaster, setSelectedMaster] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [confirmationKey, setConfirmationKey] = useState(0);
 
   const handleServiceSelect = (serviceId: string) => {
     setSelectedService(serviceId);
@@ -26,7 +27,14 @@ export function BookingFlow() {
   const handleDateTimeSelect = (date: string, time: string) => {
     setSelectedDate(date);
     setSelectedTime(time);
+    setConfirmationKey((prev) => prev + 1); // Увеличиваем счетчик для пересоздания компонента
     setStep('confirmation');
+  };
+
+  const handleBackFromConfirmation = () => {
+    setStep('datetime');
+    setSelectedDate(null);
+    setSelectedTime(null);
   };
 
   const handleBack = () => {
@@ -37,9 +45,7 @@ export function BookingFlow() {
       setStep('master');
       setSelectedMaster(null);
     } else if (step === 'confirmation') {
-      setStep('datetime');
-      setSelectedDate(null);
-      setSelectedTime(null);
+      handleBackFromConfirmation();
     }
   };
 
@@ -69,12 +75,12 @@ export function BookingFlow() {
         selectedDate &&
         selectedTime && (
           <BookingConfirmation
-            key={`${selectedService}-${selectedMaster}-${selectedDate}-${selectedTime}`}
+            key={confirmationKey}
             serviceId={selectedService}
             masterId={selectedMaster}
             date={selectedDate}
             time={selectedTime}
-            onBack={handleBack}
+            onBack={handleBackFromConfirmation}
           />
         )}
     </div>
