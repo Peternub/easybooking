@@ -1,7 +1,7 @@
 import { Button, Card, Section, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { BookingReadable } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
 
@@ -15,11 +15,22 @@ export function BookingsList({ onAddBooking }: Props) {
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: filter нужен для перезагрузки при смене фильтра
   useEffect(() => {
     loadBookings();
   }, [filter]);
+
+  // Фокус на textarea при открытии модалки
+  useEffect(() => {
+    if (cancellingBookingId && textareaRef.current) {
+      // Небольшая задержка для корректной работы
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
+  }, [cancellingBookingId]);
 
   async function loadBookings() {
     try {
@@ -279,12 +290,12 @@ export function BookingsList({ onAddBooking }: Props) {
               Укажите причину отмены. Клиент получит уведомление с этим сообщением.
             </Text>
             <textarea
+              ref={textareaRef}
               key={`cancel-reason-${cancellingBookingId}`}
               value={cancellationReason}
               onChange={(e) => setCancellationReason(e.target.value)}
               placeholder="Например: Мастер заболел, запись перенесена на другое время"
               rows={4}
-              autoFocus
               style={{
                 width: '100%',
                 padding: '12px',

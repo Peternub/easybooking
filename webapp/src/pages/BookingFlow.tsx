@@ -69,6 +69,7 @@ export function BookingFlow() {
         selectedDate &&
         selectedTime && (
           <BookingConfirmation
+            key={`${selectedService}-${selectedMaster}-${selectedDate}-${selectedTime}`}
             serviceId={selectedService}
             masterId={selectedMaster}
             date={selectedDate}
