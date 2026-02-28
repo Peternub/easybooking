@@ -87,20 +87,28 @@ export function BookingsList({ onAddBooking }: Props) {
       console.log('Найдена запись:', booking);
 
       // Обновляем статус записи
-      const { error } = await supabase
+      const { data: updateData, error } = await supabase
         .from('bookings')
         .update({
           status: 'cancelled',
           cancellation_reason: cancellationReason.trim(),
         })
-        .eq('id', cancellingBookingId);
+        .eq('id', cancellingBookingId)
+        .select();
 
       if (error) {
         console.error('Ошибка обновления статуса:', error);
+        alert(`Ошибка обновления: ${error.message}`);
         throw error;
       }
 
-      console.log('Статус записи обновлен на cancelled');
+      console.log('Статус записи обновлен на cancelled, результат:', updateData);
+
+      if (!updateData || updateData.length === 0) {
+        console.error('Запись не была обновлена - возможно проблема с правами доступа');
+        alert('Запись не была обновлена. Проверьте права доступа в Supabase.');
+        return;
+      }
 
       // Отправляем уведомление клиенту через бота (если это онлайн запись)
       if (booking.source === 'online') {

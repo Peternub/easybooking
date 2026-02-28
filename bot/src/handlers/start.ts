@@ -20,7 +20,10 @@ export async function handleStart(ctx: CommandContext<Context>) {
     '• Оставить отзыв после посещения';
 
   // Используем webApp кнопку для получения данных через sendData()
-  const keyboard = new InlineKeyboard().webApp('📱 Записаться на услугу', config.app.webappUrl);
+  const keyboard = new InlineKeyboard()
+    .webApp('📱 Записаться на услугу', config.app.webappUrl)
+    .row()
+    .text('📋 Мои записи', 'my_bookings');
 
   if (userIsAdmin) {
     keyboard

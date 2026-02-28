@@ -17,9 +17,70 @@ export function MasterForm({ master, onClose }: Props) {
   const [specialization, setSpecialization] = useState(master?.specialization || '');
   const [phone, setPhone] = useState(master?.phone || '');
   const [photoUrl, setPhotoUrl] = useState(master?.photo_url || '');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isActive, setIsActive] = useState(master?.is_active ?? true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'schedule' | 'services' | 'absences'>('info');
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Проверка типа файла
+    if (!file.type.startsWith('image/')) {
+      alert('Пожалуйста, выберите изображение');
+      return;
+    }
+
+    // Проверка размера (макс 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Размер файла не должен превышать 5MB');
+      return;
+    }
+
+    setPhotoFile(file);
+
+    // Показываем превью
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPhotoUrl(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadPhoto(): Promise<string | null> {
+    if (!photoFile) return photoUrl || null;
+
+    setUploading(true);
+    try {
+      // Генерируем уникальное имя файла
+      const fileExt = photoFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `masters/${fileName}`;
+
+      // Загружаем файл
+      const { error: uploadError } = await supabase.storage
+        .from('master-photos')
+        .upload(filePath, photoFile);
+
+      if (uploadError) {
+        console.error('Ошибка загрузки:', uploadError);
+        throw uploadError;
+      }
+
+      // Получаем публичный URL
+      const { data } = supabase.storage.from('master-photos').getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Ошибка загрузки фото:', error);
+      alert('Не удалось загрузить фото');
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSave() {
     if (!name.trim()) {
@@ -30,12 +91,21 @@ export function MasterForm({ master, onClose }: Props) {
     setSaving(true);
 
     try {
+      // Загружаем фото, если выбрано новое
+      let finalPhotoUrl = photoUrl;
+      if (photoFile) {
+        const uploadedUrl = await uploadPhoto();
+        if (uploadedUrl) {
+          finalPhotoUrl = uploadedUrl;
+        }
+      }
+
       const masterData = {
         name: name.trim(),
         description: description.trim() || null,
         specialization: specialization.trim() || null,
         phone: phone.trim() || null,
-        photo_url: photoUrl.trim() || null,
+        photo_url: finalPhotoUrl || null,
         is_active: isActive,
       };
 
@@ -153,13 +223,39 @@ export function MasterForm({ master, onClose }: Props) {
             </Card>
 
             <Card style={{ padding: '16px', marginBottom: '12px' }}>
-              <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>URL фото</Text>
-              <Input
-                type="url"
-                value={photoUrl}
-                onChange={(e) => setPhotoUrl(e.target.value)}
-                placeholder="https://example.com/photo.jpg"
+              <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>
+                Фото мастера
+              </Text>
+              {photoUrl && (
+                <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                  <img
+                    src={photoUrl}
+                    alt="Фото мастера"
+                    style={{
+                      maxWidth: '200px',
+                      maxHeight: '200px',
+                      borderRadius: '8px',
+                      objectFit: 'cover',
+                    }}
+                  />
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid var(--tgui--secondary_bg_color)',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--tgui--bg_color)',
+                  color: 'var(--tgui--text_color)',
+                }}
               />
+              <Text style={{ fontSize: '12px', opacity: 0.5, marginTop: '8px' }}>
+                Максимальный размер: 5MB. Форматы: JPG, PNG, GIF
+              </Text>
             </Card>
 
             <Card style={{ padding: '16px', marginBottom: '12px' }}>
@@ -177,8 +273,14 @@ export function MasterForm({ master, onClose }: Props) {
             </Card>
           </Section>
 
-          <Button size="l" stretched onClick={handleSave} disabled={saving}>
-            {saving ? 'Сохранение...' : master ? 'Сохранить изменения' : 'Добавить мастера'}
+          <Button size="l" stretched onClick={handleSave} disabled={saving || uploading}>
+            {uploading
+              ? 'Загрузка фото...'
+              : saving
+                ? 'Сохранение...'
+                : master
+                  ? 'Сохранить изменения'
+                  : 'Добавить мастера'}
           </Button>
         </div>
       )}

@@ -122,12 +122,10 @@ export async function getUpcomingBookings(hoursAhead: number) {
 }
 
 export async function cancelBooking(id: string, cancelledBy: 'client' | 'admin', reason?: string) {
-  const status = cancelledBy === 'client' ? 'cancelled_by_client' : 'cancelled_by_admin';
-
   const { data, error } = await supabase
     .from('bookings')
     .update({
-      status,
+      status: 'cancelled',
       cancellation_reason: reason || null,
     })
     .eq('id', id)

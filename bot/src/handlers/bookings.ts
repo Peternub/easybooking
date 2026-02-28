@@ -44,8 +44,8 @@ export async function handleMyBookings(ctx: CommandContext<Context>) {
         const statusEmoji =
           {
             completed: '✅',
-            cancelled_by_client: '❌',
-            cancelled_by_admin: '🚫',
+            cancelled: '❌',
+            no_show: '👻',
           }[booking.status] || '❓';
 
         message += `${statusEmoji} ${date} - ${booking.service.name}\n`;

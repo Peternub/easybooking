@@ -12,6 +12,10 @@ export function setupHandlers(bot: Bot) {
   bot.command('mybookings', handleMyBookings);
 
   // Callback queries
+  bot.callbackQuery('my_bookings', async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await handleMyBookings(ctx as any);
+  });
   bot.callbackQuery(/^cancel_booking:(.+)$/, handleCancelBooking);
   bot.callbackQuery(/^confirm_cancel:(.+)$/, handleCancelBooking);
 
