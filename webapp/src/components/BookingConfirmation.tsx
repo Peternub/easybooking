@@ -18,7 +18,9 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [clientName, setClientName] = useState('');
+  const [clientFirstName, setClientFirstName] = useState('');
+  const [clientLastName, setClientLastName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoError, setPromoError] = useState('');
@@ -89,12 +91,19 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   };
 
   const handleConfirm = async () => {
-    if (!clientName.trim()) {
-      alert('Пожалуйста, введите ваше имя');
+    if (!clientFirstName.trim() || !clientLastName.trim()) {
+      alert('Пожалуйста, введите ваше имя и фамилию');
+      return;
+    }
+
+    if (!clientPhone.trim()) {
+      alert('Пожалуйста, введите номер телефона');
       return;
     }
 
     setSubmitting(true);
+
+    const clientName = `${clientFirstName.trim()} ${clientLastName.trim()}`;
 
     console.log('=== СОЗДАНИЕ ЗАПИСИ ===');
     console.log('Telegram WebApp:', window.Telegram?.WebApp);
@@ -131,6 +140,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       console.log('Данные для вставки:', {
         client_telegram_id: clientTelegramId,
         client_name: clientName,
+        client_phone: clientPhone,
         client_username: clientUsername,
         master_id: masterId,
         service_id: serviceId,
@@ -148,6 +158,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         .insert({
           client_telegram_id: clientTelegramId,
           client_name: clientName,
+          client_phone: clientPhone,
           client_username: clientUsername,
           master_id: masterId,
           service_id: serviceId,
@@ -224,7 +235,9 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       alert('✅ Запись успешно создана!\n\nУведомления будут отправлены ботом.');
 
       // Очищаем форму
-      setClientName('');
+      setClientFirstName('');
+      setClientLastName('');
+      setClientPhone('');
       setPromoCode('');
       setPromoDiscount(0);
       setPromoError('');
@@ -298,13 +311,57 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
         <Card style={{ padding: '16px' }}>
           <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
-            Ваше имя
+            Имя *
           </Text>
           <input
             type="text"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
+            value={clientFirstName}
+            onChange={(e) => setClientFirstName(e.target.value)}
             placeholder="Введите ваше имя"
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '16px',
+              border: '1px solid var(--tgui--divider_color)',
+              borderRadius: '8px',
+              backgroundColor: 'var(--tgui--secondary_bg_color)',
+              color: 'var(--tgui--text_color)',
+              outline: 'none',
+            }}
+          />
+        </Card>
+
+        <Card style={{ padding: '16px' }}>
+          <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
+            Фамилия *
+          </Text>
+          <input
+            type="text"
+            value={clientLastName}
+            onChange={(e) => setClientLastName(e.target.value)}
+            placeholder="Введите вашу фамилию"
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '16px',
+              border: '1px solid var(--tgui--divider_color)',
+              borderRadius: '8px',
+              backgroundColor: 'var(--tgui--secondary_bg_color)',
+              color: 'var(--tgui--text_color)',
+              outline: 'none',
+            }}
+          />
+        </Card>
+
+        <Card style={{ padding: '16px' }}>
+          <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
+            Номер телефона *
+          </Text>
+          <input
+            type="tel"
+            value={clientPhone}
+            onChange={(e) => setClientPhone(e.target.value)}
+            placeholder="+7 (999) 123-45-67"
             style={{
               width: '100%',
               padding: '12px',
@@ -416,7 +473,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         size="l"
         stretched
         onClick={handleConfirm}
-        disabled={submitting || !clientName.trim()}
+        disabled={submitting || !clientFirstName.trim() || !clientLastName.trim() || !clientPhone.trim()}
       >
         {submitting ? 'Создание записи...' : 'Записаться'}
       </Button>
