@@ -28,7 +28,9 @@ export function BookingsList({ onAddBooking }: Props) {
       // Небольшая задержка для корректной работы
       setTimeout(() => {
         textareaRef.current?.focus();
-      }, 100);
+        // Принудительно делаем элемент интерактивным
+        textareaRef.current?.click();
+      }, 150);
     }
   }, [cancellingBookingId]);
 
@@ -267,7 +269,7 @@ export function BookingsList({ onAddBooking }: Props) {
       {/* Модальное окно для отмены записи */}
       {cancellingBookingId && (
         <div
-          key={cancellingBookingId}
+          key={`modal-${cancellingBookingId}`}
           style={{
             position: 'fixed',
             top: 0,
@@ -280,6 +282,10 @@ export function BookingsList({ onAddBooking }: Props) {
             justifyContent: 'center',
             zIndex: 1000,
             padding: '16px',
+          }}
+          onClick={() => {
+            setCancellingBookingId(null);
+            setCancellationReason('');
           }}
         >
           <Card
@@ -297,12 +303,20 @@ export function BookingsList({ onAddBooking }: Props) {
               key={`cancel-reason-${cancellingBookingId}`}
               value={cancellationReason}
               onChange={(e) => setCancellationReason(e.target.value)}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 e.currentTarget.focus();
               }}
+              onFocus={(e) => {
+                // Прокручиваем элемент в видимую область
+                e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
               placeholder="Например: Мастер заболел, запись перенесена на другое время"
               rows={4}
+              autoFocus
               style={{
                 width: '100%',
                 padding: '12px',
@@ -314,6 +328,8 @@ export function BookingsList({ onAddBooking }: Props) {
                 fontSize: '14px',
                 fontFamily: 'inherit',
                 resize: 'vertical',
+                WebkitUserSelect: 'text',
+                userSelect: 'text',
               }}
             />
             <div style={{ display: 'flex', gap: '8px' }}>
