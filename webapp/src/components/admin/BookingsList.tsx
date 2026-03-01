@@ -266,6 +266,13 @@ export function BookingsList({ onAddBooking }: Props) {
         </Button>
       </div>
 
+      {/* Информационная подсказка */}
+      <Card style={{ padding: '12px', marginBottom: '16px', backgroundColor: 'var(--tgui--secondary_bg_color)' }}>
+        <Text style={{ fontSize: '13px', opacity: 0.8, textAlign: 'center' }}>
+          ℹ️ Для отмены нескольких записей подряд обновляйте страницу после каждой отмены
+        </Text>
+      </Card>
+
       {/* Модальное окно для отмены записи */}
       {cancellingBookingId && (
         <div
