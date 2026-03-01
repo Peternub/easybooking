@@ -125,7 +125,14 @@ export function BookingForm({ onClose }: Props) {
         .select()
         .single();
 
-      if (bookingError) throw bookingError;
+      if (bookingError) {
+        // Проверяем, является ли это ошибкой дубликата времени
+        if (bookingError.code === '23505') {
+          alert('Ошибка: Мастер уже занят в это время. Выберите другое время или другого мастера.');
+          return;
+        }
+        throw bookingError;
+      }
 
       // Отправляем запрос на создание события в Google Calendar через бота
       try {
