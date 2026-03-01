@@ -1,7 +1,7 @@
 import { Button, Card, Section, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { BookingReadable } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
 
@@ -9,30 +9,30 @@ interface Props {
   onAddBooking: () => void;
 }
 
-const CANCELLATION_REASONS = [
-  'Болезнь мастера',
-  'Непредвиденные личные обстоятельства мастера',
-  'Накладка в расписании',
-  'Отключение электроэнергии в салоне',
-  'Отключение водоснабжения в салоне',
-  'Технические неполадки в салоне',
-  'Технический сбой в системе записи',
-  'Значительное опоздание',
-  'Отсутствие необходимых материалов для вашей услуги',
-];
-
 export function BookingsList({ onAddBooking }: Props) {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
-  const [selectedReasonIndex, setSelectedReasonIndex] = useState<number | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: filter нужен для перезагрузки при смене фильтра
   useEffect(() => {
     loadBookings();
   }, [filter]);
+
+  // Фокус на textarea при открытии модалки
+  useEffect(() => {
+    if (cancellingBookingId && textareaRef.current) {
+      // Небольшая задержка для корректной работы
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        // Принудительно делаем элемент интерактивным
+        textareaRef.current?.click();
+      }, 150);
+    }
+  }, [cancellingBookingId]);
 
   async function loadBookings() {
     try {
@@ -77,7 +77,6 @@ export function BookingsList({ onAddBooking }: Props) {
 
   async function handleCancelBooking(bookingId: string) {
     setCancellationReason(''); // Очищаем причину перед открытием модалки
-    setSelectedReasonIndex(null); // Сбрасываем выбранную причину
     setCancellingBookingId(bookingId);
   }
 
@@ -86,12 +85,8 @@ export function BookingsList({ onAddBooking }: Props) {
 
     console.log('Начало отмены записи:', cancellingBookingId);
 
-    const reasonToUse = selectedReasonIndex !== null 
-      ? CANCELLATION_REASONS[selectedReasonIndex] 
-      : cancellationReason.trim();
-
-    if (!reasonToUse) {
-      alert('Выберите или укажите причину отмены');
+    if (!cancellationReason.trim()) {
+      alert('Укажите причину отмены');
       return;
     }
 
@@ -110,7 +105,7 @@ export function BookingsList({ onAddBooking }: Props) {
         .from('bookings')
         .update({
           status: 'cancelled',
-          cancellation_reason: reasonToUse,
+          cancellation_reason: cancellationReason.trim(),
         })
         .eq('id', cancellingBookingId)
         .select();
@@ -162,7 +157,7 @@ export function BookingsList({ onAddBooking }: Props) {
               body: JSON.stringify({
                 clientTelegramId: bookingData.client_telegram_id,
                 bookingId: cancellingBookingId,
-                reason: reasonToUse,
+                reason: cancellationReason.trim(),
                 bookingDate: booking.booking_date,
                 bookingTime: booking.booking_time,
                 masterName: booking.master_name,
@@ -194,7 +189,6 @@ export function BookingsList({ onAddBooking }: Props) {
       alert('Запись отменена');
       setCancellingBookingId(null);
       setCancellationReason('');
-      setSelectedReasonIndex(null);
       loadBookings();
     } catch (error) {
       console.error('Ошибка отмены записи:', error);
@@ -292,7 +286,6 @@ export function BookingsList({ onAddBooking }: Props) {
           onClick={() => {
             setCancellingBookingId(null);
             setCancellationReason('');
-            setSelectedReasonIndex(null);
           }}
         >
           <Card
@@ -303,76 +296,40 @@ export function BookingsList({ onAddBooking }: Props) {
               Отмена записи
             </Text>
             <Text style={{ fontSize: '14px', marginBottom: '16px', opacity: 0.8 }}>
-              Выберите причину отмены. Клиент получит уведомление с этим сообщением.
+              Укажите причину отмены. Клиент получит уведомление с этим сообщением.
             </Text>
-
-            {/* Список готовых причин */}
-            <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {CANCELLATION_REASONS.map((reason, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => {
-                    setSelectedReasonIndex(index);
-                    setCancellationReason('');
-                  }}
-                  style={{
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: selectedReasonIndex === index 
-                      ? '2px solid var(--tgui--button_color)' 
-                      : '1px solid var(--tgui--secondary_bg_color)',
-                    backgroundColor: selectedReasonIndex === index 
-                      ? 'var(--tgui--secondary_bg_color)' 
-                      : 'var(--tgui--bg_color)',
-                    color: 'var(--tgui--text_color)',
-                    fontSize: '14px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-
-            {/* Разделитель */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              marginBottom: '12px',
-              opacity: 0.5 
-            }}>
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--tgui--secondary_bg_color)' }} />
-              <Text style={{ fontSize: '12px' }}>или своя причина</Text>
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--tgui--secondary_bg_color)' }} />
-            </div>
-
-            {/* Поле для своей причины */}
             <textarea
+              ref={textareaRef}
               key={`cancel-reason-${cancellingBookingId}`}
               value={cancellationReason}
-              onChange={(e) => {
-                setCancellationReason(e.target.value);
-                setSelectedReasonIndex(null);
+              onChange={(e) => setCancellationReason(e.target.value)}
+              onTouchStart={(e) => {
+                e.stopPropagation();
               }}
-              placeholder="Введите свою причину отмены..."
-              rows={3}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.currentTarget.focus();
+              }}
+              onFocus={(e) => {
+                // Прокручиваем элемент в видимую область
+                e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+              placeholder="Например: Мастер заболел, запись перенесена на другое время"
+              rows={4}
+              autoFocus
               style={{
                 width: '100%',
                 padding: '12px',
                 marginBottom: '16px',
                 borderRadius: '8px',
-                border: cancellationReason && !selectedReasonIndex
-                  ? '2px solid var(--tgui--button_color)'
-                  : '1px solid var(--tgui--secondary_bg_color)',
+                border: '1px solid var(--tgui--secondary_bg_color)',
                 backgroundColor: 'var(--tgui--bg_color)',
                 color: 'var(--tgui--text_color)',
                 fontSize: '14px',
                 fontFamily: 'inherit',
                 resize: 'vertical',
+                WebkitUserSelect: 'text',
+                userSelect: 'text',
               }}
             />
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -390,7 +347,6 @@ export function BookingsList({ onAddBooking }: Props) {
                 onClick={() => {
                   setCancellingBookingId(null);
                   setCancellationReason('');
-                  setSelectedReasonIndex(null);
                 }}
                 style={{ flex: 1 }}
               >
