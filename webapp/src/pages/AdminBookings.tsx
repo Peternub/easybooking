@@ -7,6 +7,7 @@ export function AdminBookings() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     // Проверка прав администратора
@@ -43,9 +44,17 @@ export function AdminBookings() {
       </Title>
 
       {showForm ? (
-        <BookingForm onClose={() => setShowForm(false)} />
+        <BookingForm 
+          onClose={() => {
+            setShowForm(false);
+            setRefreshKey(prev => prev + 1); // Принудительно обновляем список
+          }} 
+        />
       ) : (
-        <BookingsList onAddBooking={() => setShowForm(true)} />
+        <BookingsList 
+          key={refreshKey} 
+          onAddBooking={() => setShowForm(true)} 
+        />
       )}
     </div>
   );
