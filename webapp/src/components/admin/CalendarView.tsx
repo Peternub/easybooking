@@ -10,7 +10,7 @@ export function CalendarView() {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [masters, setMasters] = useState<Master[]>([]);
   const [loading, setLoading] = useState(true);
-  // const [showAddBooking, setShowAddBooking] = useState(false); // TODO: будет использоваться позже
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedDate нужен для перезагрузки
   useEffect(() => {
@@ -20,16 +20,34 @@ export function CalendarView() {
   async function loadData() {
     setLoading(true);
     try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      let bookingsData: BookingReadable[] = [];
 
-      // Загружаем записи на выбранную дату
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('bookings_readable')
-        .select('*')
-        .eq('booking_date', dateStr)
-        .order('booking_time');
+      if (viewMode === 'day') {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const { data, error } = await supabase
+          .from('bookings_readable')
+          .select('*')
+          .eq('booking_date', dateStr)
+          .order('booking_time');
 
-      if (bookingsError) throw bookingsError;
+        if (error) throw error;
+        bookingsData = data || [];
+      } else {
+        // Неделя: загружаем записи на 7 дней начиная с выбранной даты
+        const startDate = format(selectedDate, 'yyyy-MM-dd');
+        const endDate = format(addDays(selectedDate, 6), 'yyyy-MM-dd');
+        
+        const { data, error } = await supabase
+          .from('bookings_readable')
+          .select('*')
+          .gte('booking_date', startDate)
+          .lte('booking_date', endDate)
+          .order('booking_date')
+          .order('booking_time');
+
+        if (error) throw error;
+        bookingsData = data || [];
+      }
 
       // Загружаем мастеров
       const { data: mastersData, error: mastersError } = await supabase
@@ -40,7 +58,7 @@ export function CalendarView() {
 
       if (mastersError) throw mastersError;
 
-      setBookings(bookingsData || []);
+      setBookings(bookingsData);
       setMasters(mastersData || []);
     } catch (error) {
       console.error('Ошибка загрузки данных:', error);
@@ -110,40 +128,74 @@ export function CalendarView() {
         Календарь записей
       </Title>
 
-      {/* Навигация по датам */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto' }}>
-        {[-1, 0, 1, 2, 3].map((offset) => {
-          const date = addDays(startOfDay(new Date()), offset);
-          const isSelected = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-
-          return (
-            <Button
-              key={offset}
-              mode={isSelected ? 'filled' : 'outline'}
-              size="s"
-              onClick={() => setSelectedDate(date)}
-              style={{
-                minWidth: '80px',
-                backgroundColor: isSelected ? '#1C2833' : 'transparent',
-              }}
-            >
-              {offset === 0 ? 'Сегодня' : format(date, 'd MMM', { locale: ru })}
-            </Button>
-          );
-        })}
+      {/* Переключатель вида */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <Button
+          mode={viewMode === 'day' ? 'filled' : 'outline'}
+          size="s"
+          onClick={() => setViewMode('day')}
+        >
+          День
+        </Button>
+        <Button
+          mode={viewMode === 'week' ? 'filled' : 'outline'}
+          size="s"
+          onClick={() => setViewMode('week')}
+        >
+          Неделя
+        </Button>
       </div>
 
-      {/* Кнопка добавления записи */}
+      {/* Навигация по датам */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto' }}>
+        <Button
+          mode="outline"
+          size="s"
+          onClick={() => setSelectedDate(addDays(selectedDate, viewMode === 'day' ? -1 : -7))}
+        >
+          ←
+        </Button>
+        {viewMode === 'day' ? (
+          [-1, 0, 1, 2, 3, 4, 5].map((offset) => {
+            const date = addDays(startOfDay(new Date()), offset);
+            const isSelected = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+
+            return (
+              <Button
+                key={offset}
+                mode={isSelected ? 'filled' : 'outline'}
+                size="s"
+                onClick={() => setSelectedDate(date)}
+                style={{ minWidth: '80px' }}
+              >
+                {offset === 0 ? 'Сегодня' : format(date, 'd MMM', { locale: ru })}
+              </Button>
+            );
+          })
+        ) : (
+          <Button mode="filled" size="s" style={{ minWidth: '200px' }}>
+            {format(selectedDate, 'd MMM', { locale: ru })} -{' '}
+            {format(addDays(selectedDate, 6), 'd MMM', { locale: ru })}
+          </Button>
+        )}
+        <Button
+          mode="outline"
+          size="s"
+          onClick={() => setSelectedDate(addDays(selectedDate, viewMode === 'day' ? 1 : 7))}
+        >
+          →
+        </Button>
+      </div>
+
+      {/* Кнопка "Сегодня" */}
       <Button
-        size="l"
+        size="m"
         stretched
-        onClick={() => {
-          // TODO: setShowAddBooking(true);
-          alert('Функционал в разработке');
-        }}
+        mode="outline"
+        onClick={() => setSelectedDate(startOfDay(new Date()))}
         style={{ marginBottom: '16px' }}
       >
-        + Добавить запись
+        📅 Вернуться к сегодня
       </Button>
 
       {loading ? (
