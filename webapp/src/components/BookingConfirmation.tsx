@@ -18,8 +18,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [clientFirstName, setClientFirstName] = useState('');
-  const [clientLastName, setClientLastName] = useState('');
+  const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -91,7 +90,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   };
 
   const handleConfirm = async () => {
-    if (!clientFirstName.trim() || !clientLastName.trim()) {
+    if (!clientName.trim()) {
       alert('Пожалуйста, введите ваше имя и фамилию');
       return;
     }
@@ -102,8 +101,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     }
 
     setSubmitting(true);
-
-    const clientName = `${clientFirstName.trim()} ${clientLastName.trim()}`;
 
     console.log('=== СОЗДАНИЕ ЗАПИСИ ===');
     console.log('Telegram WebApp:', window.Telegram?.WebApp);
@@ -235,8 +232,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       alert('✅ Запись успешно создана!\n\nУведомления будут отправлены ботом.');
 
       // Очищаем форму
-      setClientFirstName('');
-      setClientLastName('');
+      setClientName('');
       setClientPhone('');
       setPromoCode('');
       setPromoDiscount(0);
@@ -284,6 +280,13 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         Подтверждение записи
       </Title>
 
+      {/* Информационное сообщение */}
+      <Card style={{ padding: '12px', marginBottom: '16px', backgroundColor: 'var(--tgui--secondary_bg_color)' }}>
+        <Text style={{ fontSize: '13px', opacity: 0.9, textAlign: 'center' }}>
+          ℹ️ Если вы хотите сделать несколько записей, используйте одно и то же имя для всех записей
+        </Text>
+      </Card>
+
       <Card style={{ padding: '16px', marginBottom: '16px' }}>
         <div style={{ marginBottom: '16px' }}>
           <Text style={{ fontSize: '14px', opacity: 0.6 }}>Услуга</Text>
@@ -311,35 +314,13 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
         <Card style={{ padding: '16px' }}>
           <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
-            Имя *
+            Имя и фамилия *
           </Text>
           <input
             type="text"
-            value={clientFirstName}
-            onChange={(e) => setClientFirstName(e.target.value)}
-            placeholder="Введите ваше имя"
-            style={{
-              width: '100%',
-              padding: '12px',
-              fontSize: '16px',
-              border: '1px solid var(--tgui--divider_color)',
-              borderRadius: '8px',
-              backgroundColor: 'var(--tgui--secondary_bg_color)',
-              color: 'var(--tgui--text_color)',
-              outline: 'none',
-            }}
-          />
-        </Card>
-
-        <Card style={{ padding: '16px' }}>
-          <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
-            Фамилия *
-          </Text>
-          <input
-            type="text"
-            value={clientLastName}
-            onChange={(e) => setClientLastName(e.target.value)}
-            placeholder="Введите вашу фамилию"
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
+            placeholder="Иван Иванов"
             style={{
               width: '100%',
               padding: '12px',
@@ -473,7 +454,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         size="l"
         stretched
         onClick={handleConfirm}
-        disabled={submitting || !clientFirstName.trim() || !clientLastName.trim() || !clientPhone.trim()}
+        disabled={submitting || !clientName.trim() || !clientPhone.trim()}
       >
         {submitting ? 'Создание записи...' : 'Записаться'}
       </Button>
