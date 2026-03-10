@@ -125,10 +125,12 @@ export function MastersList() {
               <div style={{ flex: 1 }}>
                 <Text style={{ fontSize: '18px', fontWeight: 'bold' }}>{master.name}</Text>
                 {master.specialization && (
-                  <Text style={{ fontSize: '14px', opacity: 0.8 }}>{master.specialization}</Text>
+                  <Text style={{ fontSize: '14px', opacity: 0.8, marginTop: '4px' }}>
+                    {master.specialization}
+                  </Text>
                 )}
                 {master.description && (
-                  <Text style={{ fontSize: '14px', opacity: 0.6, marginTop: '4px' }}>
+                  <Text style={{ fontSize: '14px', opacity: 0.6, marginTop: '8px' }}>
                     {master.description}
                   </Text>
                 )}

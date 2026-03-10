@@ -14,7 +14,6 @@ interface Props {
 export function MasterForm({ master, onClose }: Props) {
   const [name, setName] = useState(master?.name || '');
   const [description, setDescription] = useState(master?.description || '');
-  const [specialization, setSpecialization] = useState(master?.specialization || '');
   const [phone, setPhone] = useState(master?.phone || '');
   const [photoUrl, setPhotoUrl] = useState(master?.photo_url || '');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -103,7 +102,6 @@ export function MasterForm({ master, onClose }: Props) {
       const masterData = {
         name: name.trim(),
         description: description.trim() || null,
-        specialization: specialization.trim() || null,
         phone: phone.trim() || null,
         photo_url: finalPhotoUrl || null,
         is_active: isActive,
@@ -187,18 +185,6 @@ export function MasterForm({ master, onClose }: Props) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Анна Иванова"
-              />
-            </Card>
-
-            <Card style={{ padding: '16px', marginBottom: '12px' }}>
-              <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>
-                Специализация
-              </Text>
-              <Input
-                type="text"
-                value={specialization}
-                onChange={(e) => setSpecialization(e.target.value)}
-                placeholder="Парикмахер-стилист"
               />
             </Card>
 

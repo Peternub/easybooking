@@ -18,35 +18,18 @@ const DAYS = [
 ];
 
 export function MasterWorkSchedule({ master }: Props) {
-  const [schedule, setSchedule] = useState<Record<string, string[]>>(master.work_schedule || {});
+  const [schedule, setSchedule] = useState<Record<string, string>>(
+    Object.entries(master.work_schedule || {}).reduce((acc, [day, times]) => {
+      acc[day] = Array.isArray(times) && times.length > 0 ? times[0] : '';
+      return acc;
+    }, {} as Record<string, string>)
+  );
   const [saving, setSaving] = useState(false);
 
-  function handleTimeChange(day: string, index: number, value: string) {
-    const daySchedule = schedule[day] || [];
-    const newDaySchedule = [...daySchedule];
-    newDaySchedule[index] = value;
-
+  function handleTimeChange(day: string, value: string) {
     setSchedule({
       ...schedule,
-      [day]: newDaySchedule,
-    });
-  }
-
-  function handleAddSlot(day: string) {
-    const daySchedule = schedule[day] || [];
-    setSchedule({
-      ...schedule,
-      [day]: [...daySchedule, '10:00-18:00'],
-    });
-  }
-
-  function handleRemoveSlot(day: string, index: number) {
-    const daySchedule = schedule[day] || [];
-    const newDaySchedule = daySchedule.filter((_, i) => i !== index);
-
-    setSchedule({
-      ...schedule,
-      [day]: newDaySchedule,
+      [day]: value,
     });
   }
 
@@ -54,9 +37,17 @@ export function MasterWorkSchedule({ master }: Props) {
     setSaving(true);
 
     try {
+      // Преобразуем обратно в формат массива для совместимости
+      const scheduleArray = Object.entries(schedule).reduce((acc, [day, time]) => {
+        if (time.trim()) {
+          acc[day] = [time];
+        }
+        return acc;
+      }, {} as Record<string, string[]>);
+
       const { error } = await supabase
         .from('masters')
-        .update({ work_schedule: schedule })
+        .update({ work_schedule: scheduleArray })
         .eq('id', master.id);
 
       if (error) throw error;
@@ -83,34 +74,14 @@ export function MasterWorkSchedule({ master }: Props) {
               {day.label}
             </Text>
 
-            {(schedule[day.key] || []).map((timeSlot: string, index: number) => (
-              <div
-                key={`${day.key}-${index}`}
-                style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}
-              >
-                <Input
-                  type="text"
-                  value={timeSlot}
-                  onChange={(e) => handleTimeChange(day.key, index, e.target.value)}
-                  placeholder="10:00-18:00"
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  mode="outline"
-                  size="s"
-                  onClick={() => handleRemoveSlot(day.key, index)}
-                  style={{ color: '#F44336' }}
-                >
-                  ✕
-                </Button>
-              </div>
-            ))}
+            <Input
+              type="text"
+              value={schedule[day.key] || ''}
+              onChange={(e) => handleTimeChange(day.key, e.target.value)}
+              placeholder="10:00-18:00"
+            />
 
-            <Button mode="outline" size="s" onClick={() => handleAddSlot(day.key)}>
-              + Добавить время
-            </Button>
-
-            {(!schedule[day.key] || schedule[day.key].length === 0) && (
+            {(!schedule[day.key] || !schedule[day.key].trim()) && (
               <Text style={{ fontSize: '12px', opacity: 0.6, marginTop: '8px' }}>Выходной</Text>
             )}
           </Card>
