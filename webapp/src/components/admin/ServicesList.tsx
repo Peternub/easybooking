@@ -144,7 +144,6 @@ export function ServicesList() {
 
                     <div style={{ marginTop: '8px', display: 'flex', gap: '16px' }}>
                       <Text style={{ fontSize: '14px' }}>💰 {service.price} ₽</Text>
-                      <Text style={{ fontSize: '14px' }}>⏱️ {service.duration_minutes} мин</Text>
                       {service.category && (
                         <Text style={{ fontSize: '14px' }}>📁 {service.category}</Text>
                       )}

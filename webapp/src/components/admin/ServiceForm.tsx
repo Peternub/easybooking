@@ -12,9 +12,6 @@ export function ServiceForm({ service, onClose }: Props) {
   const [name, setName] = useState(service?.name || '');
   const [description, setDescription] = useState(service?.description || '');
   const [price, setPrice] = useState(service?.price?.toString() || '');
-  const [durationMinutes, setDurationMinutes] = useState(
-    service?.duration_minutes?.toString() || '',
-  );
   const [category, setCategory] = useState(service?.category || '');
   const [isActive, setIsActive] = useState(service?.is_active ?? true);
   const [saving, setSaving] = useState(false);
@@ -32,11 +29,6 @@ export function ServiceForm({ service, onClose }: Props) {
       return;
     }
 
-    if (!durationMinutes || Number.parseInt(durationMinutes) <= 0) {
-      alert('Введите корректную длительность');
-      return;
-    }
-
     setSaving(true);
 
     try {
@@ -44,7 +36,7 @@ export function ServiceForm({ service, onClose }: Props) {
         name: name.trim(),
         description: description.trim() || null,
         price: Number.parseFloat(price),
-        duration_minutes: Number.parseInt(durationMinutes),
+        duration_minutes: 60, // Устанавливаем значение по умолчанию
         category: category.trim() || null,
         is_active: isActive,
       };
@@ -130,25 +122,6 @@ export function ServiceForm({ service, onClose }: Props) {
               placeholder="1000"
               min="0"
               step="0.01"
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="service-duration"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
-              Длительность (минут) *
-            </label>
-            <Input
-              id="service-duration"
-              type="number"
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(e.target.value)}
-              placeholder="60"
-              min="1"
-              step="1"
               required
             />
           </div>
