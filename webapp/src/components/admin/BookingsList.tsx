@@ -54,8 +54,8 @@ export function BookingsList({ onAddBooking }: Props) {
       }
 
       const { data, error } = await query
-        .order('booking_date', { ascending: false })
-        .order('booking_time', { ascending: false })
+        .order('booking_date', { ascending: true })
+        .order('booking_time', { ascending: true })
         .limit(50);
 
       if (error) {

@@ -1,15 +1,13 @@
-import { Button, Spinner, Title } from '@telegram-apps/telegram-ui';
+import { Spinner, Title } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import { BookingForm } from '../components/admin/BookingForm';
 import { BookingsList } from '../components/admin/BookingsList';
-import { CalendarView } from '../components/admin/CalendarView';
 
 export function AdminBookings() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   useEffect(() => {
     // Проверка прав администратора
@@ -45,27 +43,6 @@ export function AdminBookings() {
         Управление записями
       </Title>
 
-      {!showForm && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          <Button
-            mode={viewMode === 'list' ? 'filled' : 'outline'}
-            size="m"
-            onClick={() => setViewMode('list')}
-            style={{ flex: 1 }}
-          >
-            📋 Список
-          </Button>
-          <Button
-            mode={viewMode === 'calendar' ? 'filled' : 'outline'}
-            size="m"
-            onClick={() => setViewMode('calendar')}
-            style={{ flex: 1 }}
-          >
-            📅 Календарь
-          </Button>
-        </div>
-      )}
-
       {showForm ? (
         <BookingForm 
           onClose={() => {
@@ -73,8 +50,6 @@ export function AdminBookings() {
             setRefreshKey(prev => prev + 1); // Принудительно обновляем список
           }} 
         />
-      ) : viewMode === 'calendar' ? (
-        <CalendarView />
       ) : (
         <BookingsList 
           key={refreshKey} 
