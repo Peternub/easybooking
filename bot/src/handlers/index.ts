@@ -2,6 +2,7 @@
 
 import type { Bot } from 'grammy';
 import { handleMyBookings } from './bookings.js';
+import { handleCancelBooking } from './cancel.js';
 import { handleStart } from './start.js';
 import { handleWebApp } from './webapp.js';
 
@@ -15,6 +16,8 @@ export function setupHandlers(bot: Bot) {
     await ctx.answerCallbackQuery();
     await handleMyBookings(ctx as any);
   });
+  bot.callbackQuery(/^cancel_booking:(.+)$/, handleCancelBooking);
+  bot.callbackQuery(/^confirm_cancel:(.+)$/, handleCancelBooking);
 
   // Web App данные
   bot.on('message:web_app_data', handleWebApp);
