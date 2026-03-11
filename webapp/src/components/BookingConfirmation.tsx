@@ -308,6 +308,9 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         <div>
           <Text style={{ fontSize: '14px', opacity: 0.6 }}>Стоимость</Text>
           <Title level="2">{service.price} ₽</Title>
+          <Text style={{ fontSize: '13px', opacity: 0.7, marginTop: '4px' }}>
+            💳 Оплата в салоне
+          </Text>
         </div>
       </Card>
 
@@ -442,7 +445,12 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
               borderTop: '1px solid var(--tgui--divider_color)',
             }}
           >
-            <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>Итого:</Text>
+            <div>
+              <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>Итого:</Text>
+              <Text style={{ fontSize: '12px', opacity: 0.7, marginTop: '2px' }}>
+                💳 Оплата в салоне
+              </Text>
+            </div>
             <Title level="2" style={{ margin: 0 }}>
               {service.price - Math.round((service.price * promoDiscount) / 100)} ₽
             </Title>
