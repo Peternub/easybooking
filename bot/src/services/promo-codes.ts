@@ -43,10 +43,30 @@ export async function createPromoCode(
 
 // Проверить промокод
 export async function validatePromoCode(code: string, clientTelegramId: number) {
+  const upperCode = code.toUpperCase();
+  
+  // Сначала проверяем многоразовые промокоды
+  const { data: reusablePromo, error: reusableError } = await supabase
+    .from('promo_codes')
+    .select('*')
+    .eq('code', upperCode)
+    .eq('is_reusable', true)
+    .gte('valid_until', new Date().toISOString())
+    .single();
+
+  if (reusablePromo && !reusableError) {
+    // Проверяем лимит использований
+    if (reusablePromo.usage_limit && reusablePromo.usage_count >= reusablePromo.usage_limit) {
+      return null;
+    }
+    return reusablePromo;
+  }
+
+  // Если не нашли многоразовый, проверяем одноразовый для конкретного клиента
   const { data, error } = await supabase
     .from('promo_codes')
     .select('*')
-    .eq('code', code.toUpperCase())
+    .eq('code', upperCode)
     .eq('client_telegram_id', clientTelegramId)
     .eq('is_used', false)
     .gte('valid_until', new Date().toISOString())
@@ -61,6 +81,39 @@ export async function validatePromoCode(code: string, clientTelegramId: number) 
 
 // Использовать промокод
 export async function usePromoCode(code: string, bookingId: string) {
+  const upperCode = code.toUpperCase();
+  
+  // Получаем промокод
+  const { data: promo } = await supabase
+    .from('promo_codes')
+    .select('*')
+    .eq('code', upperCode)
+    .single();
+
+  if (!promo) {
+    throw new Error('Промокод не найден');
+  }
+
+  // Если многоразовый - увеличиваем счётчик
+  if (promo.is_reusable) {
+    const { data, error } = await supabase
+      .from('promo_codes')
+      .update({
+        usage_count: (promo.usage_count || 0) + 1,
+      })
+      .eq('code', upperCode)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Ошибка использования промокода:', error);
+      throw error;
+    }
+
+    return data;
+  }
+
+  // Если одноразовый - помечаем как использованный
   const { data, error } = await supabase
     .from('promo_codes')
     .update({
@@ -68,7 +121,7 @@ export async function usePromoCode(code: string, bookingId: string) {
       used_at: new Date().toISOString(),
       booking_id: bookingId,
     })
-    .eq('code', code.toUpperCase())
+    .eq('code', upperCode)
     .select()
     .single();
 

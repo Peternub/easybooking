@@ -1,25 +1,27 @@
--- Добавление пробного промокода qwerty11 на скидку 11%
--- Выполните этот скрипт в SQL Editor в Supabase Dashboard
+-- Добавление тестового промокода QWERTY11
+-- Выполните этот скрипт в SQL Editor на dashboard.supabase.com
+-- ВАЖНО: Сначала примените миграцию 013_reusable_promo_codes.sql
 
 INSERT INTO promo_codes (
   code,
   discount_percent,
-  is_active,
-  usage_limit,
-  used_count,
   valid_from,
   valid_until,
-  description
+  is_reusable,
+  usage_limit
 ) VALUES (
   'QWERTY11',
   11,
-  true,
-  NULL, -- без ограничения использований
-  0,
   NOW(),
-  NULL, -- без срока действия
-  'Пробный промокод на скидку 11%'
-);
+  NOW() + INTERVAL '1 year',
+  TRUE,
+  NULL  -- без ограничений на количество использований
+)
+ON CONFLICT (code) DO UPDATE SET
+  discount_percent = EXCLUDED.discount_percent,
+  valid_until = EXCLUDED.valid_until,
+  is_reusable = EXCLUDED.is_reusable,
+  usage_limit = EXCLUDED.usage_limit;
 
 -- Проверка результата
 SELECT * FROM promo_codes WHERE code = 'QWERTY11';
