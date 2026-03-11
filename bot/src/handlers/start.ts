@@ -32,7 +32,9 @@ export async function handleStart(ctx: CommandContext<Context>) {
       .row()
       .webApp('👥 Мастера', `${config.app.webappUrl}/admin-masters`)
       .row()
-      .webApp('💼 Услуги', `${config.app.webappUrl}/admin-services`);
+      .webApp('💼 Услуги', `${config.app.webappUrl}/admin-services`)
+      .row()
+      .webApp('⭐ Отзывы', `${config.app.webappUrl}/admin-reviews`);
   }
 
   await ctx.reply(message, { reply_markup: keyboard });
