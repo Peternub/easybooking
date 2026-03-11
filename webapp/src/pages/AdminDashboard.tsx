@@ -2,9 +2,10 @@ import { Tabbar } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import { CalendarView } from '../components/admin/CalendarView';
 import { ClientsView } from '../components/admin/ClientsView';
+import { ReviewsView } from '../components/admin/ReviewsView';
 import { SettingsView } from '../components/admin/SettingsView';
 
-type TabType = 'calendar' | 'clients' | 'settings';
+type TabType = 'calendar' | 'clients' | 'reviews' | 'settings';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
@@ -50,6 +51,7 @@ export function AdminDashboard() {
     <div style={{ paddingBottom: '80px' }}>
       {activeTab === 'calendar' && <CalendarView />}
       {activeTab === 'clients' && <ClientsView />}
+      {activeTab === 'reviews' && <ReviewsView />}
       {activeTab === 'settings' && <SettingsView />}
 
       <Tabbar style={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}>
@@ -66,6 +68,13 @@ export function AdminDashboard() {
           onClick={() => setActiveTab('clients')}
         >
           👥
+        </Tabbar.Item>
+        <Tabbar.Item
+          text="Отзывы"
+          selected={activeTab === 'reviews'}
+          onClick={() => setActiveTab('reviews')}
+        >
+          ⭐
         </Tabbar.Item>
         <Tabbar.Item
           text="Настройки"
