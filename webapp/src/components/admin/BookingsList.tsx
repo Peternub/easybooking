@@ -12,33 +12,24 @@ interface Props {
 export function BookingsList({ onAddBooking }: Props) {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: filter нужен для перезагрузки при смене фильтра
+  // biome-ignore lint/correctness/useExhaustiveDependencies: загружаем записи при монтировании
   useEffect(() => {
     loadBookings();
-  }, [filter]);
+  }, []);
 
   async function loadBookings() {
     try {
-      console.log('Загрузка записей, фильтр:', filter);
-
-      let query = supabase.from('bookings_readable').select('*');
+      console.log('Загрузка предстоящих записей');
 
       const today = new Date().toISOString().split('T')[0];
       console.log('Сегодня:', today);
 
-      if (filter === 'upcoming') {
-        query = query.gte('booking_date', today).in('status', ['active', 'pending']);
-        console.log('Фильтр: предстоящие записи (>= сегодня, статус active/pending)');
-      } else if (filter === 'past') {
-        query = query.lt('booking_date', today);
-        console.log('Фильтр: прошедшие записи (< сегодня)');
-      } else {
-        console.log('Фильтр: все записи');
-      }
-
-      const { data, error } = await query
+      const { data, error } = await supabase
+        .from('bookings_readable')
+        .select('*')
+        .gte('booking_date', today)
+        .in('status', ['active', 'pending'])
         .order('booking_date', { ascending: true })
         .order('booking_time', { ascending: true })
         .limit(50);
@@ -105,30 +96,6 @@ export function BookingsList({ onAddBooking }: Props) {
       <Button size="l" stretched onClick={onAddBooking} style={{ marginBottom: '16px' }}>
         + Добавить запись вручную
       </Button>
-
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto' }}>
-        <Button
-          mode={filter === 'upcoming' ? 'filled' : 'outline'}
-          size="s"
-          onClick={() => setFilter('upcoming')}
-        >
-          Предстоящие
-        </Button>
-        <Button
-          mode={filter === 'past' ? 'filled' : 'outline'}
-          size="s"
-          onClick={() => setFilter('past')}
-        >
-          Прошедшие
-        </Button>
-        <Button
-          mode={filter === 'all' ? 'filled' : 'outline'}
-          size="s"
-          onClick={() => setFilter('all')}
-        >
-          Все
-        </Button>
-      </div>
 
       {/* Информационная подсказка */}
       <Card style={{ padding: '12px', marginBottom: '16px', backgroundColor: 'var(--tgui--secondary_bg_color)' }}>
