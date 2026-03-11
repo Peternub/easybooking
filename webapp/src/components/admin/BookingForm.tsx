@@ -20,6 +20,7 @@ export function BookingForm({ onClose }: Props) {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [availableHours, setAvailableHours] = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadMasters();
@@ -30,6 +31,7 @@ export function BookingForm({ onClose }: Props) {
   useEffect(() => {
     if (selectedMasterId && bookingDate) {
       updateAvailableHours();
+      loadBookedSlots();
     }
   }, [selectedMasterId, bookingDate]);
 
@@ -60,6 +62,32 @@ export function BookingForm({ onClose }: Props) {
       setServices(data || []);
     } catch (error) {
       console.error('Ошибка загрузки услуг:', error);
+    }
+  }
+
+  async function loadBookedSlots() {
+    if (!selectedMasterId || !bookingDate) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('booking_time')
+        .eq('master_id', selectedMasterId)
+        .eq('booking_date', bookingDate)
+        .in('status', ['active', 'pending']);
+
+      if (error) throw error;
+
+      // Создаем Set из занятых временных слотов (формат "HH:MM")
+      const slots = new Set<string>();
+      (data || []).forEach(booking => {
+        const time = booking.booking_time.substring(0, 5); // "HH:MM:SS" -> "HH:MM"
+        slots.add(time);
+      });
+
+      setBookedSlots(slots);
+    } catch (error) {
+      console.error('Ошибка загрузки занятых слотов:', error);
     }
   }
 
@@ -98,6 +126,29 @@ export function BookingForm({ onClose }: Props) {
     setAvailableHours(hours);
   }
 
+  // Проверяем, занят ли временной слот
+  function isTimeSlotBooked(hour: string, minute: string): boolean {
+    const timeSlot = `${hour}:${minute}`;
+    return bookedSlots.has(timeSlot);
+  }
+
+  // Получаем доступные минуты для выбранного часа
+  function getAvailableMinutes(): Array<{value: string, label: string, disabled: boolean}> {
+    const minutes = [
+      { value: '00', label: '00 мин' },
+      { value: '15', label: '15 мин' },
+      { value: '30', label: '30 мин' },
+      { value: '45', label: '45 мин' },
+    ];
+
+    if (!bookingHour) return minutes.map(m => ({ ...m, disabled: false }));
+
+    return minutes.map(m => ({
+      ...m,
+      disabled: isTimeSlotBooked(bookingHour, m.value)
+    }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -106,9 +157,15 @@ export function BookingForm({ onClose }: Props) {
       return;
     }
 
-    setSaving(true);
-
     const bookingTime = `${bookingHour}:${bookingMinute}`;
+
+    // Проверяем, не занято ли время
+    if (isTimeSlotBooked(bookingHour, bookingMinute)) {
+      alert('Это время уже занято. Выберите другое время.');
+      return;
+    }
+
+    setSaving(true);
 
     try {
       // Получаем информацию об услуге для цены
@@ -348,7 +405,11 @@ export function BookingForm({ onClose }: Props) {
               <select
                 id="booking-hour"
                 value={bookingHour}
-                onChange={(e) => setBookingHour(e.target.value)}
+                onChange={(e) => {
+                  setBookingHour(e.target.value);
+                  // Сбрасываем минуты при смене часа
+                  setBookingMinute('00');
+                }}
                 required
                 disabled={!selectedMasterId || !bookingDate}
                 style={{
@@ -362,17 +423,24 @@ export function BookingForm({ onClose }: Props) {
                 }}
               >
                 <option value="">Час</option>
-                {availableHours.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {hour}
-                  </option>
-                ))}
+                {availableHours.map((hour) => {
+                  // Проверяем, есть ли хотя бы один свободный слот в этом часу
+                  const hasAvailableSlot = ['00', '15', '30', '45'].some(
+                    minute => !isTimeSlotBooked(hour, minute)
+                  );
+                  return (
+                    <option key={hour} value={hour} disabled={!hasAvailableSlot}>
+                      {hour}:00 {!hasAvailableSlot ? '(занято)' : ''}
+                    </option>
+                  );
+                })}
               </select>
               <select
                 id="booking-minute"
                 value={bookingMinute}
                 onChange={(e) => setBookingMinute(e.target.value)}
                 required
+                disabled={!bookingHour}
                 style={{
                   flex: 1,
                   padding: '12px',
@@ -383,10 +451,11 @@ export function BookingForm({ onClose }: Props) {
                   color: 'var(--tgui--text_color)',
                 }}
               >
-                <option value="00">00 мин</option>
-                <option value="15">15 мин</option>
-                <option value="30">30 мин</option>
-                <option value="45">45 мин</option>
+                {getAvailableMinutes().map((minute) => (
+                  <option key={minute.value} value={minute.value} disabled={minute.disabled}>
+                    {minute.label} {minute.disabled ? '(занято)' : ''}
+                  </option>
+                ))}
               </select>
             </div>
             {!selectedMasterId && (
@@ -402,6 +471,11 @@ export function BookingForm({ onClose }: Props) {
             {selectedMasterId && bookingDate && availableHours.length === 0 && (
               <p style={{ fontSize: '12px', color: '#F44336', marginTop: '8px' }}>
                 Мастер не работает в этот день
+              </p>
+            )}
+            {bookingHour && bookingMinute && isTimeSlotBooked(bookingHour, bookingMinute) && (
+              <p style={{ fontSize: '12px', color: '#F44336', marginTop: '8px' }}>
+                ⚠️ Это время уже занято
               </p>
             )}
           </div>
