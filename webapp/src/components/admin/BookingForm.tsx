@@ -15,14 +15,23 @@ export function BookingForm({ onClose }: Props) {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [bookingDate, setBookingDate] = useState('');
-  const [bookingTime, setBookingTime] = useState('');
+  const [bookingHour, setBookingHour] = useState('');
+  const [bookingMinute, setBookingMinute] = useState('00');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [availableHours, setAvailableHours] = useState<string[]>([]);
 
   useEffect(() => {
     loadMasters();
     loadServices();
   }, []);
+
+  // Обновляем доступные часы при выборе мастера и даты
+  useEffect(() => {
+    if (selectedMasterId && bookingDate) {
+      updateAvailableHours();
+    }
+  }, [selectedMasterId, bookingDate]);
 
   async function loadMasters() {
     try {
@@ -54,15 +63,52 @@ export function BookingForm({ onClose }: Props) {
     }
   }
 
+  function updateAvailableHours() {
+    const master = masters.find(m => m.id === selectedMasterId);
+    if (!master || !master.work_schedule || !bookingDate) {
+      setAvailableHours([]);
+      return;
+    }
+
+    // Определяем день недели (0 = воскресенье, 1 = понедельник, ...)
+    const date = new Date(bookingDate);
+    const dayOfWeek = date.getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const dayName = dayNames[dayOfWeek];
+
+    // Получаем график работы на этот день
+    const schedule = master.work_schedule[dayName];
+    if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
+      setAvailableHours([]);
+      return;
+    }
+
+    // Парсим время работы (формат "10:00-18:00")
+    const timeRange = schedule[0];
+    const [startTime, endTime] = timeRange.split('-');
+    const [startHour] = startTime.split(':').map(Number);
+    const [endHour] = endTime.split(':').map(Number);
+
+    // Генерируем список часов
+    const hours: string[] = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+      hours.push(hour.toString().padStart(2, '0'));
+    }
+
+    setAvailableHours(hours);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!selectedMasterId || !selectedServiceId || !clientName || !bookingDate || !bookingTime) {
+    if (!selectedMasterId || !selectedServiceId || !clientName || !bookingDate || !bookingHour) {
       alert('Заполните все обязательные поля');
       return;
     }
 
     setSaving(true);
+
+    const bookingTime = `${bookingHour}:${bookingMinute}`;
 
     try {
       // Получаем информацию об услуге для цены
@@ -298,13 +344,66 @@ export function BookingForm({ onClose }: Props) {
             >
               Время записи *
             </label>
-            <Input
-              id="booking-time"
-              type="time"
-              value={bookingTime}
-              onChange={(e) => setBookingTime(e.target.value)}
-              required
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <select
+                id="booking-hour"
+                value={bookingHour}
+                onChange={(e) => setBookingHour(e.target.value)}
+                required
+                disabled={!selectedMasterId || !bookingDate}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  fontSize: '16px',
+                  border: '1px solid var(--tgui--divider_color)',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--tgui--secondary_bg_color)',
+                  color: 'var(--tgui--text_color)',
+                }}
+              >
+                <option value="">Час</option>
+                {availableHours.map((hour) => (
+                  <option key={hour} value={hour}>
+                    {hour}
+                  </option>
+                ))}
+              </select>
+              <select
+                id="booking-minute"
+                value={bookingMinute}
+                onChange={(e) => setBookingMinute(e.target.value)}
+                required
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  fontSize: '16px',
+                  border: '1px solid var(--tgui--divider_color)',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--tgui--secondary_bg_color)',
+                  color: 'var(--tgui--text_color)',
+                }}
+              >
+                <option value="00">00 мин</option>
+                <option value="15">15 мин</option>
+                <option value="30">30 мин</option>
+                <option value="45">45 мин</option>
+              </select>
+            </div>
+            {!selectedMasterId && (
+              <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '8px' }}>
+                Сначала выберите мастера
+              </p>
+            )}
+            {selectedMasterId && !bookingDate && (
+              <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '8px' }}>
+                Сначала выберите дату
+              </p>
+            )}
+            {selectedMasterId && bookingDate && availableHours.length === 0 && (
+              <p style={{ fontSize: '12px', color: '#F44336', marginTop: '8px' }}>
+                Мастер не работает в этот день
+              </p>
+            )}
           </div>
 
           <div>
