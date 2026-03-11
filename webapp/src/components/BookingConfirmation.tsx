@@ -307,7 +307,23 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
         <div>
           <Text style={{ fontSize: '14px', opacity: 0.6 }}>Стоимость</Text>
-          <Title level="2">{service.price} ₽</Title>
+          {promoDiscount > 0 ? (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                <Text style={{ fontSize: '18px', textDecoration: 'line-through', opacity: 0.5 }}>
+                  {service.price} ₽
+                </Text>
+                <Title level="2" style={{ margin: 0, color: 'var(--tgui--link_color)' }}>
+                  {service.price - Math.round((service.price * promoDiscount) / 100)} ₽
+                </Title>
+              </div>
+              <Text style={{ fontSize: '13px', opacity: 0.7, marginTop: '4px', color: 'var(--tgui--link_color)' }}>
+                Скидка: {Math.round((service.price * promoDiscount) / 100)} ₽ ({promoDiscount}%)
+              </Text>
+            </div>
+          ) : (
+            <Title level="2">{service.price} ₽</Title>
+          )}
           <Text style={{ fontSize: '13px', opacity: 0.7, marginTop: '4px' }}>
             💳 Оплата в салоне
           </Text>
@@ -407,56 +423,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           )}
         </Card>
       </div>
-
-      {promoDiscount > 0 && service && (
-        <Card style={{ padding: '16px', marginBottom: '16px' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '8px',
-            }}
-          >
-            <Text style={{ fontSize: '14px' }}>Исходная цена:</Text>
-            <Text style={{ fontSize: '14px', textDecoration: 'line-through', opacity: 0.6 }}>
-              {service.price} ₽
-            </Text>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '8px',
-            }}
-          >
-            <Text style={{ fontSize: '14px' }}>Скидка ({promoDiscount}%):</Text>
-            <Text style={{ fontSize: '14px', color: 'var(--tgui--link_color)' }}>
-              -{Math.round((service.price * promoDiscount) / 100)} ₽
-            </Text>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingTop: '8px',
-              borderTop: '1px solid var(--tgui--divider_color)',
-            }}
-          >
-            <div>
-              <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>Итого:</Text>
-              <Text style={{ fontSize: '12px', opacity: 0.7, marginTop: '2px' }}>
-                💳 Оплата в салоне
-              </Text>
-            </div>
-            <Title level="2" style={{ margin: 0 }}>
-              {service.price - Math.round((service.price * promoDiscount) / 100)} ₽
-            </Title>
-          </div>
-        </Card>
-      )}
 
       <Button
         size="l"
