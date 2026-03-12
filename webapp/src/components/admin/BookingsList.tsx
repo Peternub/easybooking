@@ -97,13 +97,6 @@ export function BookingsList({ onAddBooking }: Props) {
         + Добавить запись вручную
       </Button>
 
-      {/* Информационная подсказка */}
-      <Card style={{ padding: '12px', marginBottom: '16px', backgroundColor: 'var(--tgui--secondary_bg_color)' }}>
-        <Text style={{ fontSize: '13px', opacity: 0.8, textAlign: 'center' }}>
-          ℹ️ Для отмены нескольких записей подряд обновляйте страницу после каждой отмены
-        </Text>
-      </Card>
-
       <Section header="Записи">
         {bookings.length === 0 ? (
           <Text style={{ opacity: 0.6, textAlign: 'center', padding: '20px' }}>Нет записей</Text>
