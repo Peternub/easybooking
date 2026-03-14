@@ -18,6 +18,7 @@ export function setupHandlers(bot: Bot) {
   });
   bot.callbackQuery(/^cancel_booking:(.+)$/, handleCancelBooking);
   bot.callbackQuery(/^confirm_cancel:(.+)$/, handleCancelBooking);
+  bot.callbackQuery('cancel_action', handleCancelBooking);
 
   // Web App данные
   bot.on('message:web_app_data', handleWebApp);
