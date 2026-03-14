@@ -170,7 +170,14 @@ export function BookingsList({ onAddBooking }: Props) {
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-              <Text style={{ fontSize: '19px', fontWeight: 700, lineHeight: 1.2 }}>
+              <Text
+                style={{
+                  fontSize: '19px',
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  color: 'var(--app-text)',
+                }}
+              >
                 {booking.client_name}
               </Text>
 
@@ -218,10 +225,14 @@ export function BookingsList({ onAddBooking }: Props) {
                 backgroundColor: 'var(--app-accent-soft)',
               }}
             >
-              <Text style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>
+              <Text
+                style={{ fontSize: '12px', color: 'var(--app-text-soft)', marginBottom: '4px' }}
+              >
                 Заметка администратора
               </Text>
-              <Text style={{ fontSize: '14px', lineHeight: 1.45 }}>{booking.admin_notes}</Text>
+              <Text style={{ fontSize: '14px', lineHeight: 1.45, color: 'var(--app-text)' }}>
+                {booking.admin_notes}
+              </Text>
             </div>
           )}
         </div>
@@ -242,7 +253,7 @@ export function BookingsList({ onAddBooking }: Props) {
                 gap: '10px',
               }}
             >
-              <Text style={{ fontSize: '20px', fontWeight: 700 }}>
+              <Text style={{ fontSize: '20px', fontWeight: 700, color: 'var(--app-text)' }}>
                 {format(currentMonth, 'LLLL yyyy', { locale: ru })}
               </Text>
 
@@ -278,7 +289,7 @@ export function BookingsList({ onAddBooking }: Props) {
                     padding: '8px 4px',
                     textAlign: 'center',
                     fontSize: '12px',
-                    opacity: 0.58,
+                    color: 'var(--app-text-soft)',
                     textTransform: 'uppercase',
                   }}
                 >
@@ -306,8 +317,8 @@ export function BookingsList({ onAddBooking }: Props) {
                         : '1px solid var(--app-border)',
                       background: isSelected ? 'var(--app-accent-soft)' : 'var(--app-surface)',
                       textAlign: 'left',
-                      color: 'inherit',
-                      opacity: inCurrentMonth ? 1 : 0.45,
+                      color: 'var(--app-text)',
+                      opacity: inCurrentMonth ? 1 : 0.5,
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '6px',
@@ -324,7 +335,7 @@ export function BookingsList({ onAddBooking }: Props) {
                         style={{
                           fontSize: '14px',
                           fontWeight: isToday(day) || isSelected ? 700 : 500,
-                          color: isToday(day) ? 'var(--app-accent-strong)' : 'inherit',
+                          color: isToday(day) ? 'var(--app-accent-strong)' : 'var(--app-text-soft)',
                         }}
                       >
                         {format(day, 'd')}
@@ -359,6 +370,7 @@ export function BookingsList({ onAddBooking }: Props) {
                             backgroundColor: booking.status === 'active' ? '#e8d8c7' : '#efdbc4',
                             fontSize: '11px',
                             lineHeight: 1.25,
+                            color: 'var(--app-text)',
                             overflow: 'hidden',
                           }}
                         >
@@ -378,7 +390,7 @@ export function BookingsList({ onAddBooking }: Props) {
                       ))}
 
                       {dayBookings.length > 3 && (
-                        <div style={{ fontSize: '11px', opacity: 0.65 }}>
+                        <div style={{ fontSize: '11px', color: 'var(--app-text-soft)' }}>
                           + ещё {dayBookings.length - 3}
                         </div>
                       )}
@@ -391,7 +403,7 @@ export function BookingsList({ onAddBooking }: Props) {
         </AdminCard>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <Text style={{ fontSize: '18px', fontWeight: 700 }}>
+          <Text style={{ fontSize: '18px', fontWeight: 700, color: 'var(--app-text)' }}>
             {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
           </Text>
 
@@ -411,10 +423,10 @@ export function BookingsList({ onAddBooking }: Props) {
                     }}
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Text style={{ fontSize: '18px', fontWeight: 700 }}>
+                      <Text style={{ fontSize: '18px', fontWeight: 700, color: 'var(--app-text)' }}>
                         {booking.booking_time.substring(0, 5)} · {booking.client_name}
                       </Text>
-                      <Text style={{ fontSize: '14px', opacity: 0.75 }}>
+                      <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
                         {booking.master_name} · {booking.service_name}
                       </Text>
                     </div>

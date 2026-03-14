@@ -95,7 +95,9 @@ export function ClientsView() {
                 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                  <Text style={{ fontSize: '18px', fontWeight: 700 }}>{client.name}</Text>
+                  <Text style={{ fontSize: '18px', fontWeight: 700, color: 'var(--app-text)' }}>
+                    {client.name}
+                  </Text>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {client.username && <AdminChip label={`@${client.username}`} tone="blue" />}
                     {client.phone && <AdminChip label={client.phone} tone="neutral" />}
@@ -114,10 +116,17 @@ export function ClientsView() {
                     textAlign: 'center',
                   }}
                 >
-                  <Text style={{ display: 'block', fontSize: '22px', fontWeight: 700 }}>
+                  <Text
+                    style={{
+                      display: 'block',
+                      fontSize: '22px',
+                      fontWeight: 700,
+                      color: 'var(--app-text)',
+                    }}
+                  >
                     {client.total_bookings}
                   </Text>
-                  <Text style={{ fontSize: '12px', opacity: 0.6 }}>записей</Text>
+                  <Text style={{ fontSize: '12px', color: 'var(--app-text-soft)' }}>записей</Text>
                 </div>
               </div>
 
@@ -129,7 +138,9 @@ export function ClientsView() {
                     backgroundColor: 'var(--app-surface-muted)',
                   }}
                 >
-                  <Text style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>
+                  <Text
+                    style={{ fontSize: '12px', color: 'var(--app-text-soft)', marginBottom: '4px' }}
+                  >
                     Заметки
                   </Text>
                   <Text style={{ fontSize: '14px', lineHeight: 1.45 }}>{client.notes}</Text>

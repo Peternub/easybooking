@@ -55,7 +55,9 @@ export function MastersList() {
   }
 
   async function handleDelete(masterId: string) {
-    if (!confirm('Удалить мастера? Если будущие записи есть, удаление будет заблокировано.')) {
+    if (
+      !confirm('Удалить мастера? Если у него есть будущие записи, удаление будет заблокировано.')
+    ) {
       return;
     }
 
@@ -224,7 +226,14 @@ export function MastersList() {
                   <div
                     style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}
                   >
-                    <Text style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2 }}>
+                    <Text
+                      style={{
+                        fontSize: '20px',
+                        fontWeight: 700,
+                        lineHeight: 1.2,
+                        color: 'var(--app-text)',
+                      }}
+                    >
                       {master.name}
                     </Text>
                     <AdminChip
@@ -234,7 +243,9 @@ export function MastersList() {
                   </div>
 
                   {master.specialization && (
-                    <Text style={{ fontSize: '14px', opacity: 0.76 }}>{master.specialization}</Text>
+                    <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
+                      {master.specialization}
+                    </Text>
                   )}
 
                   <div
@@ -252,7 +263,7 @@ export function MastersList() {
                       <AdminDetailRow label="О мастере" value={master.description} />
                     )}
                     {!master.phone && !master.description && (
-                      <Text style={{ fontSize: '14px', opacity: 0.6 }}>
+                      <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
                         Контакт и описание пока не заполнены.
                       </Text>
                     )}

@@ -175,7 +175,14 @@ export function ServicesList() {
           <AdminCard key={service.id}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <Text style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2 }}>
+                <Text
+                  style={{
+                    fontSize: '20px',
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                    color: 'var(--app-text)',
+                  }}
+                >
                   {service.name}
                 </Text>
                 <AdminChip
@@ -186,7 +193,7 @@ export function ServicesList() {
               </div>
 
               {service.description && (
-                <Text style={{ fontSize: '14px', opacity: 0.74, lineHeight: 1.5 }}>
+                <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)', lineHeight: 1.5 }}>
                   {service.description}
                 </Text>
               )}
@@ -204,7 +211,7 @@ export function ServicesList() {
                 <AdminDetailRow label="Цена" value={`${service.price} ₽`} />
                 <AdminDetailRow label="Длительность" value={`${service.duration_minutes} мин`} />
                 {!service.description && !service.category && (
-                  <Text style={{ fontSize: '14px', opacity: 0.6 }}>
+                  <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
                     Описание и категория пока не заполнены.
                   </Text>
                 )}

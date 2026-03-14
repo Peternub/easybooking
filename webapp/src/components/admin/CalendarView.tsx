@@ -187,7 +187,9 @@ export function CalendarView() {
       ) : (
         bookingsByMaster.map(({ master, bookings: masterBookings }) => (
           <div key={master.id} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <Text style={{ fontSize: '18px', fontWeight: 700 }}>{master.name}</Text>
+            <Text style={{ fontSize: '18px', fontWeight: 700, color: 'var(--app-text)' }}>
+              {master.name}
+            </Text>
 
             {masterBookings.length === 0 ? (
               <AdminEmptyState text="На выбранный период записей нет." />
@@ -205,10 +207,12 @@ export function CalendarView() {
                       }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <Text style={{ fontSize: '18px', fontWeight: 700 }}>
+                        <Text
+                          style={{ fontSize: '18px', fontWeight: 700, color: 'var(--app-text)' }}
+                        >
                           {booking.booking_time.substring(0, 5)} · {booking.client_name}
                         </Text>
-                        <Text style={{ fontSize: '14px', opacity: 0.75 }}>
+                        <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
                           {booking.service_name}
                         </Text>
                       </div>
