@@ -1,7 +1,7 @@
-import { Button, Input, Text, Title } from '@telegram-apps/telegram-ui';
+import { Button, Text, Title } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { pageShellStyle, softPanelStyle, titleStyle } from '../components/AppTheme';
+import { inputStyle, pageShellStyle, softPanelStyle, titleStyle } from '../components/AppTheme';
 
 export function ReviewPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -15,28 +15,51 @@ export function ReviewPage() {
       return;
     }
 
+    if (!bookingId) {
+      alert('Не удалось определить запись для отзыва');
+      return;
+    }
+
+    const webApp = window.Telegram?.WebApp;
+
+    if (!webApp) {
+      alert('Telegram Web App недоступен');
+      return;
+    }
+
     setIsSubmitting(true);
 
-    const data = {
-      type: 'review',
-      bookingId,
-      rating,
-      comment,
-    };
+    try {
+      webApp.sendData(
+        JSON.stringify({
+          type: 'review',
+          bookingId,
+          rating,
+          comment,
+        }),
+      );
 
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.sendData(JSON.stringify(data));
+      window.setTimeout(() => {
+        webApp.close();
+      }, 250);
+    } catch (error) {
+      console.error('Ошибка отправки отзыва:', error);
+      alert('Не удалось отправить отзыв. Попробуйте еще раз.');
+      setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
-    if (window.Telegram?.WebApp) {
-      const webApp = window.Telegram.WebApp;
-      webApp.BackButton.show();
-      webApp.BackButton.onClick(() => {
-        webApp.close();
-      });
+    const webApp = window.Telegram?.WebApp;
+
+    if (!webApp) {
+      return;
     }
+
+    webApp.BackButton.show();
+    webApp.BackButton.onClick(() => {
+      webApp.close();
+    });
   }, []);
 
   return (
@@ -86,13 +109,47 @@ export function ReviewPage() {
         >
           Комментарий
         </Text>
-        <Input
-          header="Ваш отзыв"
-          placeholder="Расскажите о вашем опыте..."
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-        />
+
+        <label
+          style={{
+            display: 'block',
+            padding: '16px',
+            borderRadius: '22px',
+            backgroundColor: 'var(--app-card)',
+            border: '1px solid var(--app-border)',
+            boxShadow: 'var(--app-shadow)',
+          }}
+        >
+          <span
+            style={{
+              display: 'block',
+              marginBottom: '10px',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: 'var(--app-text-soft)',
+            }}
+          >
+            Ваш отзыв
+          </span>
+
+          <textarea
+            placeholder="Расскажите о вашем опыте..."
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            rows={4}
+            style={{
+              ...inputStyle,
+              minHeight: '116px',
+              resize: 'vertical',
+              lineHeight: 1.5,
+            }}
+          />
+        </label>
       </div>
+
+      <Text style={{ color: 'var(--app-text-soft)', fontSize: '14px' }}>
+        После отправки окно автоматически закроется.
+      </Text>
 
       <Button
         size="l"
@@ -103,6 +160,7 @@ export function ReviewPage() {
           backgroundColor: 'var(--app-accent)',
           color: '#fffaf3',
           borderRadius: '18px',
+          fontWeight: 700,
         }}
       >
         {isSubmitting ? 'Отправка...' : 'Отправить отзыв'}
