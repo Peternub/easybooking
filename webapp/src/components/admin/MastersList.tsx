@@ -12,6 +12,15 @@ interface RelatedBooking {
   admin_notes: string | null;
 }
 
+function isUpcomingBooking(booking: RelatedBooking, now: Date) {
+  if (!['active', 'pending'].includes(booking.status)) {
+    return false;
+  }
+
+  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+  return bookingDateTime.getTime() > now.getTime();
+}
+
 export function MastersList() {
   const [masters, setMasters] = useState<Master[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,8 +52,6 @@ export function MastersList() {
     try {
       const master = masters.find((item) => item.id === masterId);
       const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const currentTime = now.toTimeString().slice(0, 8);
 
       const { data: relatedBookings, error: bookingsError } = await supabase
         .from('bookings')
@@ -53,21 +60,9 @@ export function MastersList() {
 
       if (bookingsError) throw bookingsError;
 
-      const futureBookings = ((relatedBookings || []) as RelatedBooking[]).filter((booking) => {
-        if (!['active', 'pending'].includes(booking.status)) {
-          return false;
-        }
-
-        if (booking.booking_date > today) {
-          return true;
-        }
-
-        if (booking.booking_date === today && booking.booking_time > currentTime) {
-          return true;
-        }
-
-        return false;
-      });
+      const futureBookings = ((relatedBookings || []) as RelatedBooking[]).filter((booking) =>
+        isUpcomingBooking(booking, now),
+      );
 
       if (futureBookings.length > 0) {
         alert('Нельзя удалить мастера, пока у него есть будущие записи.');
