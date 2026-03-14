@@ -1,4 +1,4 @@
-﻿import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
+import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Service } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
@@ -36,8 +36,8 @@ export function ServicesList() {
 
       setServices(data || []);
     } catch (error) {
-      console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё СѓСЃР»СѓРі:', error);
-      alert('РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ СѓСЃР»СѓРіРё');
+      console.error('Ошибка загрузки услуг:', error);
+      alert('Не удалось загрузить услуги');
     } finally {
       setLoading(false);
     }
@@ -54,23 +54,17 @@ export function ServicesList() {
         throw error;
       }
 
-      alert(
-        service.is_active
-          ? 'РЈСЃР»СѓРіР° РґРµР°РєС‚РёРІРёСЂРѕРІР°РЅР°'
-          : 'РЈСЃР»СѓРіР° Р°РєС‚РёРІРёСЂРѕРІР°РЅР°',
-      );
+      alert(service.is_active ? 'Услуга деактивирована' : 'Услуга активирована');
       loadServices();
     } catch (error) {
-      console.error('РћС€РёР±РєР° РёР·РјРµРЅРµРЅРёСЏ СЃС‚Р°С‚СѓСЃР° СѓСЃР»СѓРіРё:', error);
-      alert('РќРµ СѓРґР°Р»РѕСЃСЊ РёР·РјРµРЅРёС‚СЊ СЃС‚Р°С‚СѓСЃ СѓСЃР»СѓРіРё');
+      console.error('Ошибка изменения статуса услуги:', error);
+      alert('Не удалось изменить статус услуги');
     }
   }
 
   async function handleDelete(serviceId: string) {
     if (
-      !confirm(
-        'РЈРґР°Р»РёС‚СЊ СЌС‚Сѓ СѓСЃР»СѓРіСѓ? РСЃС‚РѕСЂРёСЏ Р·Р°РїРёСЃРµР№ СЃРѕС…СЂР°РЅРёС‚СЃСЏ, РЅРѕ СѓСЃР»СѓРіР° РёСЃС‡РµР·РЅРµС‚ РёР· РєР°С‚Р°Р»РѕРіР°.',
-      )
+      !confirm('Удалить эту услугу? История записей сохранится, но услуга исчезнет из каталога.')
     ) {
       return;
     }
@@ -78,8 +72,8 @@ export function ServicesList() {
     try {
       const service = services.find((item) => item.id === serviceId);
       const deletedServiceNote = service?.name
-        ? `[РЈРґР°Р»РµРЅР° СѓСЃР»СѓРіР°: ${service.name}]`
-        : '[РЈРґР°Р»РµРЅР° СѓСЃР»СѓРіР°]';
+        ? `[Удалена услуга: ${service.name}]`
+        : '[Удалена услуга]';
 
       const { data: relatedBookings, error: bookingsError } = await supabase
         .from('bookings')
@@ -132,11 +126,11 @@ export function ServicesList() {
         throw deleteError;
       }
 
-      alert('РЈСЃР»СѓРіР° СѓРґР°Р»РµРЅР°');
+      alert('Услуга удалена');
       loadServices();
     } catch (error) {
-      console.error('РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ СѓСЃР»СѓРіРё:', error);
-      alert('РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ СѓСЃР»СѓРіСѓ');
+      console.error('Ошибка удаления услуги:', error);
+      alert('Не удалось удалить услугу');
     }
   }
 
@@ -171,11 +165,11 @@ export function ServicesList() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <AdminPrimaryButton stretched onClick={handleAdd}>
-        + Р”РѕР±Р°РІРёС‚СЊ СѓСЃР»СѓРіСѓ
+        + Добавить услугу
       </AdminPrimaryButton>
 
       {services.length === 0 ? (
-        <AdminEmptyState text="РЈСЃР»СѓРіРё РµС‰С‘ РЅРµ РґРѕР±Р°РІР»РµРЅС‹." />
+        <AdminEmptyState text="Услуги еще не добавлены." />
       ) : (
         services.map((service) => (
           <AdminCard key={service.id}>
@@ -192,7 +186,7 @@ export function ServicesList() {
                   {service.name}
                 </Text>
                 <AdminChip
-                  label={service.is_active ? 'РђРєС‚РёРІРЅР°' : 'РЎРєСЂС‹С‚Р°'}
+                  label={service.is_active ? 'Активна' : 'Скрыта'}
                   tone={service.is_active ? 'green' : 'orange'}
                 />
                 {service.category && <AdminChip label={service.category} tone="blue" />}
@@ -214,17 +208,17 @@ export function ServicesList() {
                   backgroundColor: 'var(--app-surface-muted)',
                 }}
               >
-                <AdminDetailRow label="Р¦РµРЅР°" value={`${service.price} в‚Ѕ`} />
+                <AdminDetailRow label="Цена" value={`${service.price} ₽`} />
                 {!service.description && !service.category && (
                   <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
-                    РћРїРёСЃР°РЅРёРµ Рё РєР°С‚РµРіРѕСЂРёСЏ РїРѕРєР° РЅРµ Р·Р°РїРѕР»РЅРµРЅС‹.
+                    Описание и категория пока не заполнены.
                   </Text>
                 )}
               </div>
 
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <Button mode="outline" size="s" onClick={() => handleEdit(service)}>
-                  РР·РјРµРЅРёС‚СЊ
+                  Изменить
                 </Button>
                 <Button
                   mode="outline"
@@ -232,7 +226,7 @@ export function ServicesList() {
                   onClick={() => handleToggleActive(service)}
                   style={{ color: 'var(--app-accent-strong)' }}
                 >
-                  {service.is_active ? 'Р”РµР°РєС‚РёРІРёСЂРѕРІР°С‚СЊ' : 'РђРєС‚РёРІРёСЂРѕРІР°С‚СЊ'}
+                  {service.is_active ? 'Деактивировать' : 'Активировать'}
                 </Button>
                 <Button
                   mode="outline"
@@ -240,7 +234,7 @@ export function ServicesList() {
                   onClick={() => handleDelete(service.id)}
                   style={{ color: 'var(--app-danger)' }}
                 >
-                  РЈРґР°Р»РёС‚СЊ
+                  Удалить
                 </Button>
               </div>
             </div>
