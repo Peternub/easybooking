@@ -4,6 +4,14 @@ import type { Master } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
 import { MasterForm } from './MasterForm';
 
+interface RelatedBooking {
+  id: string;
+  booking_date: string;
+  booking_time: string;
+  status: string;
+  admin_notes: string | null;
+}
+
 export function MastersList() {
   const [masters, setMasters] = useState<Master[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,24 +36,76 @@ export function MastersList() {
   }
 
   async function handleDelete(masterId: string) {
-    if (!confirm('Вы уверены что хотите удалить этого мастера? Это действие нельзя отменить.')) {
+    if (!confirm('Вы уверены, что хотите удалить этого мастера? Это действие нельзя отменить.')) {
       return;
     }
 
     try {
-      const { error } = await supabase.from('masters').delete().eq('id', masterId);
+      const master = masters.find((item) => item.id === masterId);
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const currentTime = now.toTimeString().slice(0, 8);
 
-      if (error) {
-        // Проверяем если ошибка из-за существующих записей
-        if (error.code === '23503') {
-          alert(
-            'Невозможно удалить мастера, так как у него есть записи клиентов. Вместо удаления рекомендуется деактивировать мастера (сделать неактивным).',
-          );
-        } else {
-          throw error;
+      const { data: relatedBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id, booking_date, booking_time, status, admin_notes')
+        .eq('master_id', masterId);
+
+      if (bookingsError) throw bookingsError;
+
+      const futureBookings = ((relatedBookings || []) as RelatedBooking[]).filter((booking) => {
+        if (!['active', 'pending'].includes(booking.status)) {
+          return false;
         }
+
+        if (booking.booking_date > today) {
+          return true;
+        }
+
+        if (booking.booking_date === today && booking.booking_time > currentTime) {
+          return true;
+        }
+
+        return false;
+      });
+
+      if (futureBookings.length > 0) {
+        alert('Нельзя удалить мастера, пока у него есть будущие записи.');
         return;
       }
+
+      if ((relatedBookings || []).length > 0) {
+        const deletedMasterNote = master?.name
+          ? `[Удален мастер: ${master.name}]`
+          : '[Удален мастер]';
+
+        for (const booking of (relatedBookings || []) as RelatedBooking[]) {
+          const nextAdminNotes = booking.admin_notes
+            ? `${booking.admin_notes}\n${deletedMasterNote}`
+            : deletedMasterNote;
+
+          const { error: bookingUpdateError } = await supabase
+            .from('bookings')
+            .update({
+              master_id: null,
+              admin_notes: nextAdminNotes,
+            })
+            .eq('id', booking.id);
+
+          if (bookingUpdateError) throw bookingUpdateError;
+        }
+      }
+
+      const { error: reviewsError } = await supabase
+        .from('reviews')
+        .update({ master_id: null })
+        .eq('master_id', masterId);
+
+      if (reviewsError) throw reviewsError;
+
+      const { error: deleteError } = await supabase.from('masters').delete().eq('id', masterId);
+
+      if (deleteError) throw deleteError;
 
       alert('Мастер удален');
       loadMasters();
@@ -136,7 +196,7 @@ export function MastersList() {
                 )}
                 {master.phone && (
                   <Text style={{ fontSize: '14px', opacity: 0.6, marginTop: '4px' }}>
-                    📞 {master.phone}
+                    Телефон: {master.phone}
                   </Text>
                 )}
                 <div style={{ marginTop: '8px' }}>
@@ -146,7 +206,7 @@ export function MastersList() {
                       color: master.is_active ? '#4CAF50' : '#F44336',
                     }}
                   >
-                    {master.is_active ? '✓ Активен' : '✗ Неактивен'}
+                    {master.is_active ? 'Активен' : 'Неактивен'}
                   </Text>
                 </div>
               </div>
@@ -159,7 +219,7 @@ export function MastersList() {
                 onClick={() => handleEdit(master)}
                 style={{ flex: 1, minWidth: '120px' }}
               >
-                ✏️ Редактировать
+                Редактировать
               </Button>
               <Button
                 mode="outline"
@@ -171,7 +231,7 @@ export function MastersList() {
                   color: master.is_active ? '#FF9800' : '#4CAF50',
                 }}
               >
-                {master.is_active ? '⏸️ Деактивировать' : '▶️ Активировать'}
+                {master.is_active ? 'Деактивировать' : 'Активировать'}
               </Button>
               <Button
                 mode="outline"
@@ -179,7 +239,7 @@ export function MastersList() {
                 onClick={() => handleDelete(master.id)}
                 style={{ flex: 1, minWidth: '120px', color: '#F44336' }}
               >
-                🗑️ Удалить
+                Удалить
               </Button>
             </div>
           </Card>
