@@ -174,7 +174,13 @@ export function MastersList() {
   }
 
   if (showForm) {
-    return <MasterForm master={selectedMaster} onClose={handleFormClose} />;
+    return (
+      <MasterForm
+        key={selectedMaster?.id ?? 'new-master'}
+        master={selectedMaster}
+        onClose={handleFormClose}
+      />
+    );
   }
 
   return (

@@ -1,5 +1,5 @@
 import { Text } from '@telegram-apps/telegram-ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Master } from '../../../../shared/types';
 import { backButtonStyle, inputStyle } from '../../components/AppTheme';
 import { supabase } from '../../services/supabase';
@@ -30,6 +30,19 @@ export function MasterForm({ master, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'schedule' | 'services' | 'absences'>('info');
+
+  // Синхронизируем локальный state при переключении на другого мастера.
+  useEffect(() => {
+    setName(master?.name || '');
+    setDescription(master?.description || '');
+    setPhone(master?.phone || '');
+    setPhotoUrl(master?.photo_url || '');
+    setPhotoFile(null);
+    setIsActive(master?.is_active ?? true);
+    setSaving(false);
+    setUploading(false);
+    setActiveTab('info');
+  }, [master]);
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
