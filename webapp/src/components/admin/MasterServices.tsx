@@ -1,7 +1,8 @@
-import { Button, Card, Section, Spinner, Text } from '@telegram-apps/telegram-ui';
+import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Master, Service } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
+import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 
 interface Props {
   master: Master;
@@ -19,26 +20,21 @@ export function MasterServices({ master }: Props) {
 
   async function loadServices() {
     try {
-      // Загружаем все услуги
       const { data: services, error: servicesError } = await supabase
         .from('services')
         .select('*')
         .eq('is_active', true)
         .order('name');
-
       if (servicesError) throw servicesError;
 
-      // Загружаем услуги мастера
       const { data: masterServicesData, error: masterServicesError } = await supabase
         .from('master_services')
         .select('service_id, services(*)')
         .eq('master_id', master.id);
-
       if (masterServicesError) throw masterServicesError;
 
       setAllServices(services || []);
 
-      // Преобразуем данные - services может быть массивом или объектом
       const masterServicesList = (masterServicesData || [])
         .map((item: { services: Service | Service[] }) => {
           const serviceData = item.services;
@@ -48,7 +44,7 @@ export function MasterServices({ master }: Props) {
 
       setMasterServices(masterServicesList);
     } catch (error) {
-      console.error('Ошибка загрузки услуг:', error);
+      console.error('Ошибка загрузки услуг мастера:', error);
     } finally {
       setLoading(false);
     }
@@ -60,7 +56,6 @@ export function MasterServices({ master }: Props) {
         master_id: master.id,
         service_id: serviceId,
       });
-
       if (error) throw error;
 
       alert('Услуга добавлена');
@@ -72,9 +67,7 @@ export function MasterServices({ master }: Props) {
   }
 
   async function handleRemoveService(serviceId: string) {
-    if (!confirm('Удалить эту услугу у мастера?')) {
-      return;
-    }
+    if (!confirm('Удалить эту услугу у мастера?')) return;
 
     try {
       const { error } = await supabase
@@ -82,7 +75,6 @@ export function MasterServices({ master }: Props) {
         .delete()
         .eq('master_id', master.id)
         .eq('service_id', serviceId);
-
       if (error) throw error;
 
       alert('Услуга удалена');
@@ -101,68 +93,88 @@ export function MasterServices({ master }: Props) {
     );
   }
 
-  const masterServiceIds = new Set(masterServices.map((s) => s.id));
-  const availableServices = allServices.filter((s) => !masterServiceIds.has(s.id));
+  const masterServiceIds = new Set(masterServices.map((service) => service.id));
+  const availableServices = allServices.filter((service) => !masterServiceIds.has(service.id));
 
   return (
-    <div>
-      <Section header="Услуги мастера">
-        {masterServices.length === 0 ? (
-          <Text style={{ opacity: 0.6, textAlign: 'center', padding: '20px' }}>
-            У мастера нет услуг
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <AdminCard style={{ padding: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <Text style={{ fontSize: '32px', fontWeight: 700, color: 'var(--app-text)' }}>
+            Услуги мастера
           </Text>
-        ) : (
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}
-          >
-            {masterServices.map((service) => (
-              <Card key={service.id} style={{ padding: '12px' }}>
-                <div
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <div>
-                    <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>{service.name}</Text>
-                    <Text style={{ fontSize: '14px', opacity: 0.6 }}>
-                      {service.price} ₽ • {service.duration_minutes} мин
-                    </Text>
-                  </div>
-                  <Button
-                    mode="outline"
-                    size="s"
-                    onClick={() => handleRemoveService(service.id)}
-                    style={{ color: '#F44336' }}
-                  >
-                    Удалить
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </Section>
+          <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
+            Выберите услуги, которые оказывает мастер.
+          </Text>
+        </div>
+      </AdminCard>
+
+      {masterServices.length === 0 ? (
+        <AdminCard style={{ padding: '16px', textAlign: 'center' }}>
+          <Text style={{ color: 'var(--app-text-soft)' }}>У мастера пока нет услуг.</Text>
+        </AdminCard>
+      ) : (
+        masterServices.map((service) => (
+          <AdminCard key={service.id} style={{ padding: '14px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <Text style={{ fontSize: '17px', fontWeight: 700, color: 'var(--app-text)' }}>
+                  {service.name}
+                </Text>
+                <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
+                  {service.price} ₽
+                </Text>
+              </div>
+              <Button
+                mode="outline"
+                size="s"
+                onClick={() => handleRemoveService(service.id)}
+                style={{ color: 'var(--app-danger)' }}
+              >
+                Удалить
+              </Button>
+            </div>
+          </AdminCard>
+        ))
+      )}
 
       {availableServices.length > 0 && (
-        <Section header="Добавить услугу">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {availableServices.map((service) => (
-              <Card key={service.id} style={{ padding: '12px' }}>
-                <div
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <div>
-                    <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>{service.name}</Text>
-                    <Text style={{ fontSize: '14px', opacity: 0.6 }}>
-                      {service.price} ₽ • {service.duration_minutes} мин
-                    </Text>
-                  </div>
-                  <Button mode="outline" size="s" onClick={() => handleAddService(service.id)}>
-                    + Добавить
-                  </Button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <Text style={{ fontSize: '16px', fontWeight: 700, color: 'var(--app-text)' }}>
+            Добавить услугу
+          </Text>
+          {availableServices.map((service) => (
+            <AdminCard key={service.id} style={{ padding: '14px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <Text style={{ fontSize: '17px', fontWeight: 700, color: 'var(--app-text)' }}>
+                    {service.name}
+                  </Text>
+                  <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>
+                    {service.price} ₽
+                  </Text>
                 </div>
-              </Card>
-            ))}
-          </div>
-        </Section>
+                <AdminPrimaryButton onClick={() => handleAddService(service.id)}>
+                  + Добавить
+                </AdminPrimaryButton>
+              </div>
+            </AdminCard>
+          ))}
+        </div>
       )}
     </div>
   );
