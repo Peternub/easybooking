@@ -2,13 +2,7 @@ import { Input, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Client } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
-import {
-  AdminCard,
-  AdminChip,
-  AdminEmptyState,
-  AdminMetric,
-  AdminSectionTitle,
-} from './AdminTheme';
+import { AdminCard, AdminChip, AdminEmptyState } from './AdminTheme';
 
 interface ClientWithStats extends Client {
   total_bookings: number;
@@ -78,30 +72,12 @@ export function ClientsView() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <AdminSectionTitle
-          title="База клиентов"
-          subtitle="Поиск по имени, Telegram и телефону, плюс быстрая статистика по посещениям."
-        />
-
-        <Input
-          type="text"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Поиск по имени, Telegram или телефону"
-        />
-      </AdminCard>
-
-      <AdminCard>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <AdminMetric value={clients.length} label="Всего клиентов" />
-          <AdminMetric
-            value={clients.filter((client) => client.last_visit).length}
-            label="С визитами"
-          />
-          <AdminMetric value={filteredClients.length} label="Найдено" />
-        </div>
-      </AdminCard>
+      <Input
+        type="text"
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+        placeholder="Поиск по имени, Telegram или телефону"
+      />
 
       {filteredClients.length === 0 ? (
         <AdminEmptyState text="Клиенты не найдены." />

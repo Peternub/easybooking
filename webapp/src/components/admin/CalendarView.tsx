@@ -4,13 +4,7 @@ import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import type { BookingReadable, Master } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
-import {
-  AdminCard,
-  AdminChip,
-  AdminEmptyState,
-  AdminMetric,
-  AdminSectionTitle,
-} from './AdminTheme';
+import { AdminCard, AdminChip, AdminEmptyState } from './AdminTheme';
 
 function getStatusText(status: string) {
   switch (status) {
@@ -120,12 +114,7 @@ export function CalendarView() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <AdminSectionTitle
-          title="Календарь загрузки"
-          subtitle="Дневной и недельный режимы с быстрым переходом по датам."
-        />
-
+      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <Button
             mode={viewMode === 'day' ? 'filled' : 'outline'}
@@ -193,84 +182,60 @@ export function CalendarView() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
           <Spinner size="l" />
         </div>
+      ) : bookingsByMaster.length === 0 ? (
+        <AdminEmptyState text="Нет активных мастеров для отображения календаря." />
       ) : (
-        <>
-          <AdminCard>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <AdminMetric value={bookings.length} label="Всего записей" />
-              <AdminMetric
-                value={bookings.filter((booking) => booking.status === 'active').length}
-                label="Подтверждённых"
-              />
-              <AdminMetric
-                value={bookings.filter((booking) => booking.status === 'completed').length}
-                label="Завершённых"
-              />
-            </div>
-          </AdminCard>
+        bookingsByMaster.map(({ master, bookings: masterBookings }) => (
+          <div key={master.id} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <Text style={{ fontSize: '18px', fontWeight: 700 }}>{master.name}</Text>
 
-          {bookingsByMaster.length === 0 ? (
-            <AdminEmptyState text="Нет активных мастеров для отображения календаря." />
-          ) : (
-            bookingsByMaster.map(({ master, bookings: masterBookings }) => (
-              <div
-                key={master.id}
-                style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
-              >
-                <AdminSectionTitle
-                  title={master.name}
-                  subtitle={master.specialization || 'Без указанной специализации'}
-                />
-
-                {masterBookings.length === 0 ? (
-                  <AdminEmptyState text="На выбранный период записей нет." />
-                ) : (
-                  masterBookings.map((booking) => (
-                    <AdminCard key={booking.id} style={{ padding: '16px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            gap: '10px',
-                            alignItems: 'flex-start',
-                            flexWrap: 'wrap',
-                          }}
-                        >
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <Text style={{ fontSize: '18px', fontWeight: 700 }}>
-                              {booking.booking_time.substring(0, 5)} · {booking.client_name}
-                            </Text>
-                            <Text style={{ fontSize: '14px', opacity: 0.75 }}>
-                              {booking.service_name}
-                            </Text>
-                          </div>
-
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <AdminChip
-                              label={getStatusText(booking.status)}
-                              tone={getStatusTone(booking.status)}
-                            />
-                            <AdminChip label={`${booking.final_price} ₽`} tone="blue" />
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {booking.client_username && (
-                            <AdminChip label={`@${booking.client_username}`} tone="blue" />
-                          )}
-                          {booking.client_phone && (
-                            <AdminChip label={booking.client_phone} tone="neutral" />
-                          )}
-                        </div>
+            {masterBookings.length === 0 ? (
+              <AdminEmptyState text="На выбранный период записей нет." />
+            ) : (
+              masterBookings.map((booking) => (
+                <AdminCard key={booking.id} style={{ padding: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                        alignItems: 'flex-start',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <Text style={{ fontSize: '18px', fontWeight: 700 }}>
+                          {booking.booking_time.substring(0, 5)} · {booking.client_name}
+                        </Text>
+                        <Text style={{ fontSize: '14px', opacity: 0.75 }}>
+                          {booking.service_name}
+                        </Text>
                       </div>
-                    </AdminCard>
-                  ))
-                )}
-              </div>
-            ))
-          )}
-        </>
+
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <AdminChip
+                          label={getStatusText(booking.status)}
+                          tone={getStatusTone(booking.status)}
+                        />
+                        <AdminChip label={`${booking.final_price} ₽`} tone="blue" />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {booking.client_username && (
+                        <AdminChip label={`@${booking.client_username}`} tone="blue" />
+                      )}
+                      {booking.client_phone && (
+                        <AdminChip label={booking.client_phone} tone="neutral" />
+                      )}
+                    </div>
+                  </div>
+                </AdminCard>
+              ))
+            )}
+          </div>
+        ))
       )}
     </div>
   );

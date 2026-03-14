@@ -3,7 +3,6 @@ import { useState } from 'react';
 import {
   AdminCard,
   AdminDeniedState,
-  AdminHero,
   AdminLoadingState,
   adminPageStyle,
 } from '../components/admin/AdminTheme';
@@ -37,12 +36,6 @@ export function AdminDashboard() {
   return (
     <div style={{ paddingBottom: '88px' }}>
       <div style={adminPageStyle}>
-        <AdminHero
-          eyebrow="Дашборд"
-          title="Рабочая панель"
-          description="Календарь, база клиентов, отзывы и быстрые настройки в одном месте."
-        />
-
         <AdminCard style={{ padding: '14px' }}>
           <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
             {(Object.keys(tabLabels) as TabType[]).map((tab) => (

@@ -8,7 +8,6 @@ import {
   AdminDetailRow,
   AdminEmptyState,
   AdminPrimaryButton,
-  AdminSectionTitle,
 } from './AdminTheme';
 import { MasterForm } from './MasterForm';
 
@@ -181,25 +180,6 @@ export function MastersList() {
       <AdminPrimaryButton stretched onClick={handleAdd}>
         + Добавить мастера
       </AdminPrimaryButton>
-
-      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <AdminSectionTitle
-          title="Все мастера"
-          subtitle="Статусы, описание и контакты теперь собраны в одном ритме и легко читаются."
-        />
-
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <AdminChip label={`Всего: ${masters.length}`} tone="blue" />
-          <AdminChip
-            label={`Активных: ${masters.filter((master) => master.is_active).length}`}
-            tone="green"
-          />
-          <AdminChip
-            label={`Скрытых: ${masters.filter((master) => !master.is_active).length}`}
-            tone="orange"
-          />
-        </div>
-      </AdminCard>
 
       {masters.length === 0 ? (
         <AdminEmptyState text="Мастера ещё не добавлены." />

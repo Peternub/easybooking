@@ -1,6 +1,5 @@
 import {
   AdminDeniedState,
-  AdminHero,
   AdminLoadingState,
   adminPageStyle,
 } from '../components/admin/AdminTheme';
@@ -20,11 +19,6 @@ export function AdminServices() {
 
   return (
     <div style={adminPageStyle}>
-      <AdminHero
-        eyebrow="Каталог"
-        title="Управление услугами"
-        description="Меняйте цены, описание, категории и доступность услуг без перегруженного интерфейса."
-      />
       <ServicesList />
     </div>
   );

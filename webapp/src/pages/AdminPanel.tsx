@@ -1,7 +1,6 @@
 import {
   AdminActionLink,
   AdminDeniedState,
-  AdminHero,
   AdminLoadingState,
   adminPageStyle,
 } from '../components/admin/AdminTheme';
@@ -20,12 +19,6 @@ export function AdminPanel() {
 
   return (
     <div style={adminPageStyle}>
-      <AdminHero
-        eyebrow="EasyBooking"
-        title="Админ-панель"
-        description="Управляйте расписанием, клиентами, услугами и качеством сервиса из одного интерфейса."
-      />
-
       <AdminActionLink
         to="/admin-bookings"
         label="Записи"
@@ -44,7 +37,7 @@ export function AdminPanel() {
       <AdminActionLink
         to="/admin-dashboard"
         label="Дашборд"
-        description="Календарь, клиенты, отзывы и общая операционная картина."
+        description="Календарь, клиенты, отзывы и общая рабочая картина."
       />
       <AdminActionLink
         to="/admin-reviews"

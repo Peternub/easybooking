@@ -8,7 +8,6 @@ import {
   AdminDetailRow,
   AdminEmptyState,
   AdminPrimaryButton,
-  AdminSectionTitle,
 } from './AdminTheme';
 import { ServiceForm } from './ServiceForm';
 
@@ -168,25 +167,6 @@ export function ServicesList() {
       <AdminPrimaryButton stretched onClick={handleAdd}>
         + Добавить услугу
       </AdminPrimaryButton>
-
-      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <AdminSectionTitle
-          title="Каталог услуг"
-          subtitle="Цена, длительность и статус теперь видны без визуального шума."
-        />
-
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <AdminChip label={`Всего: ${services.length}`} tone="blue" />
-          <AdminChip
-            label={`Активных: ${services.filter((service) => service.is_active).length}`}
-            tone="green"
-          />
-          <AdminChip
-            label={`Скрытых: ${services.filter((service) => !service.is_active).length}`}
-            tone="orange"
-          />
-        </div>
-      </AdminCard>
 
       {services.length === 0 ? (
         <AdminEmptyState text="Услуги ещё не добавлены." />

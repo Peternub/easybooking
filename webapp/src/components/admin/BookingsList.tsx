@@ -10,7 +10,6 @@ import {
   AdminDetailRow,
   AdminEmptyState,
   AdminPrimaryButton,
-  AdminSectionTitle,
 } from './AdminTheme';
 
 interface Props {
@@ -125,25 +124,6 @@ export function BookingsList({ onAddBooking }: Props) {
       <AdminPrimaryButton stretched onClick={onAddBooking}>
         + Добавить запись вручную
       </AdminPrimaryButton>
-
-      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <AdminSectionTitle
-          title="Ближайшие записи"
-          subtitle="Карточки собраны так, чтобы админ сразу видел клиента, статус, услугу и время."
-        />
-
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <AdminChip label={`Всего: ${bookings.length}`} tone="blue" />
-          <AdminChip
-            label={`Подтверждённых: ${bookings.filter((booking) => booking.status === 'active').length}`}
-            tone="green"
-          />
-          <AdminChip
-            label={`Ожидают: ${bookings.filter((booking) => booking.status === 'pending').length}`}
-            tone="orange"
-          />
-        </div>
-      </AdminCard>
 
       {bookings.length === 0 ? (
         <AdminEmptyState text="Ближайших записей нет." />

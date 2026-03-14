@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   AdminDeniedState,
-  AdminHero,
   AdminLoadingState,
   adminPageStyle,
 } from '../components/admin/AdminTheme';
@@ -24,12 +23,6 @@ export function AdminBookings() {
 
   return (
     <div style={adminPageStyle}>
-      <AdminHero
-        eyebrow="Записи"
-        title="Управление бронированиями"
-        description="Показываем ближайшие визиты в понятных карточках и оставляем быстрый сценарий ручной записи."
-      />
-
       {showForm ? (
         <BookingForm
           onClose={() => {

@@ -1,6 +1,5 @@
 import {
   AdminDeniedState,
-  AdminHero,
   AdminLoadingState,
   adminPageStyle,
 } from '../components/admin/AdminTheme';
@@ -20,11 +19,6 @@ export function AdminMasters() {
 
   return (
     <div style={adminPageStyle}>
-      <AdminHero
-        eyebrow="Команда"
-        title="Управление мастерами"
-        description="Следите за активностью специалистов, редактируйте профили и контролируйте состав команды."
-      />
       <MastersList />
     </div>
   );
