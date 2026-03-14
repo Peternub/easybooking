@@ -1,7 +1,15 @@
-import { Button, Card, Section, Spinner, Text } from '@telegram-apps/telegram-ui';
+import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Service } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
+import {
+  AdminCard,
+  AdminChip,
+  AdminDetailRow,
+  AdminEmptyState,
+  AdminPrimaryButton,
+  AdminSectionTitle,
+} from './AdminTheme';
 import { ServiceForm } from './ServiceForm';
 
 interface RelatedBooking {
@@ -23,7 +31,10 @@ export function ServicesList() {
     try {
       const { data, error } = await supabase.from('services').select('*').order('name');
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       setServices(data || []);
     } catch (error) {
       console.error('Ошибка загрузки услуг:', error);
@@ -40,18 +51,22 @@ export function ServicesList() {
         .update({ is_active: !service.is_active })
         .eq('id', service.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       alert(service.is_active ? 'Услуга деактивирована' : 'Услуга активирована');
       loadServices();
     } catch (error) {
-      console.error('Ошибка изменения статуса:', error);
+      console.error('Ошибка изменения статуса услуги:', error);
       alert('Не удалось изменить статус услуги');
     }
   }
 
   async function handleDelete(serviceId: string) {
-    if (!confirm('Удалить эту услугу? Это действие нельзя отменить.')) {
+    if (
+      !confirm('Удалить эту услугу? История записей сохранится, но услуга исчезнет из каталога.')
+    ) {
       return;
     }
 
@@ -66,7 +81,9 @@ export function ServicesList() {
         .select('id, admin_notes')
         .eq('service_id', serviceId);
 
-      if (bookingsError) throw bookingsError;
+      if (bookingsError) {
+        throw bookingsError;
+      }
 
       for (const booking of (relatedBookings || []) as RelatedBooking[]) {
         const nextAdminNotes = booking.admin_notes
@@ -81,7 +98,9 @@ export function ServicesList() {
           })
           .eq('id', booking.id);
 
-        if (bookingUpdateError) throw bookingUpdateError;
+        if (bookingUpdateError) {
+          throw bookingUpdateError;
+        }
       }
 
       const { error: reviewsError } = await supabase
@@ -89,18 +108,24 @@ export function ServicesList() {
         .update({ service_id: null })
         .eq('service_id', serviceId);
 
-      if (reviewsError) throw reviewsError;
+      if (reviewsError) {
+        throw reviewsError;
+      }
 
       const { error: masterServicesError } = await supabase
         .from('master_services')
         .delete()
         .eq('service_id', serviceId);
 
-      if (masterServicesError) throw masterServicesError;
+      if (masterServicesError) {
+        throw masterServicesError;
+      }
 
       const { error: deleteError } = await supabase.from('services').delete().eq('id', serviceId);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        throw deleteError;
+      }
 
       alert('Услуга удалена');
       loadServices();
@@ -139,80 +164,97 @@ export function ServicesList() {
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: '16px' }}>
-        <Button mode="filled" size="l" stretched onClick={handleAdd}>
-          + Добавить услугу
-        </Button>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <AdminPrimaryButton stretched onClick={handleAdd}>
+        + Добавить услугу
+      </AdminPrimaryButton>
 
-      <Section header="Все услуги">
-        {services.length === 0 ? (
-          <Text style={{ opacity: 0.6, textAlign: 'center', padding: '20px' }}>Нет услуг</Text>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {services.map((service) => (
-              <Card key={service.id} style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'start',
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <Text style={{ fontSize: '18px', fontWeight: 'bold' }}>{service.name}</Text>
-                        {!service.is_active && (
-                          <Text style={{ fontSize: '12px', color: '#F44336', marginTop: '4px' }}>
-                            (Неактивна)
-                          </Text>
-                        )}
-                      </div>
-                    </div>
+      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <AdminSectionTitle
+          title="Каталог услуг"
+          subtitle="Цена, длительность и статус теперь видны без визуального шума."
+        />
 
-                    {service.description && (
-                      <Text style={{ fontSize: '14px', opacity: 0.7, marginTop: '8px' }}>
-                        {service.description}
-                      </Text>
-                    )}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <AdminChip label={`Всего: ${services.length}`} tone="blue" />
+          <AdminChip
+            label={`Активных: ${services.filter((service) => service.is_active).length}`}
+            tone="green"
+          />
+          <AdminChip
+            label={`Скрытых: ${services.filter((service) => !service.is_active).length}`}
+            tone="orange"
+          />
+        </div>
+      </AdminCard>
 
-                    <div style={{ marginTop: '8px', display: 'flex', gap: '16px' }}>
-                      <Text style={{ fontSize: '14px' }}>Цена: {service.price} ₽</Text>
-                      {service.category && (
-                        <Text style={{ fontSize: '14px' }}>Категория: {service.category}</Text>
-                      )}
-                    </div>
-                  </div>
+      {services.length === 0 ? (
+        <AdminEmptyState text="Услуги ещё не добавлены." />
+      ) : (
+        services.map((service) => (
+          <AdminCard key={service.id}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <Text style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2 }}>
+                  {service.name}
+                </Text>
+                <AdminChip
+                  label={service.is_active ? 'Активна' : 'Скрыта'}
+                  tone={service.is_active ? 'green' : 'orange'}
+                />
+                {service.category && <AdminChip label={service.category} tone="blue" />}
+              </div>
 
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <Button mode="outline" size="s" onClick={() => handleEdit(service)}>
-                      Изменить
-                    </Button>
-                    <Button
-                      mode="outline"
-                      size="s"
-                      onClick={() => handleToggleActive(service)}
-                      style={{ color: service.is_active ? '#FF9800' : '#4CAF50' }}
-                    >
-                      {service.is_active ? 'Деактивировать' : 'Активировать'}
-                    </Button>
-                    <Button
-                      mode="outline"
-                      size="s"
-                      onClick={() => handleDelete(service.id)}
-                      style={{ color: '#F44336' }}
-                    >
-                      Удалить
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </Section>
+              {service.description && (
+                <Text style={{ fontSize: '14px', opacity: 0.74, lineHeight: 1.5 }}>
+                  {service.description}
+                </Text>
+              )}
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  padding: '14px',
+                  borderRadius: '16px',
+                  backgroundColor: 'rgba(255,255,255,0.035)',
+                }}
+              >
+                <AdminDetailRow label="Цена" value={`${service.price} ₽`} />
+                <AdminDetailRow label="Длительность" value={`${service.duration_minutes} мин`} />
+                {!service.description && !service.category && (
+                  <Text style={{ fontSize: '14px', opacity: 0.6 }}>
+                    Описание и категория пока не заполнены.
+                  </Text>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <Button mode="outline" size="s" onClick={() => handleEdit(service)}>
+                  Изменить
+                </Button>
+                <Button
+                  mode="outline"
+                  size="s"
+                  onClick={() => handleToggleActive(service)}
+                  style={{ color: service.is_active ? '#ffcf70' : '#7ee787' }}
+                >
+                  {service.is_active ? 'Деактивировать' : 'Активировать'}
+                </Button>
+                <Button
+                  mode="outline"
+                  size="s"
+                  onClick={() => handleDelete(service.id)}
+                  style={{ color: '#ff9a92' }}
+                >
+                  Удалить
+                </Button>
+              </div>
+            </div>
+          </AdminCard>
+        ))
+      )}
     </div>
   );
 }

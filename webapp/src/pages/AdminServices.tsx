@@ -1,45 +1,30 @@
-import { Spinner, Title } from '@telegram-apps/telegram-ui';
-import { useEffect, useState } from 'react';
+import {
+  AdminDeniedState,
+  AdminHero,
+  AdminLoadingState,
+  adminPageStyle,
+} from '../components/admin/AdminTheme';
 import { ServicesList } from '../components/admin/ServicesList';
+import { useAdminAccess } from '../components/admin/useAdminAccess';
 
 export function AdminServices() {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Проверка прав администратора
-    const adminTelegramId = import.meta.env.VITE_ADMIN_TELEGRAM_ID;
-    const currentUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-
-    if (currentUserId && adminTelegramId && String(currentUserId) === String(adminTelegramId)) {
-      setIsAdmin(true);
-    }
-    setLoading(false);
-  }, []);
+  const { isAdmin, loading } = useAdminAccess();
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-        <Spinner size="l" />
-      </div>
-    );
+    return <AdminLoadingState />;
   }
 
   if (!isAdmin) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h2>Доступ запрещен</h2>
-        <p>У вас нет прав для просмотра админ панели</p>
-      </div>
-    );
+    return <AdminDeniedState />;
   }
 
   return (
-    <div style={{ padding: '16px', paddingBottom: '80px' }}>
-      <Title level="1" style={{ marginBottom: '16px' }}>
-        Управление услугами
-      </Title>
-
+    <div style={adminPageStyle}>
+      <AdminHero
+        eyebrow="Каталог"
+        title="Управление услугами"
+        description="Меняйте цены, описание, категории и доступность услуг без перегруженного интерфейса."
+      />
       <ServicesList />
     </div>
   );

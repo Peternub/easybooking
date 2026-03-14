@@ -1,9 +1,17 @@
-import { Button, Card, Section, Spinner, Text } from '@telegram-apps/telegram-ui';
+import { Spinner, Text } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import type { BookingReadable } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
+import {
+  AdminCard,
+  AdminChip,
+  AdminDetailRow,
+  AdminEmptyState,
+  AdminPrimaryButton,
+  AdminSectionTitle,
+} from './AdminTheme';
 
 interface Props {
   onAddBooking: () => void;
@@ -20,39 +28,25 @@ function getStatusText(status: string) {
     case 'cancelled':
       return 'Отменена';
     case 'no_show':
-      return 'Не пришел';
+      return 'Не пришёл';
     default:
       return status;
   }
 }
 
-function getStatusStyles(status: string) {
+function getStatusTone(status: string): 'green' | 'orange' | 'blue' | 'red' | 'neutral' {
   switch (status) {
     case 'pending':
-      return {
-        backgroundColor: 'rgba(255, 179, 71, 0.18)',
-        color: '#ffcf70',
-      };
+      return 'orange';
     case 'active':
-      return {
-        backgroundColor: 'rgba(76, 175, 80, 0.18)',
-        color: '#7ee787',
-      };
+      return 'green';
     case 'completed':
-      return {
-        backgroundColor: 'rgba(46, 166, 255, 0.18)',
-        color: '#73c4ff',
-      };
+      return 'blue';
     case 'cancelled':
-      return {
-        backgroundColor: 'rgba(244, 67, 54, 0.18)',
-        color: '#ff8a80',
-      };
+    case 'no_show':
+      return 'red';
     default:
-      return {
-        backgroundColor: 'rgba(142, 142, 147, 0.18)',
-        color: '#c7c7cc',
-      };
+      return 'neutral';
   }
 }
 
@@ -71,30 +65,17 @@ function getSourceText(source: string) {
   }
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '88px 1fr',
-        gap: '10px',
-        alignItems: 'start',
-      }}
-    >
-      <Text
-        style={{
-          fontSize: '12px',
-          lineHeight: 1.4,
-          opacity: 0.58,
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-        }}
-      >
-        {label}
-      </Text>
-      <Text style={{ fontSize: '15px', lineHeight: 1.45 }}>{value}</Text>
-    </div>
-  );
+function getSourceTone(source: string): 'blue' | 'orange' | 'green' | 'neutral' {
+  switch (source) {
+    case 'online':
+      return 'blue';
+    case 'manual':
+      return 'orange';
+    case 'phone':
+      return 'green';
+    default:
+      return 'neutral';
+  }
 }
 
 export function BookingsList({ onAddBooking }: Props) {
@@ -118,7 +99,10 @@ export function BookingsList({ onAddBooking }: Props) {
         .order('booking_time', { ascending: true })
         .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       setBookings(data || []);
     } catch (error) {
       console.error('Ошибка загрузки записей:', error);
@@ -137,138 +121,116 @@ export function BookingsList({ onAddBooking }: Props) {
   }
 
   return (
-    <div>
-      <Button size="l" stretched onClick={onAddBooking} style={{ marginBottom: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <AdminPrimaryButton stretched onClick={onAddBooking}>
         + Добавить запись вручную
-      </Button>
+      </AdminPrimaryButton>
 
-      <Section header="Записи">
-        {bookings.length === 0 ? (
-          <Text style={{ opacity: 0.6, textAlign: 'center', padding: '20px' }}>Нет записей</Text>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {bookings.map((booking) => {
-              const statusStyles = getStatusStyles(booking.status);
-              const dateLabel = `${format(new Date(booking.booking_date), 'd MMMM yyyy', {
-                locale: ru,
-              })} в ${booking.booking_time.substring(0, 5)}`;
+      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <AdminSectionTitle
+          title="Ближайшие записи"
+          subtitle="Карточки собраны так, чтобы админ сразу видел клиента, статус, услугу и время."
+        />
 
-              return (
-                <Card
-                  key={booking.id}
-                  style={{
-                    padding: '18px',
-                    borderRadius: '18px',
-                    background:
-                      'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'start',
-                        gap: '12px',
-                      }}
-                    >
-                      <div
-                        style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}
-                      >
-                        <Text style={{ fontSize: '19px', fontWeight: 'bold', lineHeight: 1.2 }}>
-                          {booking.client_name}
-                        </Text>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <AdminChip label={`Всего: ${bookings.length}`} tone="blue" />
+          <AdminChip
+            label={`Подтверждённых: ${bookings.filter((booking) => booking.status === 'active').length}`}
+            tone="green"
+          />
+          <AdminChip
+            label={`Ожидают: ${bookings.filter((booking) => booking.status === 'pending').length}`}
+            tone="orange"
+          />
+        </div>
+      </AdminCard>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {booking.client_username && (
-                            <Text style={{ fontSize: '14px', opacity: 0.78 }}>
-                              Telegram: @{booking.client_username}
-                            </Text>
-                          )}
-                          {booking.client_phone && (
-                            <Text style={{ fontSize: '14px', opacity: 0.78 }}>
-                              Телефон: {booking.client_phone}
-                            </Text>
-                          )}
-                        </div>
-                      </div>
+      {bookings.length === 0 ? (
+        <AdminEmptyState text="Ближайших записей нет." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {bookings.map((booking) => {
+            const dateLabel = `${format(new Date(booking.booking_date), 'd MMMM yyyy', {
+              locale: ru,
+            })} в ${booking.booking_time.substring(0, 5)}`;
 
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'flex-end',
-                          gap: '8px',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <div
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '999px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            lineHeight: 1,
-                            ...statusStyles,
-                          }}
-                        >
-                          {getStatusText(booking.status)}
-                        </div>
-                        <div
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '999px',
-                            fontSize: '12px',
-                            lineHeight: 1,
-                            backgroundColor: 'rgba(46, 166, 255, 0.12)',
-                            color: '#8ecbff',
-                          }}
-                        >
-                          {getSourceText(booking.source)}
-                        </div>
+            return (
+              <AdminCard key={booking.id}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                      <Text style={{ fontSize: '19px', fontWeight: 700, lineHeight: 1.2 }}>
+                        {booking.client_name}
+                      </Text>
+
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {booking.client_username && (
+                          <AdminChip label={`@${booking.client_username}`} tone="blue" />
+                        )}
+                        {booking.client_phone && (
+                          <AdminChip label={booking.client_phone} tone="neutral" />
+                        )}
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '10px',
-                        padding: '14px',
-                        borderRadius: '14px',
-                        backgroundColor: 'rgba(255,255,255,0.03)',
-                      }}
-                    >
-                      <DetailRow label="Мастер" value={booking.master_name} />
-                      <DetailRow label="Услуга" value={booking.service_name} />
-                      <DetailRow label="Дата" value={dateLabel} />
-                      <DetailRow label="Стоимость" value={`${booking.final_price} ₽`} />
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <AdminChip
+                        label={getStatusText(booking.status)}
+                        tone={getStatusTone(booking.status)}
+                      />
+                      <AdminChip
+                        label={getSourceText(booking.source)}
+                        tone={getSourceTone(booking.source)}
+                      />
                     </div>
-
-                    {booking.admin_notes && (
-                      <div
-                        style={{
-                          padding: '12px 14px',
-                          borderRadius: '14px',
-                          backgroundColor: 'rgba(255, 193, 7, 0.08)',
-                        }}
-                      >
-                        <Text style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>
-                          Заметка
-                        </Text>
-                        <Text style={{ fontSize: '14px', lineHeight: 1.45 }}>
-                          {booking.admin_notes}
-                        </Text>
-                      </div>
-                    )}
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </Section>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      padding: '14px',
+                      borderRadius: '16px',
+                      backgroundColor: 'rgba(255,255,255,0.035)',
+                    }}
+                  >
+                    <AdminDetailRow label="Мастер" value={booking.master_name} />
+                    <AdminDetailRow label="Услуга" value={booking.service_name} />
+                    <AdminDetailRow label="Дата" value={dateLabel} />
+                    <AdminDetailRow label="Стоимость" value={`${booking.final_price} ₽`} />
+                  </div>
+
+                  {booking.admin_notes && (
+                    <div
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '16px',
+                        backgroundColor: 'rgba(255, 193, 7, 0.08)',
+                      }}
+                    >
+                      <Text style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>
+                        Заметка администратора
+                      </Text>
+                      <Text style={{ fontSize: '14px', lineHeight: 1.45 }}>
+                        {booking.admin_notes}
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </AdminCard>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,15 @@
-import { Button, Card, Spinner, Text } from '@telegram-apps/telegram-ui';
+import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Master } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
+import {
+  AdminCard,
+  AdminChip,
+  AdminDetailRow,
+  AdminEmptyState,
+  AdminPrimaryButton,
+  AdminSectionTitle,
+} from './AdminTheme';
 import { MasterForm } from './MasterForm';
 
 interface RelatedBooking {
@@ -35,7 +43,10 @@ export function MastersList() {
     try {
       const { data, error } = await supabase.from('masters').select('*').order('name');
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       setMasters(data || []);
     } catch (error) {
       console.error('Ошибка загрузки мастеров:', error);
@@ -45,7 +56,7 @@ export function MastersList() {
   }
 
   async function handleDelete(masterId: string) {
-    if (!confirm('Вы уверены, что хотите удалить этого мастера? Это действие нельзя отменить.')) {
+    if (!confirm('Удалить мастера? Если будущие записи есть, удаление будет заблокировано.')) {
       return;
     }
 
@@ -58,7 +69,9 @@ export function MastersList() {
         .select('id, booking_date, booking_time, status, admin_notes')
         .eq('master_id', masterId);
 
-      if (bookingsError) throw bookingsError;
+      if (bookingsError) {
+        throw bookingsError;
+      }
 
       const futureBookings = ((relatedBookings || []) as RelatedBooking[]).filter((booking) =>
         isUpcomingBooking(booking, now),
@@ -71,8 +84,8 @@ export function MastersList() {
 
       if ((relatedBookings || []).length > 0) {
         const deletedMasterNote = master?.name
-          ? `[Удален мастер: ${master.name}]`
-          : '[Удален мастер]';
+          ? `[Удалён мастер: ${master.name}]`
+          : '[Удалён мастер]';
 
         for (const booking of (relatedBookings || []) as RelatedBooking[]) {
           const nextAdminNotes = booking.admin_notes
@@ -87,7 +100,9 @@ export function MastersList() {
             })
             .eq('id', booking.id);
 
-          if (bookingUpdateError) throw bookingUpdateError;
+          if (bookingUpdateError) {
+            throw bookingUpdateError;
+          }
         }
       }
 
@@ -96,13 +111,17 @@ export function MastersList() {
         .update({ master_id: null })
         .eq('master_id', masterId);
 
-      if (reviewsError) throw reviewsError;
+      if (reviewsError) {
+        throw reviewsError;
+      }
 
       const { error: deleteError } = await supabase.from('masters').delete().eq('id', masterId);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        throw deleteError;
+      }
 
-      alert('Мастер удален');
+      alert('Мастер удалён');
       loadMasters();
     } catch (error) {
       console.error('Ошибка удаления мастера:', error);
@@ -117,12 +136,14 @@ export function MastersList() {
         .update({ is_active: !master.is_active })
         .eq('id', master.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       alert(master.is_active ? 'Мастер деактивирован' : 'Мастер активирован');
       loadMasters();
     } catch (error) {
-      console.error('Ошибка изменения статуса:', error);
+      console.error('Ошибка изменения статуса мастера:', error);
       alert('Не удалось изменить статус мастера');
     }
   }
@@ -156,95 +177,133 @@ export function MastersList() {
   }
 
   return (
-    <div>
-      <Button size="l" stretched onClick={handleAdd} style={{ marginBottom: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <AdminPrimaryButton stretched onClick={handleAdd}>
         + Добавить мастера
-      </Button>
+      </AdminPrimaryButton>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {masters.map((master) => (
-          <Card key={master.id} style={{ padding: '16px' }}>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              {master.photo_url && (
-                <img
-                  src={master.photo_url}
-                  alt={master.name}
-                  style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                  }}
-                />
-              )}
-              <div style={{ flex: 1 }}>
-                <Text style={{ fontSize: '18px', fontWeight: 'bold' }}>{master.name}</Text>
-                {master.specialization && (
-                  <Text style={{ fontSize: '14px', opacity: 0.8, marginTop: '4px' }}>
-                    {master.specialization}
-                  </Text>
-                )}
-                {master.description && (
-                  <Text style={{ fontSize: '14px', opacity: 0.6, marginTop: '8px' }}>
-                    {master.description}
-                  </Text>
-                )}
-                {master.phone && (
-                  <Text style={{ fontSize: '14px', opacity: 0.6, marginTop: '4px' }}>
-                    Телефон: {master.phone}
-                  </Text>
-                )}
-                <div style={{ marginTop: '8px' }}>
-                  <Text
+      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <AdminSectionTitle
+          title="Все мастера"
+          subtitle="Статусы, описание и контакты теперь собраны в одном ритме и легко читаются."
+        />
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <AdminChip label={`Всего: ${masters.length}`} tone="blue" />
+          <AdminChip
+            label={`Активных: ${masters.filter((master) => master.is_active).length}`}
+            tone="green"
+          />
+          <AdminChip
+            label={`Скрытых: ${masters.filter((master) => !master.is_active).length}`}
+            tone="orange"
+          />
+        </div>
+      </AdminCard>
+
+      {masters.length === 0 ? (
+        <AdminEmptyState text="Мастера ещё не добавлены." />
+      ) : (
+        masters.map((master) => (
+          <AdminCard key={master.id}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                {master.photo_url ? (
+                  <img
+                    src={master.photo_url}
+                    alt={master.name}
                     style={{
-                      fontSize: '12px',
-                      color: master.is_active ? '#4CAF50' : '#F44336',
+                      width: '72px',
+                      height: '72px',
+                      borderRadius: '18px',
+                      objectFit: 'cover',
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '72px',
+                      height: '72px',
+                      borderRadius: '18px',
+                      background: 'rgba(255,255,255,0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '28px',
+                      fontWeight: 700,
+                      color: '#8ecbff',
+                      flexShrink: 0,
                     }}
                   >
-                    {master.is_active ? 'Активен' : 'Неактивен'}
-                  </Text>
+                    {master.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                  <div
+                    style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}
+                  >
+                    <Text style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2 }}>
+                      {master.name}
+                    </Text>
+                    <AdminChip
+                      label={master.is_active ? 'Активен' : 'Скрыт'}
+                      tone={master.is_active ? 'green' : 'orange'}
+                    />
+                  </div>
+
+                  {master.specialization && (
+                    <Text style={{ fontSize: '14px', opacity: 0.76 }}>{master.specialization}</Text>
+                  )}
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      padding: '14px',
+                      borderRadius: '16px',
+                      backgroundColor: 'rgba(255,255,255,0.035)',
+                    }}
+                  >
+                    {master.phone && <AdminDetailRow label="Телефон" value={master.phone} />}
+                    {master.description && (
+                      <AdminDetailRow label="О мастере" value={master.description} />
+                    )}
+                    {!master.phone && !master.description && (
+                      <Text style={{ fontSize: '14px', opacity: 0.6 }}>
+                        Контакт и описание пока не заполнены.
+                      </Text>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-              <Button
-                mode="outline"
-                size="s"
-                onClick={() => handleEdit(master)}
-                style={{ flex: 1, minWidth: '120px' }}
-              >
-                Редактировать
-              </Button>
-              <Button
-                mode="outline"
-                size="s"
-                onClick={() => handleToggleActive(master)}
-                style={{
-                  flex: 1,
-                  minWidth: '120px',
-                  color: master.is_active ? '#FF9800' : '#4CAF50',
-                }}
-              >
-                {master.is_active ? 'Деактивировать' : 'Активировать'}
-              </Button>
-              <Button
-                mode="outline"
-                size="s"
-                onClick={() => handleDelete(master.id)}
-                style={{ flex: 1, minWidth: '120px', color: '#F44336' }}
-              >
-                Удалить
-              </Button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <Button mode="outline" size="s" onClick={() => handleEdit(master)}>
+                  Изменить
+                </Button>
+                <Button
+                  mode="outline"
+                  size="s"
+                  onClick={() => handleToggleActive(master)}
+                  style={{ color: master.is_active ? '#ffcf70' : '#7ee787' }}
+                >
+                  {master.is_active ? 'Деактивировать' : 'Активировать'}
+                </Button>
+                <Button
+                  mode="outline"
+                  size="s"
+                  onClick={() => handleDelete(master.id)}
+                  style={{ color: '#ff9a92' }}
+                >
+                  Удалить
+                </Button>
+              </div>
             </div>
-          </Card>
-        ))}
-      </div>
-
-      {masters.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px', opacity: 0.6 }}>
-          <Text>Нет мастеров</Text>
-        </div>
+          </AdminCard>
+        ))
       )}
     </div>
   );

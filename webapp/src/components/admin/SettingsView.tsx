@@ -1,95 +1,42 @@
-import { Button, Card, Section, Text, Title } from '@telegram-apps/telegram-ui';
-import { useState } from 'react';
+import { AdminActionLink, AdminCard, AdminChip, AdminSectionTitle } from './AdminTheme';
 
 export function SettingsView() {
-  const [activeSection, setActiveSection] = useState<'services' | 'masters'>('services');
-
   return (
-    <div style={{ padding: '16px' }}>
-      <Title level="1" style={{ marginBottom: '16px' }}>
-        Настройки
-      </Title>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <AdminSectionTitle
+          title="Быстрые действия"
+          subtitle="Из дашборда можно сразу перейти в ключевые операционные разделы."
+        />
 
-      {/* Переключатель разделов */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        <Button
-          mode={activeSection === 'services' ? 'filled' : 'outline'}
-          onClick={() => setActiveSection('services')}
-          style={{ flex: 1 }}
-        >
-          Услуги
-        </Button>
-        <Button
-          mode={activeSection === 'masters' ? 'filled' : 'outline'}
-          onClick={() => setActiveSection('masters')}
-          style={{ flex: 1 }}
-        >
-          Мастера
-        </Button>
-      </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <AdminChip label="Мастера" tone="blue" />
+          <AdminChip label="Услуги" tone="green" />
+          <AdminChip label="Записи" tone="orange" />
+          <AdminChip label="Отзывы" tone="neutral" />
+        </div>
+      </AdminCard>
 
-      {activeSection === 'services' ? <ServicesSection /> : <MastersSection />}
-    </div>
-  );
-}
-
-function ServicesSection() {
-  return (
-    <div>
-      <Button size="l" stretched style={{ marginBottom: '16px' }}>
-        + Добавить услугу
-      </Button>
-
-      <Section header="Активные услуги">
-        <Card style={{ padding: '12px', marginBottom: '8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>Стрижка мужская</Text>
-              <Text style={{ fontSize: '14px', opacity: 0.6 }}>45 минут</Text>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>1500 ₽</Text>
-              <Button mode="plain" size="s">
-                Изменить
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        <Text style={{ fontSize: '14px', opacity: 0.6, textAlign: 'center', marginTop: '16px' }}>
-          Функционал в разработке
-        </Text>
-      </Section>
-    </div>
-  );
-}
-
-function MastersSection() {
-  return (
-    <div>
-      <Button size="l" stretched style={{ marginBottom: '16px' }}>
-        + Добавить мастера
-      </Button>
-
-      <Section header="Активные мастера">
-        <Card style={{ padding: '12px', marginBottom: '8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>Анна Иванова</Text>
-              <Text style={{ fontSize: '14px', opacity: 0.6 }}>
-                Опытный мастер с 5-летним стажем работы
-              </Text>
-            </div>
-            <Button mode="plain" size="s">
-              Изменить
-            </Button>
-          </div>
-        </Card>
-
-        <Text style={{ fontSize: '14px', opacity: 0.6, textAlign: 'center', marginTop: '16px' }}>
-          Функционал в разработке
-        </Text>
-      </Section>
+      <AdminActionLink
+        to="/admin-masters"
+        label="Открыть мастеров"
+        description="Редактирование профилей, активности и состава команды."
+      />
+      <AdminActionLink
+        to="/admin-services"
+        label="Открыть услуги"
+        description="Каталог, цены, категории и отключение ненужных позиций."
+      />
+      <AdminActionLink
+        to="/admin-bookings"
+        label="Открыть записи"
+        description="Ближайшие визиты, ручное создание и контроль потока клиентов."
+      />
+      <AdminActionLink
+        to="/admin-reviews"
+        label="Открыть отзывы"
+        description="Рейтинг мастеров, комментарии клиентов и качество сервиса."
+      />
     </div>
   );
 }

@@ -1,7 +1,14 @@
-import { Card, Input, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
+import { Input, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Client } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
+import {
+  AdminCard,
+  AdminChip,
+  AdminEmptyState,
+  AdminMetric,
+  AdminSectionTitle,
+} from './AdminTheme';
 
 interface ClientWithStats extends Client {
   total_bookings: number;
@@ -19,18 +26,17 @@ export function ClientsView() {
 
   async function loadClients() {
     try {
-      // Загружаем клиентов с подсчетом записей
       const { data, error } = await supabase.from('clients').select(`
           *,
           bookings:bookings(count)
         `);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      // Преобразуем данные
       const clientsWithStats = await Promise.all(
         (data || []).map(async (client: Client & { bookings?: { count: number }[] }) => {
-          // Получаем последнюю запись
           const { data: lastBooking } = await supabase
             .from('bookings')
             .select('booking_date')
@@ -71,77 +77,91 @@ export function ClientsView() {
   }
 
   return (
-    <div style={{ padding: '16px' }}>
-      <Title level="1" style={{ marginBottom: '16px' }}>
-        База клиентов
-      </Title>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <AdminCard style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <AdminSectionTitle
+          title="База клиентов"
+          subtitle="Поиск по имени, Telegram и телефону, плюс быстрая статистика по посещениям."
+        />
 
-      {/* Поиск */}
-      <Input
-        type="text"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Поиск по имени, нику или телефону"
-        style={{ marginBottom: '16px' }}
-      />
+        <Input
+          type="text"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Поиск по имени, Telegram или телефону"
+        />
+      </AdminCard>
 
-      {/* Статистика */}
-      <Card style={{ padding: '16px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
-          <div>
-            <Text style={{ fontSize: '24px', fontWeight: 'bold' }}>{clients.length}</Text>
-            <Text style={{ fontSize: '12px', opacity: 0.6 }}>Всего клиентов</Text>
-          </div>
-          <div>
-            <Text style={{ fontSize: '24px', fontWeight: 'bold' }}>
-              {clients.filter((c) => c.last_visit).length}
-            </Text>
-            <Text style={{ fontSize: '12px', opacity: 0.6 }}>С записями</Text>
-          </div>
+      <AdminCard>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <AdminMetric value={clients.length} label="Всего клиентов" />
+          <AdminMetric
+            value={clients.filter((client) => client.last_visit).length}
+            label="С визитами"
+          />
+          <AdminMetric value={filteredClients.length} label="Найдено" />
         </div>
-      </Card>
+      </AdminCard>
 
-      {/* Список клиентов */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {filteredClients.map((client) => (
-          <Card
-            key={client.id}
-            style={{ padding: '12px', cursor: 'pointer' }}
-            onClick={() => {
-              // TODO: Открыть карточку клиента
-              console.log('Открыть клиента:', client.id);
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>{client.name}</Text>
-                {client.username && (
-                  <Text style={{ fontSize: '14px', opacity: 0.6 }}>@{client.username}</Text>
-                )}
-                {client.phone && (
-                  <Text style={{ fontSize: '14px', opacity: 0.6 }}>{client.phone}</Text>
-                )}
-                {client.notes && (
-                  <Text style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px' }}>
-                    📝 {client.notes}
+      {filteredClients.length === 0 ? (
+        <AdminEmptyState text="Клиенты не найдены." />
+      ) : (
+        filteredClients.map((client) => (
+          <AdminCard key={client.id}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  alignItems: 'flex-start',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                  <Text style={{ fontSize: '18px', fontWeight: 700 }}>{client.name}</Text>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {client.username && <AdminChip label={`@${client.username}`} tone="blue" />}
+                    {client.phone && <AdminChip label={client.phone} tone="neutral" />}
+                    {client.telegram_id && (
+                      <AdminChip label={`ID ${client.telegram_id}`} tone="orange" />
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    minWidth: '96px',
+                    padding: '12px 14px',
+                    borderRadius: '16px',
+                    backgroundColor: 'rgba(255,255,255,0.035)',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Text style={{ display: 'block', fontSize: '22px', fontWeight: 700 }}>
+                    {client.total_bookings}
                   </Text>
-                )}
+                  <Text style={{ fontSize: '12px', opacity: 0.6 }}>записей</Text>
+                </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <Text style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                  {client.total_bookings}
-                </Text>
-                <Text style={{ fontSize: '12px', opacity: 0.6 }}>записей</Text>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
 
-      {filteredClients.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px', opacity: 0.6 }}>
-          <Text>Клиенты не найдены</Text>
-        </div>
+              {client.notes && (
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '16px',
+                    backgroundColor: 'rgba(255,255,255,0.035)',
+                  }}
+                >
+                  <Text style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>
+                    Заметки
+                  </Text>
+                  <Text style={{ fontSize: '14px', lineHeight: 1.45 }}>{client.notes}</Text>
+                </div>
+              )}
+            </div>
+          </AdminCard>
+        ))
       )}
     </div>
   );
