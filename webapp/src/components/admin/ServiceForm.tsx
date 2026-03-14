@@ -1,12 +1,21 @@
-import { Button, Input, Section, Textarea } from '@telegram-apps/telegram-ui';
+import { Text } from '@telegram-apps/telegram-ui';
 import { useState } from 'react';
 import type { Service } from '../../../../shared/types';
+import { backButtonStyle, inputStyle } from '../../components/AppTheme';
 import { supabase } from '../../services/supabase';
+import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 
 interface Props {
   service: Service | null;
   onClose: () => void;
 }
+
+const labelStyle = {
+  display: 'block',
+  marginBottom: '8px',
+  fontSize: '14px',
+  color: 'var(--app-text)',
+} as const;
 
 export function ServiceForm({ service, onClose }: Props) {
   const [name, setName] = useState(service?.name || '');
@@ -36,24 +45,18 @@ export function ServiceForm({ service, onClose }: Props) {
         name: name.trim(),
         description: description.trim() || null,
         price: Number.parseFloat(price),
-        duration_minutes: 60, // Устанавливаем значение по умолчанию
+        duration_minutes: 60,
         category: category.trim() || null,
         is_active: isActive,
       };
 
       if (service) {
-        // Обновление существующей услуги
         const { error } = await supabase.from('services').update(serviceData).eq('id', service.id);
-
         if (error) throw error;
-
         alert('Услуга обновлена');
       } else {
-        // Создание новой услуги
         const { error } = await supabase.from('services').insert(serviceData);
-
         if (error) throw error;
-
         alert('Услуга создана');
       }
 
@@ -67,54 +70,62 @@ export function ServiceForm({ service, onClose }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Button mode="plain" onClick={onClose} style={{ marginBottom: '16px' }}>
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <button
+        type="button"
+        onClick={onClose}
+        style={{
+          ...backButtonStyle,
+          alignSelf: 'flex-start',
+          background: 'none',
+          border: 'none',
+          fontSize: '16px',
+          cursor: 'pointer',
+        }}
+      >
         ← Назад к списку
-      </Button>
+      </button>
 
-      <Section header={service ? 'Редактировать услугу' : 'Новая услуга'}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <AdminCard style={{ padding: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <Text style={{ fontSize: '28px', fontWeight: 700, color: 'var(--app-text)' }}>
+            {service ? 'Редактировать услугу' : 'Новая услуга'}
+          </Text>
+
           <div>
-            <label
-              htmlFor="service-name"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="service-name" style={labelStyle}>
               Название услуги *
             </label>
-            <Input
+            <input
               id="service-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Например: Стрижка мужская"
+              style={inputStyle}
               required
             />
           </div>
 
           <div>
-            <label
-              htmlFor="service-description"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="service-description" style={labelStyle}>
               Описание
             </label>
-            <Textarea
+            <textarea
               id="service-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Краткое описание услуги"
               rows={3}
+              style={{ ...inputStyle, minHeight: '108px', resize: 'vertical' }}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="service-price"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="service-price" style={labelStyle}>
               Цена (₽) *
             </label>
-            <Input
+            <input
               id="service-price"
               type="number"
               value={price}
@@ -122,46 +133,44 @@ export function ServiceForm({ service, onClose }: Props) {
               placeholder="1000"
               min="0"
               step="0.01"
+              style={inputStyle}
               required
             />
           </div>
 
           <div>
-            <label
-              htmlFor="service-category"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="service-category" style={labelStyle}>
               Категория
             </label>
-            <Input
+            <input
               id="service-category"
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder="Например: Стрижки"
+              style={inputStyle}
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label
+            htmlFor="service-active"
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--app-text)' }}
+          >
             <input
+              id="service-active"
               type="checkbox"
-              id="is_active"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              style={{ width: '20px', height: '20px' }}
+              style={{ width: '18px', height: '18px', accentColor: 'var(--app-accent)' }}
             />
-            <label htmlFor="is_active" style={{ fontSize: '14px' }}>
-              Услуга активна (доступна для записи)
-            </label>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-            <Button type="submit" mode="filled" size="l" stretched disabled={saving}>
-              {saving ? 'Сохранение...' : service ? 'Сохранить изменения' : 'Создать услугу'}
-            </Button>
-          </div>
+            Услуга активна (доступна для записи)
+          </label>
         </div>
-      </Section>
+      </AdminCard>
+
+      <AdminPrimaryButton type="submit" stretched disabled={saving}>
+        {saving ? 'Сохранение...' : service ? 'Сохранить изменения' : 'Создать услугу'}
+      </AdminPrimaryButton>
     </form>
   );
 }

@@ -1,11 +1,26 @@
-import { Button, Input, Section, Textarea } from '@telegram-apps/telegram-ui';
+import { Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Master, Service } from '../../../../shared/types';
+import { backButtonStyle, inputStyle } from '../../components/AppTheme';
 import { supabase } from '../../services/supabase';
+import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 
 interface Props {
   onClose: () => void;
 }
+
+const labelStyle = {
+  display: 'block',
+  marginBottom: '8px',
+  fontSize: '14px',
+  color: 'var(--app-text)',
+} as const;
+
+const hintStyle = {
+  fontSize: '12px',
+  color: 'var(--app-text-soft)',
+  marginTop: '8px',
+} as const;
 
 export function BookingForm({ onClose }: Props) {
   const [masters, setMasters] = useState<Master[]>([]);
@@ -27,7 +42,6 @@ export function BookingForm({ onClose }: Props) {
     loadServices();
   }, []);
 
-  // Обновляем доступные часы при выборе мастера и даты
   useEffect(() => {
     if (selectedMasterId && bookingDate) {
       updateAvailableHours();
@@ -78,12 +92,11 @@ export function BookingForm({ onClose }: Props) {
 
       if (error) throw error;
 
-      // Создаем Set из занятых временных слотов (формат "HH:MM")
       const slots = new Set<string>();
-      (data || []).forEach(booking => {
-        const time = booking.booking_time.substring(0, 5); // "HH:MM:SS" -> "HH:MM"
+      for (const booking of data || []) {
+        const time = booking.booking_time.substring(0, 5);
         slots.add(time);
-      });
+      }
 
       setBookedSlots(slots);
     } catch (error) {
@@ -92,48 +105,48 @@ export function BookingForm({ onClose }: Props) {
   }
 
   function updateAvailableHours() {
-    const master = masters.find(m => m.id === selectedMasterId);
+    const master = masters.find((item) => item.id === selectedMasterId);
     if (!master || !master.work_schedule || !bookingDate) {
       setAvailableHours([]);
       return;
     }
 
-    // Определяем день недели (0 = воскресенье, 1 = понедельник, ...)
     const date = new Date(bookingDate);
     const dayOfWeek = date.getDay();
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const dayNames = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ] as const;
     const dayName = dayNames[dayOfWeek];
 
-    // Получаем график работы на этот день
     const schedule = master.work_schedule[dayName];
     if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
       setAvailableHours([]);
       return;
     }
 
-    // Парсим время работы (формат "10:00-18:00")
-    const timeRange = schedule[0];
-    const [startTime, endTime] = timeRange.split('-');
+    const [startTime, endTime] = schedule[0].split('-');
     const [startHour] = startTime.split(':').map(Number);
     const [endHour] = endTime.split(':').map(Number);
 
-    // Генерируем список часов
     const hours: string[] = [];
-    for (let hour = startHour; hour < endHour; hour++) {
+    for (let hour = startHour; hour < endHour; hour += 1) {
       hours.push(hour.toString().padStart(2, '0'));
     }
 
     setAvailableHours(hours);
   }
 
-  // Проверяем, занят ли временной слот
   function isTimeSlotBooked(hour: string, minute: string): boolean {
-    const timeSlot = `${hour}:${minute}`;
-    return bookedSlots.has(timeSlot);
+    return bookedSlots.has(`${hour}:${minute}`);
   }
 
-  // Получаем доступные минуты для выбранного часа
-  function getAvailableMinutes(): Array<{value: string, label: string, disabled: boolean}> {
+  function getAvailableMinutes(): Array<{ value: string; label: string; disabled: boolean }> {
     const minutes = [
       { value: '00', label: '00 мин' },
       { value: '15', label: '15 мин' },
@@ -141,11 +154,13 @@ export function BookingForm({ onClose }: Props) {
       { value: '45', label: '45 мин' },
     ];
 
-    if (!bookingHour) return minutes.map(m => ({ ...m, disabled: false }));
+    if (!bookingHour) {
+      return minutes.map((item) => ({ ...item, disabled: false }));
+    }
 
-    return minutes.map(m => ({
-      ...m,
-      disabled: isTimeSlotBooked(bookingHour, m.value)
+    return minutes.map((item) => ({
+      ...item,
+      disabled: isTimeSlotBooked(bookingHour, item.value),
     }));
   }
 
@@ -159,7 +174,6 @@ export function BookingForm({ onClose }: Props) {
 
     const bookingTime = `${bookingHour}:${bookingMinute}`;
 
-    // Проверяем, не занято ли время
     if (isTimeSlotBooked(bookingHour, bookingMinute)) {
       alert('Это время уже занято. Выберите другое время.');
       return;
@@ -168,14 +182,12 @@ export function BookingForm({ onClose }: Props) {
     setSaving(true);
 
     try {
-      // Получаем информацию об услуге для цены
-      const service = services.find((s) => s.id === selectedServiceId);
+      const service = services.find((item) => item.id === selectedServiceId);
       if (!service) {
         alert('Услуга не найдена');
         return;
       }
 
-      // Создаем или находим клиента
       let clientId = null;
       if (clientPhone) {
         const { data: existingClient } = await supabase
@@ -204,11 +216,10 @@ export function BookingForm({ onClose }: Props) {
         }
       }
 
-      // Создаем запись
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
-          client_telegram_id: 0, // Для ручных записей используем 0
+          client_telegram_id: 0,
           client_name: clientName,
           client_username: null,
           client_id: clientId,
@@ -217,7 +228,7 @@ export function BookingForm({ onClose }: Props) {
           booking_date: bookingDate,
           booking_time: `${bookingTime}:00`,
           status: 'active',
-          source: 'manual', // Помечаем как ручную запись
+          source: 'manual',
           original_price: service.price,
           discount_amount: 0,
           final_price: service.price,
@@ -229,15 +240,13 @@ export function BookingForm({ onClose }: Props) {
         .single();
 
       if (bookingError) {
-        // Проверяем, является ли это ошибкой дубликата времени
         if (bookingError.code === '23505') {
-          alert('Ошибка: Мастер уже занят в это время. Выберите другое время или другого мастера.');
+          alert('Мастер уже занят в это время. Выберите другое время или другого мастера.');
           return;
         }
         throw bookingError;
       }
 
-      // Отправляем запрос на создание события в Google Calendar через бота
       try {
         await fetch(
           `${import.meta.env.VITE_BOT_API_URL || 'http://localhost:3000'}/api/notify-booking`,
@@ -262,7 +271,6 @@ export function BookingForm({ onClose }: Props) {
         );
       } catch (error) {
         console.error('Ошибка создания события в календаре:', error);
-        // Продолжаем даже если не удалось создать событие
       }
 
       alert('Запись создана');
@@ -275,19 +283,36 @@ export function BookingForm({ onClose }: Props) {
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <Button mode="plain" onClick={onClose} style={{ marginBottom: '16px' }}>
-        ← Назад к списку
-      </Button>
+  const selectStyle = {
+    ...inputStyle,
+    appearance: 'none' as const,
+  };
 
-      <Section header="Новая запись (вручную)">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <button
+        type="button"
+        onClick={onClose}
+        style={{
+          ...backButtonStyle,
+          alignSelf: 'flex-start',
+          background: 'none',
+          border: 'none',
+          fontSize: '16px',
+          cursor: 'pointer',
+        }}
+      >
+        ← Назад к списку
+      </button>
+
+      <AdminCard style={{ padding: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <Text style={{ fontSize: '28px', fontWeight: 700, color: 'var(--app-text)' }}>
+            Новая запись (вручную)
+          </Text>
+
           <div>
-            <label
-              htmlFor="master"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="master" style={labelStyle}>
               Мастер *
             </label>
             <select
@@ -295,15 +320,7 @@ export function BookingForm({ onClose }: Props) {
               value={selectedMasterId}
               onChange={(e) => setSelectedMasterId(e.target.value)}
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '1px solid var(--tgui--divider_color)',
-                borderRadius: '8px',
-                backgroundColor: 'var(--tgui--secondary_bg_color)',
-                color: 'var(--tgui--text_color)',
-              }}
+              style={selectStyle}
             >
               <option value="">Выберите мастера</option>
               {masters.map((master) => (
@@ -315,10 +332,7 @@ export function BookingForm({ onClose }: Props) {
           </div>
 
           <div>
-            <label
-              htmlFor="service"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="service" style={labelStyle}>
               Услуга *
             </label>
             <select
@@ -326,15 +340,7 @@ export function BookingForm({ onClose }: Props) {
               value={selectedServiceId}
               onChange={(e) => setSelectedServiceId(e.target.value)}
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '1px solid var(--tgui--divider_color)',
-                borderRadius: '8px',
-                backgroundColor: 'var(--tgui--secondary_bg_color)',
-                color: 'var(--tgui--text_color)',
-              }}
+              style={selectStyle}
             >
               <option value="">Выберите услугу</option>
               {services.map((service) => (
@@ -346,59 +352,50 @@ export function BookingForm({ onClose }: Props) {
           </div>
 
           <div>
-            <label
-              htmlFor="client-name"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="client-name" style={labelStyle}>
               Имя клиента *
             </label>
-            <Input
+            <input
               id="client-name"
               type="text"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               placeholder="Иван Иванов"
+              style={inputStyle}
               required
             />
           </div>
 
           <div>
-            <label
-              htmlFor="client-phone"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="client-phone" style={labelStyle}>
               Телефон клиента
             </label>
-            <Input
+            <input
               id="client-phone"
               type="tel"
               value={clientPhone}
               onChange={(e) => setClientPhone(e.target.value)}
               placeholder="+7 (999) 123-45-67"
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="booking-date"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="booking-date" style={labelStyle}>
               Дата записи *
             </label>
-            <Input
+            <input
               id="booking-date"
               type="date"
               value={bookingDate}
               onChange={(e) => setBookingDate(e.target.value)}
+              style={inputStyle}
               required
             />
           </div>
 
           <div>
-            <label
-              htmlFor="booking-time"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="booking-hour" style={labelStyle}>
               Время записи *
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -407,26 +404,16 @@ export function BookingForm({ onClose }: Props) {
                 value={bookingHour}
                 onChange={(e) => {
                   setBookingHour(e.target.value);
-                  // Сбрасываем минуты при смене часа
                   setBookingMinute('00');
                 }}
                 required
                 disabled={!selectedMasterId || !bookingDate}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                }}
+                style={{ ...selectStyle, flex: 1 }}
               >
                 <option value="">Час</option>
                 {availableHours.map((hour) => {
-                  // Проверяем, есть ли хотя бы один свободный слот в этом часу
                   const hasAvailableSlot = ['00', '15', '30', '45'].some(
-                    minute => !isTimeSlotBooked(hour, minute)
+                    (minute) => !isTimeSlotBooked(hour, minute),
                   );
                   return (
                     <option key={hour} value={hour} disabled={!hasAvailableSlot}>
@@ -435,21 +422,14 @@ export function BookingForm({ onClose }: Props) {
                   );
                 })}
               </select>
+
               <select
                 id="booking-minute"
                 value={bookingMinute}
                 onChange={(e) => setBookingMinute(e.target.value)}
                 required
                 disabled={!bookingHour}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '1px solid var(--tgui--divider_color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--tgui--secondary_bg_color)',
-                  color: 'var(--tgui--text_color)',
-                }}
+                style={{ ...selectStyle, flex: 1 }}
               >
                 {getAvailableMinutes().map((minute) => (
                   <option key={minute.value} value={minute.value} disabled={minute.disabled}>
@@ -458,49 +438,38 @@ export function BookingForm({ onClose }: Props) {
                 ))}
               </select>
             </div>
-            {!selectedMasterId && (
-              <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '8px' }}>
-                Сначала выберите мастера
-              </p>
-            )}
-            {selectedMasterId && !bookingDate && (
-              <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '8px' }}>
-                Сначала выберите дату
-              </p>
-            )}
+
+            {!selectedMasterId && <p style={hintStyle}>Сначала выберите мастера</p>}
+            {selectedMasterId && !bookingDate && <p style={hintStyle}>Сначала выберите дату</p>}
             {selectedMasterId && bookingDate && availableHours.length === 0 && (
-              <p style={{ fontSize: '12px', color: '#F44336', marginTop: '8px' }}>
+              <p style={{ ...hintStyle, color: 'var(--app-danger)' }}>
                 Мастер не работает в этот день
               </p>
             )}
             {bookingHour && bookingMinute && isTimeSlotBooked(bookingHour, bookingMinute) && (
-              <p style={{ fontSize: '12px', color: '#F44336', marginTop: '8px' }}>
-                ⚠️ Это время уже занято
-              </p>
+              <p style={{ ...hintStyle, color: 'var(--app-danger)' }}>Это время уже занято</p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="notes"
-              style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}
-            >
+            <label htmlFor="notes" style={labelStyle}>
               Заметки
             </label>
-            <Textarea
+            <textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Дополнительная информация о клиенте или записи"
               rows={3}
+              style={{ ...inputStyle, minHeight: '108px', resize: 'vertical' }}
             />
           </div>
-
-          <Button type="submit" mode="filled" size="l" stretched disabled={saving}>
-            {saving ? 'Создание...' : 'Создать запись'}
-          </Button>
         </div>
-      </Section>
+      </AdminCard>
+
+      <AdminPrimaryButton type="submit" stretched disabled={saving}>
+        {saving ? 'Создание...' : 'Создать запись'}
+      </AdminPrimaryButton>
     </form>
   );
 }
