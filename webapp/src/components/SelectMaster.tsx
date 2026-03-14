@@ -2,6 +2,7 @@ import { Button, Card, Placeholder, Spinner, Text, Title } from '@telegram-apps/
 import { useEffect, useState } from 'react';
 import type { Master } from '../../../shared/types';
 import { supabase } from '../services/supabase';
+import { backButtonStyle, pageShellStyle, surfaceCardStyle, titleStyle } from './AppTheme';
 
 interface Props {
   serviceId: string;
@@ -25,11 +26,12 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
         .select('master_id, masters(*)')
         .eq('service_id', serviceId);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       const mastersData = (data || [])
         .map((item: { master_id: string; masters: Master | Master[] }) => {
-          // Supabase может вернуть массив или объект
           return Array.isArray(item.masters) ? item.masters[0] : item.masters;
         })
         .filter((master: Master | undefined) => master?.is_active) as Master[];
@@ -53,36 +55,36 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
 
   if (error) {
     return (
-      <>
+      <div style={pageShellStyle}>
         <Placeholder header="Ошибка" description={error} />
-        <Button size="l" stretched onClick={onBack} style={{ marginTop: '16px' }}>
+        <Button size="l" stretched onClick={onBack}>
           Назад
         </Button>
-      </>
+      </div>
     );
   }
 
   if (masters.length === 0) {
     return (
-      <>
+      <div style={pageShellStyle}>
         <Placeholder
           header="Нет мастеров"
           description="Для этой услуги пока нет доступных мастеров"
         />
-        <Button size="l" stretched onClick={onBack} style={{ marginTop: '16px' }}>
+        <Button size="l" stretched onClick={onBack}>
           Назад
         </Button>
-      </>
+      </div>
     );
   }
 
   return (
-    <div>
-      <Button mode="plain" onClick={onBack} style={{ marginBottom: '16px' }}>
-        ← Назад
+    <div style={pageShellStyle}>
+      <Button mode="plain" onClick={onBack} style={backButtonStyle}>
+        Назад
       </Button>
 
-      <Title level="1" style={{ marginBottom: '16px' }}>
+      <Title level="1" style={titleStyle}>
         Выберите мастера
       </Title>
 
@@ -91,7 +93,7 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
           <Card
             key={master.id}
             onClick={() => onSelect(master.id)}
-            style={{ cursor: 'pointer', padding: '16px' }}
+            style={{ ...surfaceCardStyle, cursor: 'pointer' }}
           >
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
               {master.photo_url && (
@@ -99,20 +101,28 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
                   src={master.photo_url}
                   alt={master.name}
                   style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '18px',
                     objectFit: 'cover',
                   }}
                 />
               )}
               <div style={{ flex: 1 }}>
-                <Title level="3">{master.name}</Title>
+                <Title level="3" style={{ color: 'var(--app-text)' }}>
+                  {master.name}
+                </Title>
                 {master.specialization && (
-                  <Text style={{ marginTop: '4px' }}>{master.specialization}</Text>
+                  <Text style={{ marginTop: '4px', color: 'var(--app-text-soft)' }}>
+                    {master.specialization}
+                  </Text>
                 )}
                 {master.description && (
-                  <Text style={{ marginTop: '8px', fontSize: '14px' }}>{master.description}</Text>
+                  <Text
+                    style={{ marginTop: '8px', fontSize: '14px', color: 'var(--app-text-soft)' }}
+                  >
+                    {master.description}
+                  </Text>
                 )}
               </div>
             </div>

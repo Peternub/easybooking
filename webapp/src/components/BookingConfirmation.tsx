@@ -4,6 +4,14 @@ import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import type { Master, Service } from '../../../shared/types';
 import { supabase } from '../services/supabase';
+import {
+  backButtonStyle,
+  inputStyle,
+  pageShellStyle,
+  softPanelStyle,
+  surfaceCardStyle,
+  titleStyle,
+} from './AppTheme';
 
 interface Props {
   serviceId: string;
@@ -26,7 +34,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadData() {
@@ -36,8 +43,13 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         supabase.from('services').select('*').eq('id', serviceId).single(),
       ]);
 
-      if (masterData.data) setMaster(masterData.data);
-      if (serviceData.data) setService(serviceData.data);
+      if (masterData.data) {
+        setMaster(masterData.data);
+      }
+
+      if (serviceData.data) {
+        setService(serviceData.data);
+      }
     } catch (err) {
       console.error('Ошибка загрузки данных:', err);
     } finally {
@@ -57,16 +69,13 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       return;
     }
 
-    const user = window.Telegram.WebApp.initDataUnsafe.user;
-    const clientTelegramId = user.id;
+    const clientTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id;
 
     try {
       const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
       const response = await fetch(`${botApiUrl}/api/validate-promo`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: promoCode.toUpperCase(),
           clientTelegramId,
@@ -102,12 +111,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
     setSubmitting(true);
 
-    console.log('=== СОЗДАНИЕ ЗАПИСИ ===');
-    console.log('Telegram WebApp:', window.Telegram?.WebApp);
-    console.log('User:', window.Telegram?.WebApp?.initDataUnsafe?.user);
-
     if (!window.Telegram?.WebApp?.initDataUnsafe?.user) {
-      console.error('❌ Нет данных пользователя Telegram');
       alert('Ошибка: не удалось получить данные пользователя');
       setSubmitting(false);
       return;
@@ -117,9 +121,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     const clientTelegramId = user.id;
     const clientUsername = user.username || null;
 
-    console.log('Клиент:', { clientTelegramId, clientName, clientUsername });
-    console.log('Запись:', { serviceId, masterId, date, time });
-
     if (!service || !master) {
       alert('Ошибка: данные услуги или мастера не загружены');
       setSubmitting(false);
@@ -127,28 +128,9 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     }
 
     try {
-      // Создаем запись напрямую в Supabase
-      console.log('📝 Отправка данных в Supabase...');
-
       const originalPrice = service.price;
       const discountAmount = Math.round((originalPrice * promoDiscount) / 100);
       const finalPrice = originalPrice - discountAmount;
-
-      console.log('Данные для вставки:', {
-        client_telegram_id: clientTelegramId,
-        client_name: clientName,
-        client_phone: clientPhone,
-        client_username: clientUsername,
-        master_id: masterId,
-        service_id: serviceId,
-        booking_date: date,
-        booking_time: time,
-        status: 'active',
-        original_price: originalPrice,
-        discount_amount: discountAmount,
-        final_price: finalPrice,
-        promo_code: promoCode.toUpperCase() || null,
-      });
 
       const { data: booking, error } = await supabase
         .from('bookings')
@@ -173,78 +155,51 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         .select()
         .single();
 
-      console.log('📊 Ответ от Supabase:', { data: booking, error });
-
-      if (error) {
-        console.error('❌ Ошибка создания записи:', error);
-        console.error('Детали ошибки:', JSON.stringify(error, null, 2));
-        alert(`Ошибка создания записи: ${error.message}\n\nПроверьте консоль для деталей.`);
+      if (error || !booking) {
+        alert(`Ошибка создания записи: ${error?.message || 'неизвестная ошибка'}`);
         setSubmitting(false);
         return;
       }
 
-      if (!booking) {
-        console.error('❌ Запись не создана (нет данных)');
-        alert('Ошибка: запись не создана');
-        setSubmitting(false);
-        return;
-      }
-
-      console.log('✅ Запись успешно создана в Supabase:', booking);
-
-      // Отправляем уведомления через API бота
       try {
         const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
-        console.log('📧 Отправка уведомлений через бота:', botApiUrl);
 
-        const notifyResponse = await fetch(`${botApiUrl}/api/notify-booking`, {
+        await fetch(`${botApiUrl}/api/notify-booking`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             bookingId: booking.id,
-            clientTelegramId: clientTelegramId,
-            clientName: clientName,
-            clientUsername: clientUsername,
-            masterId: masterId,
-            serviceId: serviceId,
+            clientTelegramId,
+            clientName,
+            clientUsername,
+            masterId,
+            serviceId,
             bookingDate: date,
             bookingTime: time,
-            originalPrice: originalPrice,
-            discountAmount: discountAmount,
-            finalPrice: finalPrice,
+            originalPrice,
+            discountAmount,
+            finalPrice,
             promoCode: promoCode.toUpperCase() || undefined,
           }),
         });
-
-        if (notifyResponse.ok) {
-          console.log('✅ Уведомления отправлены');
-        } else {
-          console.warn('⚠️ Не удалось отправить уведомления:', await notifyResponse.text());
-        }
       } catch (notifyError) {
-        console.warn('⚠️ Ошибка отправки уведомлений (бот может быть не запущен):', notifyError);
-        // Не блокируем создание записи, если бот недоступен
+        console.warn('Ошибка отправки уведомлений:', notifyError);
       }
 
-      // Показываем успешное сообщение перед закрытием
-      alert('✅ Запись успешно создана!\n\nУведомления будут отправлены ботом.');
+      alert('Запись успешно создана');
 
-      // Очищаем форму
       setClientName('');
       setClientPhone('');
       setPromoCode('');
       setPromoDiscount(0);
       setPromoError('');
 
-      // Закрываем Mini App
       setTimeout(() => {
         window.Telegram?.WebApp?.close();
       }, 500);
     } catch (error) {
-      console.error('❌ Ошибка:', error);
-      alert('Произошла ошибка. Попробуйте еще раз.');
+      console.error('Ошибка:', error);
+      alert('Произошла ошибка. Попробуйте ещё раз.');
       setSubmitting(false);
     }
   };
@@ -259,176 +214,174 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
   if (!master || !service) {
     return (
-      <>
+      <div style={pageShellStyle}>
         <Text>Ошибка загрузки данных</Text>
-        <Button size="l" stretched onClick={onBack} style={{ marginTop: '16px' }}>
+        <Button size="l" stretched onClick={onBack}>
           Назад
         </Button>
-      </>
+      </div>
     );
   }
 
   const dateFormatted = format(new Date(date), 'd MMMM yyyy', { locale: ru });
+  const finalPrice = service.price - Math.round((service.price * promoDiscount) / 100);
 
   return (
-    <div>
-      <Button mode="plain" onClick={onBack} style={{ marginBottom: '16px' }}>
-        ← Назад
+    <div style={pageShellStyle}>
+      <Button mode="plain" onClick={onBack} style={backButtonStyle}>
+        Назад
       </Button>
 
-      <Title level="1" style={{ marginBottom: '16px' }}>
+      <Title level="1" style={titleStyle}>
         Подтверждение записи
       </Title>
 
-      {/* Информационное сообщение */}
-      <Card style={{ padding: '12px', marginBottom: '16px', backgroundColor: 'var(--tgui--secondary_bg_color)' }}>
-        <Text style={{ fontSize: '13px', opacity: 0.9, textAlign: 'center' }}>
-          ℹ️ Если вы хотите сделать несколько записей, используйте одно и то же имя для всех записей
+      <div style={softPanelStyle}>
+        <Text style={{ color: 'var(--app-text-soft)', fontSize: '13px', textAlign: 'center' }}>
+          Если вы хотите сделать несколько записей, используйте одно и то же имя для всех визитов
         </Text>
-      </Card>
+      </div>
 
-      <Card style={{ padding: '16px', marginBottom: '16px' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <Text style={{ fontSize: '14px', opacity: 0.6 }}>Услуга</Text>
-          <Title level="3">{service.name}</Title>
-        </div>
+      <Card style={surfaceCardStyle}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>Услуга</Text>
+            <Title level="3" style={{ color: 'var(--app-text)' }}>
+              {service.name}
+            </Title>
+          </div>
 
-        <div style={{ marginBottom: '16px' }}>
-          <Text style={{ fontSize: '14px', opacity: 0.6 }}>Мастер</Text>
-          <Title level="3">{master.name}</Title>
-        </div>
+          <div>
+            <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>Мастер</Text>
+            <Title level="3" style={{ color: 'var(--app-text)' }}>
+              {master.name}
+            </Title>
+          </div>
 
-        <div style={{ marginBottom: '16px' }}>
-          <Text style={{ fontSize: '14px', opacity: 0.6 }}>Дата и время</Text>
-          <Title level="3">
-            {dateFormatted} в {time}
-          </Title>
-        </div>
+          <div>
+            <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>Дата и время</Text>
+            <Title level="3" style={{ color: 'var(--app-text)' }}>
+              {dateFormatted} в {time}
+            </Title>
+          </div>
 
-        <div>
-          <Text style={{ fontSize: '14px', opacity: 0.6 }}>Стоимость</Text>
-          {promoDiscount > 0 ? (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                <Text style={{ fontSize: '18px', textDecoration: 'line-through', opacity: 0.5 }}>
-                  {service.price} ₽
+          <div>
+            <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)' }}>Стоимость</Text>
+            {promoDiscount > 0 ? (
+              <div style={{ marginTop: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Text style={{ fontSize: '18px', textDecoration: 'line-through', opacity: 0.5 }}>
+                    {service.price} ₽
+                  </Text>
+                  <Title level="2" style={{ margin: 0, color: 'var(--app-accent-strong)' }}>
+                    {finalPrice} ₽
+                  </Title>
+                </div>
+                <Text style={{ fontSize: '13px', color: 'var(--app-text-soft)', marginTop: '4px' }}>
+                  Скидка: {Math.round((service.price * promoDiscount) / 100)} ₽ ({promoDiscount}%)
                 </Text>
-                <Title level="2" style={{ margin: 0, color: 'var(--tgui--link_color)' }}>
-                  {service.price - Math.round((service.price * promoDiscount) / 100)} ₽
-                </Title>
               </div>
-              <Text style={{ fontSize: '13px', opacity: 0.7, marginTop: '4px', color: 'var(--tgui--link_color)' }}>
-                Скидка: {Math.round((service.price * promoDiscount) / 100)} ₽ ({promoDiscount}%)
-              </Text>
-            </div>
-          ) : (
-            <Title level="2">{service.price} ₽</Title>
-          )}
-          <Text style={{ fontSize: '13px', opacity: 0.7, marginTop: '4px' }}>
-            💳 Оплата в салоне
-          </Text>
+            ) : (
+              <Title level="2" style={{ color: 'var(--app-accent-strong)' }}>
+                {service.price} ₽
+              </Title>
+            )}
+            <Text style={{ fontSize: '13px', color: 'var(--app-text-soft)', marginTop: '4px' }}>
+              Оплата в салоне
+            </Text>
+          </div>
         </div>
       </Card>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
-        <Card style={{ padding: '16px' }}>
-          <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
-            Имя и фамилия *
-          </Text>
+      <Card style={surfaceCardStyle}>
+        <Text
+          style={{
+            fontSize: '14px',
+            color: 'var(--app-text-soft)',
+            marginBottom: '8px',
+            display: 'block',
+          }}
+        >
+          Имя и фамилия *
+        </Text>
+        <input
+          type="text"
+          value={clientName}
+          onChange={(event) => setClientName(event.target.value)}
+          placeholder="Иван Иванов"
+          style={inputStyle}
+        />
+      </Card>
+
+      <Card style={surfaceCardStyle}>
+        <Text
+          style={{
+            fontSize: '14px',
+            color: 'var(--app-text-soft)',
+            marginBottom: '8px',
+            display: 'block',
+          }}
+        >
+          Номер телефона *
+        </Text>
+        <input
+          type="tel"
+          value={clientPhone}
+          onChange={(event) => setClientPhone(event.target.value)}
+          placeholder="+7 (999) 123-45-67"
+          style={inputStyle}
+        />
+      </Card>
+
+      <Card style={surfaceCardStyle}>
+        <Text
+          style={{
+            fontSize: '14px',
+            color: 'var(--app-text-soft)',
+            marginBottom: '8px',
+            display: 'block',
+          }}
+        >
+          Промокод
+        </Text>
+        <div style={{ display: 'flex', gap: '8px' }}>
           <input
             type="text"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            placeholder="Иван Иванов"
-            style={{
-              width: '100%',
-              padding: '12px',
-              fontSize: '16px',
-              border: '1px solid var(--tgui--divider_color)',
-              borderRadius: '8px',
-              backgroundColor: 'var(--tgui--secondary_bg_color)',
-              color: 'var(--tgui--text_color)',
-              outline: 'none',
+            value={promoCode}
+            onChange={(event) => {
+              setPromoCode(event.target.value.toUpperCase());
+              setPromoError('');
+              setPromoDiscount(0);
             }}
+            placeholder="Введите промокод"
+            style={{ ...inputStyle, textTransform: 'uppercase' }}
           />
-        </Card>
-
-        <Card style={{ padding: '16px' }}>
-          <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
-            Номер телефона *
+          <Button mode="outline" onClick={handlePromoCodeCheck} disabled={!promoCode.trim()}>
+            Применить
+          </Button>
+        </div>
+        {promoError && (
+          <Text style={{ color: 'var(--app-danger)', fontSize: '14px', marginTop: '8px' }}>
+            {promoError}
           </Text>
-          <input
-            type="tel"
-            value={clientPhone}
-            onChange={(e) => setClientPhone(e.target.value)}
-            placeholder="+7 (999) 123-45-67"
-            style={{
-              width: '100%',
-              padding: '12px',
-              fontSize: '16px',
-              border: '1px solid var(--tgui--divider_color)',
-              borderRadius: '8px',
-              backgroundColor: 'var(--tgui--secondary_bg_color)',
-              color: 'var(--tgui--text_color)',
-              outline: 'none',
-            }}
-          />
-        </Card>
-
-        <Card style={{ padding: '16px' }}>
-          <Text style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px', display: 'block' }}>
-            Промокод (необязательно)
+        )}
+        {promoDiscount > 0 && (
+          <Text style={{ color: 'var(--app-accent-strong)', fontSize: '14px', marginTop: '8px' }}>
+            Скидка {promoDiscount}% применена
           </Text>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(e) => {
-                setPromoCode(e.target.value.toUpperCase());
-                setPromoError('');
-                setPromoDiscount(0);
-              }}
-              placeholder="Введите промокод"
-              style={{
-                flex: 1,
-                padding: '12px',
-                fontSize: '16px',
-                border: '1px solid var(--tgui--divider_color)',
-                borderRadius: '8px',
-                backgroundColor: 'var(--tgui--secondary_bg_color)',
-                color: 'var(--tgui--text_color)',
-                outline: 'none',
-                textTransform: 'uppercase',
-              }}
-            />
-            <Button mode="outline" onClick={handlePromoCodeCheck} disabled={!promoCode.trim()}>
-              Применить
-            </Button>
-          </div>
-          {promoError && (
-            <Text
-              style={{
-                color: 'var(--tgui--destructive_text_color)',
-                fontSize: '14px',
-                marginTop: '8px',
-              }}
-            >
-              {promoError}
-            </Text>
-          )}
-          {promoDiscount > 0 && (
-            <Text style={{ color: 'var(--tgui--link_color)', fontSize: '14px', marginTop: '8px' }}>
-              ✅ Скидка {promoDiscount}% применена!
-            </Text>
-          )}
-        </Card>
-      </div>
+        )}
+      </Card>
 
       <Button
         size="l"
         stretched
         onClick={handleConfirm}
         disabled={submitting || !clientName.trim() || !clientPhone.trim()}
+        style={{
+          backgroundColor: 'var(--app-accent)',
+          color: '#fffaf3',
+          borderRadius: '18px',
+        }}
       >
         {submitting ? 'Создание записи...' : 'Записаться'}
       </Button>

@@ -206,13 +206,13 @@ export function MastersList() {
                       width: '72px',
                       height: '72px',
                       borderRadius: '18px',
-                      background: 'rgba(255,255,255,0.05)',
+                      background: 'var(--app-surface-muted)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '28px',
                       fontWeight: 700,
-                      color: '#8ecbff',
+                      color: 'var(--app-accent-strong)',
                       flexShrink: 0,
                     }}
                   >
@@ -244,7 +244,7 @@ export function MastersList() {
                       gap: '10px',
                       padding: '14px',
                       borderRadius: '16px',
-                      backgroundColor: 'rgba(255,255,255,0.035)',
+                      backgroundColor: 'var(--app-surface-muted)',
                     }}
                   >
                     {master.phone && <AdminDetailRow label="Телефон" value={master.phone} />}
@@ -268,7 +268,7 @@ export function MastersList() {
                   mode="outline"
                   size="s"
                   onClick={() => handleToggleActive(master)}
-                  style={{ color: master.is_active ? '#ffcf70' : '#7ee787' }}
+                  style={{ color: 'var(--app-accent-strong)' }}
                 >
                   {master.is_active ? 'Деактивировать' : 'Активировать'}
                 </Button>
@@ -276,7 +276,7 @@ export function MastersList() {
                   mode="outline"
                   size="s"
                   onClick={() => handleDelete(master.id)}
-                  style={{ color: '#ff9a92' }}
+                  style={{ color: 'var(--app-danger)' }}
                 >
                   Удалить
                 </Button>

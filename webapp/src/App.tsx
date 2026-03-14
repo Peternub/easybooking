@@ -11,11 +11,9 @@ import { BookingFlow } from './pages/BookingFlow';
 import { ReviewPage } from './pages/ReviewPage';
 
 export function App() {
-  // Принудительно используем темную тему
-  const theme = 'dark';
+  const theme = 'light';
 
   useEffect(() => {
-    // Инициализация Telegram WebApp
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();

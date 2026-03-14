@@ -1,6 +1,7 @@
 import { Button, Input, Text, Title } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { pageShellStyle, softPanelStyle, titleStyle } from '../components/AppTheme';
 
 export function ReviewPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -39,18 +40,25 @@ export function ReviewPage() {
   }, []);
 
   return (
-    <div style={{ padding: '16px' }}>
-      <Title level="1" style={{ marginBottom: '16px' }}>
+    <div style={pageShellStyle}>
+      <Title level="1" style={titleStyle}>
         Оцените услугу
       </Title>
 
-      <Text style={{ marginBottom: '24px' }}>Ваше мнение поможет нам стать лучше!</Text>
-
-      <div style={{ marginBottom: '24px' }}>
-        <Text weight="2" style={{ marginBottom: '12px', display: 'block' }}>
-          Оценка:
+      <div style={softPanelStyle}>
+        <Text style={{ color: 'var(--app-text-soft)' }}>
+          Ваше мнение поможет нам сделать сервис лучше.
         </Text>
-        <div style={{ display: 'flex', gap: '8px', fontSize: '32px' }}>
+      </div>
+
+      <div style={{ marginBottom: '8px' }}>
+        <Text
+          weight="2"
+          style={{ marginBottom: '12px', display: 'block', color: 'var(--app-text)' }}
+        >
+          Оценка
+        </Text>
+        <div style={{ display: 'flex', gap: '10px', fontSize: '34px' }}>
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
@@ -60,29 +68,43 @@ export function ReviewPage() {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                fontSize: '32px',
+                fontSize: '34px',
                 padding: '4px',
+                color: star <= rating ? 'var(--app-accent)' : '#d3bdab',
               }}
             >
-              {star <= rating ? '⭐️' : '☆'}
+              {star <= rating ? '★' : '☆'}
             </button>
           ))}
         </div>
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
-        <Text weight="2" style={{ marginBottom: '12px', display: 'block' }}>
-          Комментарий (необязательно):
+      <div>
+        <Text
+          weight="2"
+          style={{ marginBottom: '12px', display: 'block', color: 'var(--app-text)' }}
+        >
+          Комментарий
         </Text>
         <Input
           header="Ваш отзыв"
           placeholder="Расскажите о вашем опыте..."
           value={comment}
-          onChange={(e) => setComment(e.target.value)}
+          onChange={(event) => setComment(event.target.value)}
         />
       </div>
 
-      <Button size="l" stretched onClick={handleSubmit} disabled={isSubmitting || rating === 0}>
+      <Button
+        size="l"
+        stretched
+        onClick={handleSubmit}
+        disabled={isSubmitting || rating === 0}
+        style={{
+          backgroundColor: 'var(--app-accent)',
+          color: '#fffaf3',
+          borderRadius: '18px',
+        }}
+      >
         {isSubmitting ? 'Отправка...' : 'Отправить отзыв'}
       </Button>
     </div>

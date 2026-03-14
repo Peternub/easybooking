@@ -201,7 +201,7 @@ export function BookingsList({ onAddBooking }: Props) {
               gap: '10px',
               padding: '14px',
               borderRadius: '16px',
-              backgroundColor: 'rgba(255,255,255,0.035)',
+              backgroundColor: 'var(--app-surface-muted)',
             }}
           >
             <AdminDetailRow label="Мастер" value={booking.master_name} />
@@ -215,7 +215,7 @@ export function BookingsList({ onAddBooking }: Props) {
               style={{
                 padding: '12px 14px',
                 borderRadius: '16px',
-                backgroundColor: 'rgba(255, 193, 7, 0.08)',
+                backgroundColor: 'var(--app-accent-soft)',
               }}
             >
               <Text style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>
@@ -302,11 +302,9 @@ export function BookingsList({ onAddBooking }: Props) {
                       padding: '8px',
                       borderRadius: '16px',
                       border: isSelected
-                        ? '1px solid rgba(93, 168, 255, 0.75)'
-                        : '1px solid rgba(255,255,255,0.06)',
-                      background: isSelected
-                        ? 'rgba(52, 101, 164, 0.28)'
-                        : 'rgba(255,255,255,0.02)',
+                        ? '1px solid var(--app-accent)'
+                        : '1px solid var(--app-border)',
+                      background: isSelected ? 'var(--app-accent-soft)' : 'var(--app-surface)',
                       textAlign: 'left',
                       color: 'inherit',
                       opacity: inCurrentMonth ? 1 : 0.45,
@@ -326,7 +324,7 @@ export function BookingsList({ onAddBooking }: Props) {
                         style={{
                           fontSize: '14px',
                           fontWeight: isToday(day) || isSelected ? 700 : 500,
-                          color: isToday(day) ? '#8ecbff' : 'inherit',
+                          color: isToday(day) ? 'var(--app-accent-strong)' : 'inherit',
                         }}
                       >
                         {format(day, 'd')}
@@ -337,8 +335,8 @@ export function BookingsList({ onAddBooking }: Props) {
                             minWidth: '18px',
                             height: '18px',
                             borderRadius: '999px',
-                            backgroundColor: 'rgba(46, 166, 255, 0.18)',
-                            color: '#8ecbff',
+                            backgroundColor: 'var(--app-surface-muted)',
+                            color: 'var(--app-accent-strong)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -358,10 +356,7 @@ export function BookingsList({ onAddBooking }: Props) {
                           style={{
                             padding: '4px 6px',
                             borderRadius: '10px',
-                            backgroundColor:
-                              booking.status === 'active'
-                                ? 'rgba(76, 175, 80, 0.16)'
-                                : 'rgba(255, 179, 71, 0.16)',
+                            backgroundColor: booking.status === 'active' ? '#e8d8c7' : '#efdbc4',
                             fontSize: '11px',
                             lineHeight: 1.25,
                             overflow: 'hidden',

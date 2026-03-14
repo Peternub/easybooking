@@ -110,7 +110,7 @@ export function ClientsView() {
                     minWidth: '96px',
                     padding: '12px 14px',
                     borderRadius: '16px',
-                    backgroundColor: 'rgba(255,255,255,0.035)',
+                    backgroundColor: 'var(--app-surface-muted)',
                     textAlign: 'center',
                   }}
                 >
@@ -126,7 +126,7 @@ export function ClientsView() {
                   style={{
                     padding: '12px 14px',
                     borderRadius: '16px',
-                    backgroundColor: 'rgba(255,255,255,0.035)',
+                    backgroundColor: 'var(--app-surface-muted)',
                   }}
                 >
                   <Text style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>

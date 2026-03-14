@@ -12,18 +12,15 @@ export const adminPageStyle: CSSProperties = {
 
 const baseCardStyle: CSSProperties = {
   padding: '18px',
-  borderRadius: '20px',
-  background:
-    'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02) 65%, rgba(255,255,255,0.015))',
-  border: '1px solid rgba(255,255,255,0.07)',
-  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.18)',
+  borderRadius: '22px',
+  background: 'linear-gradient(180deg, rgba(255,250,243,0.98), rgba(248,238,226,0.96))',
+  border: '1px solid var(--app-border)',
+  boxShadow: 'var(--app-shadow)',
 };
 
 const heroCardStyle: CSSProperties = {
   ...baseCardStyle,
-  padding: '20px',
-  background:
-    'linear-gradient(135deg, rgba(77, 144, 212, 0.34), rgba(28, 54, 86, 0.72) 58%, rgba(15, 22, 31, 0.96))',
+  background: 'linear-gradient(180deg, #f8efe5, #efdfcd)',
 };
 
 export function AdminCard({
@@ -54,7 +51,7 @@ export function AdminHero({
           <Text
             style={{
               fontSize: '12px',
-              opacity: 0.68,
+              color: 'var(--app-text-soft)',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
             }}
@@ -62,11 +59,13 @@ export function AdminHero({
             {eyebrow}
           </Text>
         )}
-        <Title level="1" style={{ margin: 0, lineHeight: 1.1 }}>
+        <Title level="1" style={{ margin: 0, lineHeight: 1.1, color: 'var(--app-text)' }}>
           {title}
         </Title>
         {description && (
-          <Text style={{ fontSize: '14px', opacity: 0.82, lineHeight: 1.45 }}>{description}</Text>
+          <Text style={{ fontSize: '14px', color: 'var(--app-text-soft)', lineHeight: 1.45 }}>
+            {description}
+          </Text>
         )}
         {children}
       </div>
@@ -83,8 +82,14 @@ export function AdminSectionTitle({
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <Text style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2 }}>{title}</Text>
-      {subtitle && <Text style={{ fontSize: '13px', opacity: 0.64 }}>{subtitle}</Text>}
+      <Text
+        style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2, color: 'var(--app-text)' }}
+      >
+        {title}
+      </Text>
+      {subtitle && (
+        <Text style={{ fontSize: '13px', color: 'var(--app-text-soft)' }}>{subtitle}</Text>
+      )}
     </div>
   );
 }
@@ -103,11 +108,15 @@ export function AdminMetric({
         minWidth: '96px',
         padding: '14px',
         borderRadius: '16px',
-        backgroundColor: 'rgba(255,255,255,0.04)',
+        backgroundColor: 'var(--app-surface-muted)',
       }}
     >
-      <Text style={{ display: 'block', fontSize: '24px', fontWeight: 700 }}>{value}</Text>
-      <Text style={{ fontSize: '12px', opacity: 0.6 }}>{label}</Text>
+      <Text
+        style={{ display: 'block', fontSize: '24px', fontWeight: 700, color: 'var(--app-text)' }}
+      >
+        {value}
+      </Text>
+      <Text style={{ fontSize: '12px', color: 'var(--app-text-soft)' }}>{label}</Text>
     </div>
   );
 }
@@ -121,24 +130,24 @@ export function AdminChip({
 }) {
   const stylesByTone: Record<string, CSSProperties> = {
     neutral: {
-      backgroundColor: 'rgba(255,255,255,0.08)',
-      color: '#d1d5db',
+      backgroundColor: '#efe1d2',
+      color: '#6f5746',
     },
     blue: {
-      backgroundColor: 'rgba(46, 166, 255, 0.15)',
-      color: '#8ecbff',
+      backgroundColor: '#eadbc8',
+      color: '#7b614e',
     },
     green: {
-      backgroundColor: 'rgba(76, 175, 80, 0.18)',
-      color: '#7ee787',
+      backgroundColor: '#e8d8c7',
+      color: '#7f654d',
     },
     orange: {
-      backgroundColor: 'rgba(255, 179, 71, 0.18)',
-      color: '#ffcf70',
+      backgroundColor: '#efdbc4',
+      color: '#8d6949',
     },
     red: {
-      backgroundColor: 'rgba(244, 67, 54, 0.18)',
-      color: '#ff9a92',
+      backgroundColor: '#edd7cd',
+      color: '#8a5f51',
     },
   };
 
@@ -177,8 +186,10 @@ export function AdminActionLink({
           gap: '6px',
         }}
       >
-        <Text style={{ fontSize: '16px', fontWeight: 700 }}>{label}</Text>
-        <Text style={{ fontSize: '13px', opacity: 0.7, lineHeight: 1.45 }}>{description}</Text>
+        <Text style={{ fontSize: '16px', fontWeight: 700, color: 'var(--app-text)' }}>{label}</Text>
+        <Text style={{ fontSize: '13px', color: 'var(--app-text-soft)', lineHeight: 1.45 }}>
+          {description}
+        </Text>
       </AdminCard>
     </Link>
   );
@@ -195,7 +206,18 @@ export function AdminPrimaryButton({
   type?: 'button' | 'submit' | 'reset';
 }) {
   return (
-    <Button size="l" mode="filled" {...props}>
+    <Button
+      size="l"
+      mode="filled"
+      style={{
+        backgroundColor: 'var(--app-accent)',
+        color: '#fffaf3',
+        borderRadius: '18px',
+        border: 'none',
+        boxShadow: '0 10px 22px rgba(141, 103, 66, 0.16)',
+      }}
+      {...props}
+    >
       {children}
     </Button>
   );
@@ -204,7 +226,7 @@ export function AdminPrimaryButton({
 export function AdminEmptyState({ text }: { text: string }) {
   return (
     <AdminCard style={{ padding: '24px', textAlign: 'center' }}>
-      <Text style={{ opacity: 0.62, lineHeight: 1.5 }}>{text}</Text>
+      <Text style={{ color: 'var(--app-text-soft)', lineHeight: 1.5 }}>{text}</Text>
     </AdminCard>
   );
 }
@@ -251,14 +273,14 @@ export function AdminDetailRow({
         style={{
           fontSize: '12px',
           lineHeight: 1.4,
-          opacity: 0.58,
+          color: 'var(--app-text-soft)',
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
         }}
       >
         {label}
       </Text>
-      <Text style={{ fontSize: '15px', lineHeight: 1.45 }}>{value}</Text>
+      <Text style={{ fontSize: '15px', lineHeight: 1.45, color: 'var(--app-text)' }}>{value}</Text>
     </div>
   );
 }

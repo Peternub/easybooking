@@ -4,26 +4,68 @@
   box-sizing: border-box;
 }
 
+:root {
+  --app-bg: #f5ede3;
+  --app-surface: #fffaf3;
+  --app-surface-muted: #efe1d2;
+  --app-border: #dcc8b2;
+  --app-text: #4e3b2a;
+  --app-text-soft: #7d6653;
+  --app-accent: #a67c52;
+  --app-accent-strong: #8d6742;
+  --app-accent-soft: #e8d5bf;
+  --app-success: #b99b7a;
+  --app-warning: #c59d73;
+  --app-danger: #c48d7c;
+  --app-shadow: 0 14px 34px rgba(120, 88, 57, 0.12);
+
+  --tgui--bg_color: #f5ede3 !important;
+  --tgui--secondary_bg_color: #fffaf3 !important;
+  --tgui--section_bg_color: #fffaf3 !important;
+  --tgui--subtitle_text_color: #7d6653 !important;
+  --tgui--text_color: #4e3b2a !important;
+  --tgui--hint_color: #8a7461 !important;
+  --tgui--link_color: #8d6742 !important;
+  --tgui--button_color: #a67c52 !important;
+  --tgui--button_text_color: #fffaf3 !important;
+  --tgui--accent_text_color: #8d6742 !important;
+  --tgui--section_separator_color: #e4d4c3 !important;
+  --tgui--separator_color: #e4d4c3 !important;
+  --tgui--outline_color: #dcc8b2 !important;
+  --tgui--surface_primary: #fffaf3 !important;
+  --tgui--tertiary_bg_color: #efe1d2 !important;
+  --tgui--destructive_text_color: #a56d5d !important;
+}
+
+html,
+body,
+#root {
+  min-height: 100vh;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #17212b !important;
-  color: #ffffff !important;
+  background: radial-gradient(
+      circle at top,
+      rgba(255, 250, 243, 0.9),
+      rgba(245, 237, 227, 0.98) 42%
+    ), linear-gradient(180deg, #f8f0e6 0%, #f3e7d9 100%) !important;
+  color: var(--app-text) !important;
 }
 
 #root {
-  min-height: 100vh;
-  background-color: #17212b !important;
+  background: transparent;
 }
 
-/* Переопределяем CSS переменные Telegram для темной темы */
-:root {
-  --tgui--bg_color: #17212b !important;
-  --tgui--secondary_bg_color: #232e3c !important;
-  --tgui--text_color: #ffffff !important;
-  --tgui--hint_color: #8e8e93 !important;
-  --tgui--link_color: #2ea6ff !important;
-  --tgui--button_color: #2ea6ff !important;
-  --tgui--button_text_color: #ffffff !important;
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
 }

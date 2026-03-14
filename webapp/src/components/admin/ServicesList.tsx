@@ -198,7 +198,7 @@ export function ServicesList() {
                   gap: '10px',
                   padding: '14px',
                   borderRadius: '16px',
-                  backgroundColor: 'rgba(255,255,255,0.035)',
+                  backgroundColor: 'var(--app-surface-muted)',
                 }}
               >
                 <AdminDetailRow label="Цена" value={`${service.price} ₽`} />
@@ -218,7 +218,7 @@ export function ServicesList() {
                   mode="outline"
                   size="s"
                   onClick={() => handleToggleActive(service)}
-                  style={{ color: service.is_active ? '#ffcf70' : '#7ee787' }}
+                  style={{ color: 'var(--app-accent-strong)' }}
                 >
                   {service.is_active ? 'Деактивировать' : 'Активировать'}
                 </Button>
@@ -226,7 +226,7 @@ export function ServicesList() {
                   mode="outline"
                   size="s"
                   onClick={() => handleDelete(service.id)}
-                  style={{ color: '#ff9a92' }}
+                  style={{ color: 'var(--app-danger)' }}
                 >
                   Удалить
                 </Button>

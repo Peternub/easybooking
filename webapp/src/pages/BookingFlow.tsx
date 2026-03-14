@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { pageShellStyle } from '../components/AppTheme';
 import { BookingConfirmation } from '../components/BookingConfirmation';
 import { SelectDateTime } from '../components/SelectDateTime';
 import { SelectMaster } from '../components/SelectMaster';
@@ -50,7 +51,7 @@ export function BookingFlow() {
   };
 
   return (
-    <div style={{ padding: '16px' }}>
+    <div style={pageShellStyle}>
       {step === 'service' && <SelectService onSelect={handleServiceSelect} />}
 
       {step === 'master' && selectedService && (

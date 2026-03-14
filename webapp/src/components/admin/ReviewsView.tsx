@@ -138,7 +138,7 @@ export function ReviewsView() {
                     style={{
                       padding: '14px',
                       borderRadius: '16px',
-                      backgroundColor: 'rgba(255,255,255,0.035)',
+                      backgroundColor: 'var(--app-surface-muted)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '8px',

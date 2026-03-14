@@ -2,6 +2,7 @@ import { Card, Placeholder, Spinner, Text, Title } from '@telegram-apps/telegram
 import { useEffect, useState } from 'react';
 import type { Service } from '../../../shared/types';
 import { supabase } from '../services/supabase';
+import { pageShellStyle, surfaceCardStyle, titleStyle } from './AppTheme';
 
 interface Props {
   onSelect: (serviceId: string) => void;
@@ -25,7 +26,10 @@ export function SelectService({ onSelect }: Props) {
         .order('category')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       setServices(data || []);
     } catch (err) {
       console.error('Ошибка загрузки услуг:', err);
@@ -52,8 +56,8 @@ export function SelectService({ onSelect }: Props) {
   }
 
   return (
-    <div>
-      <Title level="1" style={{ marginBottom: '16px' }}>
+    <div style={pageShellStyle}>
+      <Title level="1" style={titleStyle}>
         Выберите услугу
       </Title>
 
@@ -62,14 +66,20 @@ export function SelectService({ onSelect }: Props) {
           <Card
             key={service.id}
             onClick={() => onSelect(service.id)}
-            style={{ cursor: 'pointer', padding: '16px' }}
+            style={{ ...surfaceCardStyle, cursor: 'pointer' }}
           >
-            <Title level="3">{service.name}</Title>
+            <Title level="3" style={{ color: 'var(--app-text)' }}>
+              {service.name}
+            </Title>
             {service.description && (
-              <Text style={{ marginTop: '8px', marginBottom: '12px' }}>{service.description}</Text>
+              <Text style={{ marginTop: '8px', color: 'var(--app-text-soft)', lineHeight: 1.45 }}>
+                {service.description}
+              </Text>
             )}
-            <div style={{ marginTop: '8px' }}>
-              <Text weight="2">{service.price} ₽</Text>
+            <div style={{ marginTop: '12px' }}>
+              <Text weight="2" style={{ color: 'var(--app-accent-strong)' }}>
+                {service.price} ₽
+              </Text>
             </div>
           </Card>
         ))}
