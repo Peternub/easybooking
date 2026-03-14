@@ -17,17 +17,8 @@ import { ru } from 'date-fns/locale';
 import { useEffect, useMemo, useState } from 'react';
 import type { BookingReadable } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
-import {
-  AdminCard,
-  AdminChip,
-  AdminDetailRow,
-  AdminEmptyState,
-  AdminPrimaryButton,
-} from './AdminTheme';
-
-interface Props {
-  onAddBooking: () => void;
-}
+import { AdminCard, AdminChip, AdminDetailRow, AdminEmptyState } from './AdminTheme';
+import { BookingForm } from './BookingForm';
 
 type ViewMode = 'calendar' | 'list';
 
@@ -42,7 +33,7 @@ function getStatusText(status: string) {
     case 'cancelled':
       return 'Отменена';
     case 'no_show':
-      return 'Не пришёл';
+      return 'Не пришел';
     default:
       return status;
   }
@@ -96,12 +87,13 @@ function getDayKey(date: Date) {
   return format(date, 'yyyy-MM-dd');
 }
 
-export function BookingsList({ onAddBooking }: Props) {
+export function BookingsList() {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [isCreatingForDay, setIsCreatingForDay] = useState(false);
 
   useEffect(() => {
     loadBookings();
@@ -270,7 +262,7 @@ export function BookingsList({ onAddBooking }: Props) {
                   size="s"
                   onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
                 >
-                  Вперёд
+                  Вперед
                 </Button>
               </div>
             </div>
@@ -307,7 +299,10 @@ export function BookingsList({ onAddBooking }: Props) {
                   <button
                     key={dayKey}
                     type="button"
-                    onClick={() => setSelectedDate(day)}
+                    onClick={() => {
+                      setSelectedDate(day);
+                      setIsCreatingForDay(true);
+                    }}
                     style={{
                       minHeight: '96px',
                       padding: '8px',
@@ -322,6 +317,7 @@ export function BookingsList({ onAddBooking }: Props) {
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '6px',
+                      cursor: 'pointer',
                     }}
                   >
                     <div
@@ -391,7 +387,7 @@ export function BookingsList({ onAddBooking }: Props) {
 
                       {dayBookings.length > 3 && (
                         <div style={{ fontSize: '11px', color: 'var(--app-text-soft)' }}>
-                          + ещё {dayBookings.length - 3}
+                          + еще {dayBookings.length - 3}
                         </div>
                       )}
                     </div>
@@ -403,9 +399,35 @@ export function BookingsList({ onAddBooking }: Props) {
         </AdminCard>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <Text style={{ fontSize: '18px', fontWeight: 700, color: 'var(--app-text)' }}>
-            {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
-          </Text>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '10px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <Text style={{ fontSize: '18px', fontWeight: 700, color: 'var(--app-text)' }}>
+              {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
+            </Text>
+            {isCreatingForDay && (
+              <Button mode="outline" size="s" onClick={() => setIsCreatingForDay(false)}>
+                Скрыть форму
+              </Button>
+            )}
+          </div>
+
+          {isCreatingForDay && (
+            <BookingForm
+              hideBackButton
+              initialDate={getDayKey(selectedDate)}
+              onSaved={() => {
+                setIsCreatingForDay(false);
+                loadBookings();
+              }}
+            />
+          )}
 
           {selectedDayBookings.length === 0 ? (
             <AdminEmptyState text="На выбранный день записей нет." />
@@ -471,10 +493,6 @@ export function BookingsList({ onAddBooking }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <AdminPrimaryButton stretched onClick={onAddBooking}>
-        + Добавить запись вручную
-      </AdminPrimaryButton>
-
       <div style={{ display: 'flex', gap: '8px' }}>
         <Button
           mode={viewMode === 'calendar' ? 'filled' : 'outline'}

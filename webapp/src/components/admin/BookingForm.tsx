@@ -6,7 +6,10 @@ import { supabase } from '../../services/supabase';
 import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 
 interface Props {
-  onClose: () => void;
+  onClose?: () => void;
+  initialDate?: string;
+  onSaved?: () => void;
+  hideBackButton?: boolean;
 }
 
 const labelStyle = {
@@ -22,14 +25,14 @@ const hintStyle = {
   marginTop: '8px',
 } as const;
 
-export function BookingForm({ onClose }: Props) {
+export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = false }: Props) {
   const [masters, setMasters] = useState<Master[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [selectedMasterId, setSelectedMasterId] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
-  const [bookingDate, setBookingDate] = useState('');
+  const [bookingDate, setBookingDate] = useState(initialDate || '');
   const [bookingHour, setBookingHour] = useState('');
   const [bookingMinute, setBookingMinute] = useState('00');
   const [notes, setNotes] = useState('');
@@ -41,6 +44,12 @@ export function BookingForm({ onClose }: Props) {
     loadMasters();
     loadServices();
   }, []);
+
+  useEffect(() => {
+    if (initialDate) {
+      setBookingDate(initialDate);
+    }
+  }, [initialDate]);
 
   useEffect(() => {
     if (selectedMasterId && bookingDate) {
@@ -274,7 +283,8 @@ export function BookingForm({ onClose }: Props) {
       }
 
       alert('Запись создана');
-      onClose();
+      onSaved?.();
+      onClose?.();
     } catch (error) {
       console.error('Ошибка создания записи:', error);
       alert('Не удалось создать запись');
@@ -290,25 +300,27 @@ export function BookingForm({ onClose }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <button
-        type="button"
-        onClick={onClose}
-        style={{
-          ...backButtonStyle,
-          alignSelf: 'flex-start',
-          background: 'none',
-          border: 'none',
-          fontSize: '16px',
-          cursor: 'pointer',
-        }}
-      >
-        ← Назад к списку
-      </button>
+      {!hideBackButton && onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            ...backButtonStyle,
+            alignSelf: 'flex-start',
+            background: 'none',
+            border: 'none',
+            fontSize: '16px',
+            cursor: 'pointer',
+          }}
+        >
+          ← Назад к списку
+        </button>
+      )}
 
       <AdminCard style={{ padding: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <Text style={{ fontSize: '28px', fontWeight: 700, color: 'var(--app-text)' }}>
-            Новая запись (вручную)
+            Новая запись
           </Text>
 
           <div>
