@@ -28,10 +28,11 @@ export function MasterForm({ master, onClose }: Props) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isActive, setIsActive] = useState(master?.is_active ?? true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'schedule' | 'services' | 'absences'>('info');
 
-  // Синхронизируем локальный state при переключении на другого мастера.
+  // Сбрасываем локальные поля при открытии другого мастера.
   useEffect(() => {
     setName(master?.name || '');
     setDescription(master?.description || '');
@@ -40,6 +41,7 @@ export function MasterForm({ master, onClose }: Props) {
     setPhotoFile(null);
     setIsActive(master?.is_active ?? true);
     setSaving(false);
+    setSaved(false);
     setUploading(false);
     setActiveTab('info');
   }, [master]);
@@ -58,6 +60,7 @@ export function MasterForm({ master, onClose }: Props) {
       return;
     }
 
+    setSaved(false);
     setPhotoFile(file);
 
     const reader = new FileReader();
@@ -102,6 +105,7 @@ export function MasterForm({ master, onClose }: Props) {
       return;
     }
 
+    setSaved(false);
     setSaving(true);
 
     try {
@@ -124,14 +128,12 @@ export function MasterForm({ master, onClose }: Props) {
       if (master) {
         const { error } = await supabase.from('masters').update(masterData).eq('id', master.id);
         if (error) throw error;
-        alert('Мастер обновлен');
       } else {
         const { error } = await supabase.from('masters').insert(masterData);
         if (error) throw error;
-        alert('Мастер добавлен');
       }
 
-      onClose();
+      setSaved(true);
     } catch (error) {
       console.error('Ошибка сохранения мастера:', error);
       alert('Не удалось сохранить мастера');
@@ -208,7 +210,10 @@ export function MasterForm({ master, onClose }: Props) {
                   id="master-name"
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setSaved(false);
+                  }}
                   placeholder="Анна Иванова"
                   style={inputStyle}
                 />
@@ -221,7 +226,10 @@ export function MasterForm({ master, onClose }: Props) {
                 <textarea
                   id="master-description"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setSaved(false);
+                  }}
                   placeholder="Опытный мастер с 5-летним стажем работы"
                   rows={3}
                   style={{ ...inputStyle, minHeight: '108px', resize: 'vertical' }}
@@ -236,7 +244,10 @@ export function MasterForm({ master, onClose }: Props) {
                   id="master-phone"
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setSaved(false);
+                  }}
                   placeholder="+7 (999) 123-45-67"
                   style={inputStyle}
                 />
@@ -293,7 +304,10 @@ export function MasterForm({ master, onClose }: Props) {
                   id="master-active"
                   type="checkbox"
                   checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
+                  onChange={(e) => {
+                    setIsActive(e.target.checked);
+                    setSaved(false);
+                  }}
                   style={{ width: '18px', height: '18px', accentColor: 'var(--app-accent)' }}
                 />
                 Мастер активен (доступен для записи)
@@ -306,9 +320,11 @@ export function MasterForm({ master, onClose }: Props) {
               ? 'Загрузка фото...'
               : saving
                 ? 'Сохранение...'
-                : master
-                  ? 'Сохранить изменения'
-                  : 'Добавить мастера'}
+                : saved
+                  ? 'Сохранено'
+                  : master
+                    ? 'Сохранить изменения'
+                    : 'Добавить мастера'}
           </AdminPrimaryButton>
         </div>
       )}

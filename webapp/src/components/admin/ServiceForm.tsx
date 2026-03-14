@@ -1,5 +1,5 @@
 import { Text } from '@telegram-apps/telegram-ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Service } from '../../../../shared/types';
 import { backButtonStyle, inputStyle } from '../../components/AppTheme';
 import { supabase } from '../../services/supabase';
@@ -24,6 +24,17 @@ export function ServiceForm({ service, onClose }: Props) {
   const [category, setCategory] = useState(service?.category || '');
   const [isActive, setIsActive] = useState(service?.is_active ?? true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setName(service?.name || '');
+    setDescription(service?.description || '');
+    setPrice(service?.price?.toString() || '');
+    setCategory(service?.category || '');
+    setIsActive(service?.is_active ?? true);
+    setSaving(false);
+    setSaved(false);
+  }, [service]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +50,7 @@ export function ServiceForm({ service, onClose }: Props) {
     }
 
     setSaving(true);
+    setSaved(false);
 
     try {
       const serviceData = {
@@ -53,14 +65,12 @@ export function ServiceForm({ service, onClose }: Props) {
       if (service) {
         const { error } = await supabase.from('services').update(serviceData).eq('id', service.id);
         if (error) throw error;
-        alert('Услуга обновлена');
       } else {
         const { error } = await supabase.from('services').insert(serviceData);
         if (error) throw error;
-        alert('Услуга создана');
       }
 
-      onClose();
+      setSaved(true);
     } catch (error) {
       console.error('Ошибка сохранения услуги:', error);
       alert('Не удалось сохранить услугу');
@@ -100,7 +110,10 @@ export function ServiceForm({ service, onClose }: Props) {
               id="service-name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setSaved(false);
+              }}
               placeholder="Например: Стрижка мужская"
               style={inputStyle}
               required
@@ -114,7 +127,10 @@ export function ServiceForm({ service, onClose }: Props) {
             <textarea
               id="service-description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setSaved(false);
+              }}
               placeholder="Краткое описание услуги"
               rows={3}
               style={{ ...inputStyle, minHeight: '108px', resize: 'vertical' }}
@@ -129,7 +145,10 @@ export function ServiceForm({ service, onClose }: Props) {
               id="service-price"
               type="number"
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => {
+                setPrice(e.target.value);
+                setSaved(false);
+              }}
               placeholder="1000"
               min="0"
               step="0.01"
@@ -146,7 +165,10 @@ export function ServiceForm({ service, onClose }: Props) {
               id="service-category"
               type="text"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSaved(false);
+              }}
               placeholder="Например: Стрижки"
               style={inputStyle}
             />
@@ -160,7 +182,10 @@ export function ServiceForm({ service, onClose }: Props) {
               id="service-active"
               type="checkbox"
               checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
+              onChange={(e) => {
+                setIsActive(e.target.checked);
+                setSaved(false);
+              }}
               style={{ width: '18px', height: '18px', accentColor: 'var(--app-accent)' }}
             />
             Услуга активна (доступна для записи)
@@ -169,7 +194,13 @@ export function ServiceForm({ service, onClose }: Props) {
       </AdminCard>
 
       <AdminPrimaryButton type="submit" stretched disabled={saving}>
-        {saving ? 'Сохранение...' : service ? 'Сохранить изменения' : 'Создать услугу'}
+        {saving
+          ? 'Сохранение...'
+          : saved
+            ? 'Сохранено'
+            : service
+              ? 'Сохранить изменения'
+              : 'Создать услугу'}
       </AdminPrimaryButton>
     </form>
   );

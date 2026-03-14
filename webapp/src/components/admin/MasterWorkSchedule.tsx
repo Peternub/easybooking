@@ -30,8 +30,10 @@ export function MasterWorkSchedule({ master }: Props) {
     ),
   );
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   function handleTimeChange(day: string, value: string) {
+    setSaved(false);
     setSchedule({
       ...schedule,
       [day]: value,
@@ -40,6 +42,7 @@ export function MasterWorkSchedule({ master }: Props) {
 
   async function handleSave() {
     setSaving(true);
+    setSaved(false);
 
     try {
       const scheduleArray = Object.entries(schedule).reduce(
@@ -58,8 +61,7 @@ export function MasterWorkSchedule({ master }: Props) {
         .eq('id', master.id);
 
       if (error) throw error;
-
-      alert('График работы сохранен');
+      setSaved(true);
     } catch (error) {
       console.error('Ошибка сохранения графика:', error);
       alert('Не удалось сохранить график');
@@ -102,7 +104,7 @@ export function MasterWorkSchedule({ master }: Props) {
       ))}
 
       <AdminPrimaryButton stretched onClick={handleSave} disabled={saving}>
-        {saving ? 'Сохранение...' : 'Сохранить график'}
+        {saving ? 'Сохранение...' : saved ? 'Сохранено' : 'Сохранить график'}
       </AdminPrimaryButton>
     </div>
   );

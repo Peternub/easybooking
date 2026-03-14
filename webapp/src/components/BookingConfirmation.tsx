@@ -26,6 +26,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [promoCode, setPromoCode] = useState('');
@@ -43,21 +44,16 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         supabase.from('services').select('*').eq('id', serviceId).single(),
       ]);
 
-      if (masterData.data) {
-        setMaster(masterData.data);
-      }
-
-      if (serviceData.data) {
-        setService(serviceData.data);
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки данных:', err);
+      if (masterData.data) setMaster(masterData.data);
+      if (serviceData.data) setService(serviceData.data);
+    } catch (error) {
+      console.error('Ошибка загрузки данных:', error);
     } finally {
       setLoading(false);
     }
   }
 
-  const handlePromoCodeCheck = async () => {
+  async function handlePromoCodeCheck() {
     if (!promoCode.trim()) {
       setPromoDiscount(0);
       setPromoError('');
@@ -83,7 +79,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       });
 
       const result = await response.json();
-
       if (result.valid) {
         setPromoDiscount(result.discount);
         setPromoError('');
@@ -96,9 +91,9 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       setPromoError('Не удалось проверить промокод');
       setPromoDiscount(0);
     }
-  };
+  }
 
-  const handleConfirm = async () => {
+  async function handleConfirm() {
     if (!clientName.trim()) {
       alert('Пожалуйста, введите ваше имя и фамилию');
       return;
@@ -110,6 +105,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     }
 
     setSubmitting(true);
+    setBookingSuccess(false);
 
     if (!window.Telegram?.WebApp?.initDataUnsafe?.user) {
       alert('Ошибка: не удалось получить данные пользователя');
@@ -163,7 +159,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
       try {
         const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
-
         await fetch(`${botApiUrl}/api/notify-booking`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -186,23 +181,14 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         console.warn('Ошибка отправки уведомлений:', notifyError);
       }
 
-      alert('Запись успешно создана');
-
-      setClientName('');
-      setClientPhone('');
-      setPromoCode('');
-      setPromoDiscount(0);
-      setPromoError('');
-
-      setTimeout(() => {
-        window.Telegram?.WebApp?.close();
-      }, 500);
+      setBookingSuccess(true);
     } catch (error) {
-      console.error('Ошибка:', error);
-      alert('Произошла ошибка. Попробуйте ещё раз.');
+      console.error('Ошибка бронирования:', error);
+      alert('Произошла ошибка. Попробуйте еще раз.');
+    } finally {
       setSubmitting(false);
     }
-  };
+  }
 
   if (loading) {
     return (
@@ -238,7 +224,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
       <div style={softPanelStyle}>
         <Text style={{ color: 'var(--app-text-soft)', fontSize: '13px', textAlign: 'center' }}>
-          Если вы хотите сделать несколько записей, используйте одно и то же имя для всех визитов
+          Если хотите сделать несколько записей, используйте одно и то же имя для всех визитов.
         </Text>
       </div>
 
@@ -376,14 +362,14 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         size="l"
         stretched
         onClick={handleConfirm}
-        disabled={submitting || !clientName.trim() || !clientPhone.trim()}
+        disabled={submitting || bookingSuccess || !clientName.trim() || !clientPhone.trim()}
         style={{
           backgroundColor: 'var(--app-accent)',
           color: '#fffaf3',
           borderRadius: '18px',
         }}
       >
-        {submitting ? 'Создание записи...' : 'Записаться'}
+        {submitting ? 'Бронирование...' : bookingSuccess ? 'Забронировано' : 'Забронировать услугу'}
       </Button>
     </div>
   );
