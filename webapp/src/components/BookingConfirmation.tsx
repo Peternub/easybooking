@@ -181,6 +181,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         console.warn('Ошибка отправки уведомлений:', notifyError);
       }
 
+      alert('Запись успешно создана');
       setBookingSuccess(true);
     } catch (error) {
       console.error('Ошибка бронирования:', error);
