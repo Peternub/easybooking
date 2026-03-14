@@ -13,17 +13,13 @@ export function BookingsList({ onAddBooking }: Props) {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: загружаем записи при монтировании
   useEffect(() => {
     loadBookings();
   }, []);
 
   async function loadBookings() {
     try {
-      console.log('Загрузка предстоящих записей');
-
       const today = new Date().toISOString().split('T')[0];
-      console.log('Сегодня:', today);
 
       const { data, error } = await supabase
         .from('bookings_readable')
@@ -34,14 +30,7 @@ export function BookingsList({ onAddBooking }: Props) {
         .order('booking_time', { ascending: true })
         .limit(50);
 
-      if (error) {
-        console.error('Ошибка Supabase:', error);
-        throw error;
-      }
-
-      console.log('Загружено записей:', data?.length || 0);
-      console.log('Данные:', data);
-
+      if (error) throw error;
       setBookings(data || []);
     } catch (error) {
       console.error('Ошибка загрузки записей:', error);
@@ -54,15 +43,15 @@ export function BookingsList({ onAddBooking }: Props) {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending':
-        return '⏳ Ожидает';
+        return 'Ожидает';
       case 'active':
-        return '✅ Активна';
+        return 'Активна';
       case 'completed':
-        return '✔️ Завершена';
+        return 'Завершена';
       case 'cancelled':
-        return '❌ Отменена';
+        return 'Отменена';
       case 'no_show':
-        return '👻 Не пришел';
+        return 'Не пришел';
       default:
         return status;
     }
@@ -71,13 +60,13 @@ export function BookingsList({ onAddBooking }: Props) {
   const getSourceText = (source: string) => {
     switch (source) {
       case 'online':
-        return '🤖 Онлайн';
+        return 'Онлайн';
       case 'manual':
-        return '✍️ Вручную';
+        return 'Вручную';
       case 'phone':
-        return '📞 Телефон';
+        return 'Телефон';
       case 'walk_in':
-        return '🚶 С улицы';
+        return 'С улицы';
       default:
         return source;
     }
@@ -116,9 +105,14 @@ export function BookingsList({ onAddBooking }: Props) {
                       <Text style={{ fontSize: '16px', fontWeight: 'bold' }}>
                         {booking.client_name}
                       </Text>
+                      {booking.client_username && (
+                        <Text style={{ fontSize: '14px', opacity: 0.7 }}>
+                          @{booking.client_username}
+                        </Text>
+                      )}
                       {booking.client_phone && (
                         <Text style={{ fontSize: '14px', opacity: 0.7 }}>
-                          📞 {booking.client_phone}
+                          Телефон: {booking.client_phone}
                         </Text>
                       )}
                     </div>
@@ -131,18 +125,18 @@ export function BookingsList({ onAddBooking }: Props) {
                   </div>
 
                   <div>
-                    <Text style={{ fontSize: '14px' }}>👤 {booking.master_name}</Text>
-                    <Text style={{ fontSize: '14px' }}>💼 {booking.service_name}</Text>
+                    <Text style={{ fontSize: '14px' }}>Мастер: {booking.master_name}</Text>
+                    <Text style={{ fontSize: '14px' }}>Услуга: {booking.service_name}</Text>
                     <Text style={{ fontSize: '14px' }}>
-                      📅 {format(new Date(booking.booking_date), 'd MMMM yyyy', { locale: ru })} в{' '}
-                      {booking.booking_time.substring(0, 5)}
+                      Дата: {format(new Date(booking.booking_date), 'd MMMM yyyy', { locale: ru })}{' '}
+                      в {booking.booking_time.substring(0, 5)}
                     </Text>
-                    <Text style={{ fontSize: '14px' }}>💰 {booking.final_price} ₽</Text>
+                    <Text style={{ fontSize: '14px' }}>Стоимость: {booking.final_price} ₽</Text>
                   </div>
 
                   {booking.admin_notes && (
                     <Text style={{ fontSize: '12px', opacity: 0.6, fontStyle: 'italic' }}>
-                      📝 {booking.admin_notes}
+                      Заметка: {booking.admin_notes}
                     </Text>
                   )}
                 </div>
