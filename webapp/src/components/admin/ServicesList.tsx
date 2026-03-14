@@ -4,6 +4,11 @@ import type { Service } from '../../../../shared/types';
 import { supabase } from '../../services/supabase';
 import { ServiceForm } from './ServiceForm';
 
+interface RelatedBooking {
+  id: string;
+  admin_notes: string | null;
+}
+
 export function ServicesList() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +24,6 @@ export function ServicesList() {
       const { data, error } = await supabase.from('services').select('*').order('name');
 
       if (error) throw error;
-
       setServices(data || []);
     } catch (error) {
       console.error('Ошибка загрузки услуг:', error);
@@ -52,19 +56,51 @@ export function ServicesList() {
     }
 
     try {
-      const { error } = await supabase.from('services').delete().eq('id', serviceId);
+      const service = services.find((item) => item.id === serviceId);
+      const deletedServiceNote = service?.name
+        ? `[Удалена услуга: ${service.name}]`
+        : '[Удалена услуга]';
 
-      if (error) {
-        // Проверяем если ошибка из-за существующих записей
-        if (error.code === '23503') {
-          alert(
-            'Невозможно удалить услугу, так как есть записи клиентов с этой услугой. Вместо удаления рекомендуется деактивировать услугу.',
-          );
-        } else {
-          throw error;
-        }
-        return;
+      const { data: relatedBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id, admin_notes')
+        .eq('service_id', serviceId);
+
+      if (bookingsError) throw bookingsError;
+
+      for (const booking of (relatedBookings || []) as RelatedBooking[]) {
+        const nextAdminNotes = booking.admin_notes
+          ? `${booking.admin_notes}\n${deletedServiceNote}`
+          : deletedServiceNote;
+
+        const { error: bookingUpdateError } = await supabase
+          .from('bookings')
+          .update({
+            service_id: null,
+            admin_notes: nextAdminNotes,
+          })
+          .eq('id', booking.id);
+
+        if (bookingUpdateError) throw bookingUpdateError;
       }
+
+      const { error: reviewsError } = await supabase
+        .from('reviews')
+        .update({ service_id: null })
+        .eq('service_id', serviceId);
+
+      if (reviewsError) throw reviewsError;
+
+      const { error: masterServicesError } = await supabase
+        .from('master_services')
+        .delete()
+        .eq('service_id', serviceId);
+
+      if (masterServicesError) throw masterServicesError;
+
+      const { error: deleteError } = await supabase.from('services').delete().eq('id', serviceId);
+
+      if (deleteError) throw deleteError;
 
       alert('Услуга удалена');
       loadServices();
@@ -143,16 +179,16 @@ export function ServicesList() {
                     )}
 
                     <div style={{ marginTop: '8px', display: 'flex', gap: '16px' }}>
-                      <Text style={{ fontSize: '14px' }}>💰 {service.price} ₽</Text>
+                      <Text style={{ fontSize: '14px' }}>Цена: {service.price} ₽</Text>
                       {service.category && (
-                        <Text style={{ fontSize: '14px' }}>📁 {service.category}</Text>
+                        <Text style={{ fontSize: '14px' }}>Категория: {service.category}</Text>
                       )}
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <Button mode="outline" size="s" onClick={() => handleEdit(service)}>
-                      ✏️ Изменить
+                      Изменить
                     </Button>
                     <Button
                       mode="outline"
@@ -160,7 +196,7 @@ export function ServicesList() {
                       onClick={() => handleToggleActive(service)}
                       style={{ color: service.is_active ? '#FF9800' : '#4CAF50' }}
                     >
-                      {service.is_active ? '⏸️ Деактивировать' : '▶️ Активировать'}
+                      {service.is_active ? 'Деактивировать' : 'Активировать'}
                     </Button>
                     <Button
                       mode="outline"
@@ -168,7 +204,7 @@ export function ServicesList() {
                       onClick={() => handleDelete(service.id)}
                       style={{ color: '#F44336' }}
                     >
-                      🗑️ Удалить
+                      Удалить
                     </Button>
                   </div>
                 </div>
