@@ -139,7 +139,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           service_id: serviceId,
           booking_date: date,
           booking_time: time,
-          status: 'pending',
+          status: 'active',
           source: 'online',
           cancellation_reason: null,
           google_event_id: null,
