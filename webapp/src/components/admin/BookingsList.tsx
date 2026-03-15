@@ -96,6 +96,15 @@ function getEffectiveBookingStatus(booking: BookingReadable): BookingReadable['s
   return bookingDateTime.getTime() <= Date.now() ? 'completed' : booking.status;
 }
 
+function isUpcomingBooking(booking: BookingReadable): boolean {
+  if (!['active', 'pending'].includes(booking.status)) {
+    return false;
+  }
+
+  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+  return bookingDateTime.getTime() > Date.now();
+}
+
 export function BookingsList() {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +136,7 @@ export function BookingsList() {
         throw error;
       }
 
-      setBookings(data || []);
+      setBookings((data || []).filter(isUpcomingBooking));
     } catch (error) {
       console.error('Ошибка загрузки записей:', error);
       alert('Не удалось загрузить записи');

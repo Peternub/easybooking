@@ -48,6 +48,15 @@ function getEffectiveBookingStatus(booking: BookingReadable): BookingReadable['s
   return bookingDateTime.getTime() <= Date.now() ? 'completed' : booking.status;
 }
 
+function isUpcomingBooking(booking: BookingReadable): boolean {
+  if (!['active', 'pending'].includes(booking.status)) {
+    return false;
+  }
+
+  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+  return bookingDateTime.getTime() > Date.now();
+}
+
 export function CalendarView() {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
@@ -107,7 +116,7 @@ export function CalendarView() {
         throw mastersError;
       }
 
-      setBookings(bookingsData);
+      setBookings(bookingsData.filter(isUpcomingBooking));
       setMasters(mastersData || []);
     } catch (error) {
       console.error('Ошибка загрузки календаря:', error);
