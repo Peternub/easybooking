@@ -39,6 +39,15 @@ function getStatusTone(status: string): 'green' | 'orange' | 'blue' | 'red' | 'n
   }
 }
 
+function getEffectiveBookingStatus(booking: BookingReadable): BookingReadable['status'] {
+  if (!['active', 'pending'].includes(booking.status)) {
+    return booking.status;
+  }
+
+  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+  return bookingDateTime.getTime() <= Date.now() ? 'completed' : booking.status;
+}
+
 export function CalendarView() {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
@@ -219,8 +228,8 @@ export function CalendarView() {
 
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <AdminChip
-                          label={getStatusText(booking.status)}
-                          tone={getStatusTone(booking.status)}
+                          label={getStatusText(getEffectiveBookingStatus(booking))}
+                          tone={getStatusTone(getEffectiveBookingStatus(booking))}
                         />
                         <AdminChip label={`${booking.final_price} ₽`} tone="blue" />
                       </div>

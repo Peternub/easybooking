@@ -87,6 +87,15 @@ function getDayKey(date: Date) {
   return format(date, 'yyyy-MM-dd');
 }
 
+function getEffectiveBookingStatus(booking: BookingReadable): BookingReadable['status'] {
+  if (!['active', 'pending'].includes(booking.status)) {
+    return booking.status;
+  }
+
+  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+  return bookingDateTime.getTime() <= Date.now() ? 'completed' : booking.status;
+}
+
 export function BookingsList() {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,8 +192,8 @@ export function BookingsList() {
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <AdminChip
-                label={getStatusText(booking.status)}
-                tone={getStatusTone(booking.status)}
+                label={getStatusText(getEffectiveBookingStatus(booking))}
+                tone={getStatusTone(getEffectiveBookingStatus(booking))}
               />
               <AdminChip
                 label={getSourceText(booking.source)}
@@ -363,7 +372,10 @@ export function BookingsList() {
                           style={{
                             padding: '4px 6px',
                             borderRadius: '10px',
-                            backgroundColor: booking.status === 'active' ? '#e8d8c7' : '#efdbc4',
+                            backgroundColor:
+                              getEffectiveBookingStatus(booking) === 'active'
+                                ? '#e8d8c7'
+                                : '#efdbc4',
                             fontSize: '11px',
                             lineHeight: 1.25,
                             color: 'var(--app-text)',
@@ -455,8 +467,8 @@ export function BookingsList() {
 
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <AdminChip
-                        label={getStatusText(booking.status)}
-                        tone={getStatusTone(booking.status)}
+                        label={getStatusText(getEffectiveBookingStatus(booking))}
+                        tone={getStatusTone(getEffectiveBookingStatus(booking))}
                       />
                       <AdminChip label={`${booking.final_price} ₽`} tone="blue" />
                     </div>
