@@ -27,6 +27,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [promoCode, setPromoCode] = useState('');
@@ -181,8 +182,8 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
         console.warn('Ошибка отправки уведомлений:', notifyError);
       }
 
-      alert('Запись успешно создана');
       setBookingSuccess(true);
+      setShowSuccessPopup(true);
     } catch (error) {
       console.error('Ошибка бронирования:', error);
       alert('Произошла ошибка. Попробуйте еще раз.');
@@ -215,6 +216,78 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
 
   return (
     <div style={pageShellStyle}>
+      {showSuccessPopup && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            background: 'rgba(57, 38, 24, 0.28)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              padding: '24px',
+              borderRadius: '28px',
+              background:
+                'linear-gradient(180deg, rgba(255, 250, 244, 0.98) 0%, rgba(247, 236, 221, 0.98) 100%)',
+              border: '1px solid rgba(174, 122, 79, 0.18)',
+              boxShadow: '0 24px 60px rgba(96, 66, 40, 0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            <Title level="2" style={{ margin: 0, color: 'var(--app-text)' }}>
+              Запись подтверждена
+            </Title>
+
+            <Text style={{ color: 'var(--app-text-soft)', lineHeight: 1.5 }}>
+              Вы успешно записаны на услугу {service.name} к мастеру {master.name}.
+            </Text>
+
+            <div
+              style={{
+                padding: '14px 16px',
+                borderRadius: '18px',
+                background: 'rgba(231, 214, 193, 0.55)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+              }}
+            >
+              <Text style={{ color: 'var(--app-text)', fontWeight: 700 }}>
+                {dateFormatted} в {time}
+              </Text>
+              <Text style={{ color: 'var(--app-text-soft)', fontSize: '14px' }}>
+                Мы отправим напоминание в Telegram перед визитом.
+              </Text>
+            </div>
+
+            <Button
+              size="l"
+              stretched
+              onClick={() => setShowSuccessPopup(false)}
+              style={{
+                backgroundColor: 'var(--app-accent)',
+                color: '#fffaf3',
+                borderRadius: '18px',
+                fontWeight: 700,
+              }}
+            >
+              Отлично
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Button mode="plain" onClick={onBack} style={backButtonStyle}>
         Назад
       </Button>
