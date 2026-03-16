@@ -3,27 +3,46 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
 import { AdminCard, AdminChip, AdminEmptyState, AdminSectionTitle } from './AdminTheme';
 
-interface Review {
+interface ReviewRow {
   id: string;
   rating: number;
   comment: string | null;
   created_at: string;
   booking_id: string;
-  booking: {
-    client_phone: string | null;
-    client_username: string | null;
-    master: {
-      name: string;
-    }[] | null;
-    service: {
-      name: string;
-    }[] | null;
-  }[] | null;
+  master_id: string;
+  service_id: string;
+}
+
+interface BookingRow {
+  id: string;
+  client_phone: string | null;
+  client_username: string | null;
+}
+
+interface MasterRow {
+  id: string;
+  name: string;
+}
+
+interface ServiceRow {
+  id: string;
+  name: string;
+}
+
+interface ReviewCard {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  clientPhone: string | null;
+  clientUsername: string | null;
+  masterName: string;
+  serviceName: string;
 }
 
 interface MasterWithReviews {
   masterName: string;
-  reviews: Review[];
+  reviews: ReviewCard[];
   averageRating: number;
 }
 
@@ -39,34 +58,71 @@ export function ReviewsView() {
     try {
       const { data: reviews, error: reviewsError } = await supabase
         .from('reviews')
-        .select(
-          `
-            id,
-            rating,
-            comment,
-            created_at,
-            booking_id,
-            booking:bookings(
-              client_phone,
-              client_username,
-              master:masters(name),
-              service:services(name)
-            )
-          `,
-        )
+        .select('id, rating, comment, created_at, booking_id, master_id, service_id')
         .order('created_at', { ascending: false });
 
       if (reviewsError) {
         throw reviewsError;
       }
 
-      const groupedByMaster = new Map<string, Review[]>();
+      const typedReviews = (reviews || []) as ReviewRow[];
 
-      for (const review of (reviews || []) as Review[]) {
-        const masterName = review.booking?.[0]?.master?.[0]?.name || 'Мастер не найден';
-        const existing = groupedByMaster.get(masterName) || [];
-        existing.push(review);
-        groupedByMaster.set(masterName, existing);
+      if (typedReviews.length === 0) {
+        setMastersWithReviews([]);
+        return;
+      }
+
+      const bookingIds = Array.from(new Set(typedReviews.map((review) => review.booking_id)));
+      const masterIds = Array.from(new Set(typedReviews.map((review) => review.master_id)));
+      const serviceIds = Array.from(new Set(typedReviews.map((review) => review.service_id)));
+
+      const [
+        { data: bookings, error: bookingsError },
+        { data: masters, error: mastersError },
+        { data: services, error: servicesError },
+      ] = await Promise.all([
+        supabase.from('bookings').select('id, client_phone, client_username').in('id', bookingIds),
+        supabase.from('masters').select('id, name').in('id', masterIds),
+        supabase.from('services').select('id, name').in('id', serviceIds),
+      ]);
+
+      if (bookingsError) {
+        throw bookingsError;
+      }
+
+      if (mastersError) {
+        throw mastersError;
+      }
+
+      if (servicesError) {
+        throw servicesError;
+      }
+
+      const bookingsMap = new Map((bookings || []).map((booking) => [booking.id, booking as BookingRow]));
+      const mastersMap = new Map((masters || []).map((master) => [master.id, master as MasterRow]));
+      const servicesMap = new Map((services || []).map((service) => [service.id, service as ServiceRow]));
+
+      const groupedByMaster = new Map<string, ReviewCard[]>();
+
+      for (const review of typedReviews) {
+        const booking = bookingsMap.get(review.booking_id);
+        const master = mastersMap.get(review.master_id);
+        const service = servicesMap.get(review.service_id);
+
+        const reviewCard: ReviewCard = {
+          id: review.id,
+          rating: review.rating,
+          comment: review.comment,
+          created_at: review.created_at,
+          clientPhone: booking?.client_phone || null,
+          clientUsername: booking?.client_username || null,
+          masterName: master?.name || 'Мастер не найден',
+          serviceName: service?.name || 'Услуга не найдена',
+        };
+
+        const existing = groupedByMaster.get(reviewCard.masterName) || [];
+        existing.push(reviewCard);
+        groupedByMaster.set(reviewCard.masterName, existing);
       }
 
       const mastersData: MasterWithReviews[] = Array.from(groupedByMaster.entries())
@@ -103,31 +159,20 @@ export function ReviewsView() {
     return '★'.repeat(rating);
   }
 
-  function getClientLabel(review: Review) {
-    const phone = review.booking?.[0]?.client_phone;
-    const username = review.booking?.[0]?.client_username;
-
-    if (phone && username) {
-      return `${phone} · @${username}`;
+  function getClientLabel(review: ReviewCard) {
+    if (review.clientPhone && review.clientUsername) {
+      return `${review.clientPhone} · @${review.clientUsername}`;
     }
 
-    if (phone) {
-      return phone;
+    if (review.clientPhone) {
+      return review.clientPhone;
     }
 
-    if (username) {
-      return `@${username}`;
+    if (review.clientUsername) {
+      return `@${review.clientUsername}`;
     }
 
     return 'Контакт клиента не указан';
-  }
-
-  function getServiceName(review: Review) {
-    return review.booking?.[0]?.service?.[0]?.name || 'Услуга не найдена';
-  }
-
-  function getMasterName(review: Review) {
-    return review.booking?.[0]?.master?.[0]?.name || 'Мастер не найден';
   }
 
   if (loading) {
@@ -205,8 +250,8 @@ export function ReviewsView() {
 
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <AdminChip label={getClientLabel(review)} tone="neutral" />
-                      <AdminChip label={getServiceName(review)} tone="blue" />
-                      <AdminChip label={getMasterName(review)} tone="orange" />
+                      <AdminChip label={review.serviceName} tone="blue" />
+                      <AdminChip label={review.masterName} tone="orange" />
                     </div>
 
                     <Text style={{ fontSize: '14px', lineHeight: 1.5, color: 'var(--app-text)' }}>
