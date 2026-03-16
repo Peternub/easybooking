@@ -33,6 +33,10 @@ function isInWindow(value: number, targetMinutes: number) {
   );
 }
 
+function isPastThreshold(value: number, thresholdMinutes: number, maxMinutes: number) {
+  return value >= thresholdMinutes && value <= maxMinutes;
+}
+
 async function getBookingsAroundNow(
   hoursOffsetStart: number,
   hoursOffsetEnd: number,
@@ -60,7 +64,10 @@ export async function sendReminders24h(bot: Bot) {
       const bookingDateTime = getBookingDateTime(booking);
       const minutesUntil = getMinutesUntil(bookingDateTime, now);
 
-      if (!isInWindow(minutesUntil, 24 * 60)) continue;
+      const shouldSendExact = isInWindow(minutesUntil, 24 * 60);
+      const shouldSendLate = minutesUntil < 24 * 60 && minutesUntil > 60;
+
+      if (!shouldSendExact && !shouldSendLate) continue;
 
       const dateFormatted = format(bookingDateTime, 'd MMMM yyyy', { locale: ru });
       const keyboard = new InlineKeyboard().text(
@@ -94,7 +101,10 @@ export async function sendReminders1h(bot: Bot) {
       const bookingDateTime = getBookingDateTime(booking);
       const minutesUntil = getMinutesUntil(bookingDateTime, now);
 
-      if (!isInWindow(minutesUntil, 60)) continue;
+      const shouldSendExact = isInWindow(minutesUntil, 60);
+      const shouldSendLate = minutesUntil < 60 && minutesUntil > 0;
+
+      if (!shouldSendExact && !shouldSendLate) continue;
 
       const keyboard = new InlineKeyboard().text(
         '❌ Отменить запись',
@@ -127,7 +137,10 @@ export async function sendReviewRequests(bot: Bot) {
       const bookingDateTime = getBookingDateTime(booking);
       const minutesAfter = getMinutesAfter(bookingDateTime, now);
 
-      if (!isInWindow(minutesAfter, 60)) continue;
+      const shouldSendExact = isInWindow(minutesAfter, 60);
+      const shouldSendLate = isPastThreshold(minutesAfter, 60, 180);
+
+      if (!shouldSendExact && !shouldSendLate) continue;
 
       const reviewExists = await hasReview(booking.id);
       if (reviewExists) continue;
