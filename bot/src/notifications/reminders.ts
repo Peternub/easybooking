@@ -12,10 +12,66 @@ import {
   markBookingNotificationSent,
 } from '../services/supabase.js';
 
-const CHECK_TOLERANCE_MINUTES = 5;
+const CHECK_TOLERANCE_MINUTES = 1;
 
-function getBookingDateTime(booking: BookingWithDetails) {
-  return new Date(`${booking.booking_date}T${booking.booking_time}`);
+function getNowInTimezone(timeZone: string) {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = Object.fromEntries(
+    formatter.formatToParts(new Date()).map((part) => [part.type, part.value]),
+  );
+
+  return new Date(
+    Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+      Number(parts.second),
+    ),
+  );
+}
+
+function getBookingDateTime(booking: BookingWithDetails, timeZone: string) {
+  const [year, month, day] = booking.booking_date.split('-').map(Number);
+  const [hours, minutes, seconds = 0] = booking.booking_time.split(':').map(Number);
+
+  const sourceDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = Object.fromEntries(
+    formatter.formatToParts(sourceDate).map((part) => [part.type, part.value]),
+  );
+
+  return new Date(
+    Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+      Number(parts.second),
+    ),
+  );
 }
 
 function getMinutesUntil(date: Date, now: Date) {
@@ -33,16 +89,12 @@ function isInWindow(value: number, targetMinutes: number) {
   );
 }
 
-function isPastThreshold(value: number, thresholdMinutes: number, maxMinutes: number) {
-  return value >= thresholdMinutes && value <= maxMinutes;
-}
-
 async function getBookingsAroundNow(
   hoursOffsetStart: number,
   hoursOffsetEnd: number,
   statuses: string[],
 ) {
-  const now = new Date();
+  const now = getNowInTimezone(config.app.timezone);
   const start = new Date(now.getTime() + hoursOffsetStart * 60 * 60 * 1000);
   const end = new Date(now.getTime() + hoursOffsetEnd * 60 * 60 * 1000);
 
@@ -55,19 +107,16 @@ async function getBookingsAroundNow(
 // Напоминание за 24 часа
 export async function sendReminders24h(bot: Bot) {
   try {
-    const now = new Date();
-    const bookings = await getBookingsAroundNow(0, 26, ['active']);
+    const now = getNowInTimezone(config.app.timezone);
+    const bookings = await getBookingsAroundNow(23, 25, ['active']);
 
     for (const booking of bookings) {
       if (booking.reminder_24h_sent_at) continue;
 
-      const bookingDateTime = getBookingDateTime(booking);
+      const bookingDateTime = getBookingDateTime(booking, config.app.timezone);
       const minutesUntil = getMinutesUntil(bookingDateTime, now);
 
-      const shouldSendExact = isInWindow(minutesUntil, 24 * 60);
-      const shouldSendLate = minutesUntil < 24 * 60 && minutesUntil > 60;
-
-      if (!shouldSendExact && !shouldSendLate) continue;
+      if (!isInWindow(minutesUntil, 24 * 60)) continue;
 
       const dateFormatted = format(bookingDateTime, 'd MMMM yyyy', { locale: ru });
       const keyboard = new InlineKeyboard().text(
@@ -92,19 +141,16 @@ export async function sendReminders24h(bot: Bot) {
 // Напоминание за 1 час
 export async function sendReminders1h(bot: Bot) {
   try {
-    const now = new Date();
+    const now = getNowInTimezone(config.app.timezone);
     const bookings = await getBookingsAroundNow(0, 2, ['active']);
 
     for (const booking of bookings) {
       if (booking.reminder_1h_sent_at) continue;
 
-      const bookingDateTime = getBookingDateTime(booking);
+      const bookingDateTime = getBookingDateTime(booking, config.app.timezone);
       const minutesUntil = getMinutesUntil(bookingDateTime, now);
 
-      const shouldSendExact = isInWindow(minutesUntil, 60);
-      const shouldSendLate = minutesUntil < 60 && minutesUntil > 0;
-
-      if (!shouldSendExact && !shouldSendLate) continue;
+      if (!isInWindow(minutesUntil, 60)) continue;
 
       const keyboard = new InlineKeyboard().text(
         '❌ Отменить запись',
@@ -128,19 +174,16 @@ export async function sendReminders1h(bot: Bot) {
 // Запрос на отзыв через 1 час после начала услуги
 export async function sendReviewRequests(bot: Bot) {
   try {
-    const now = new Date();
-    const bookings = await getBookingsAroundNow(-3, 0, ['active', 'completed']);
+    const now = getNowInTimezone(config.app.timezone);
+    const bookings = await getBookingsAroundNow(-2, 0, ['active', 'completed']);
 
     for (const booking of bookings) {
       if (booking.review_request_sent_at) continue;
 
-      const bookingDateTime = getBookingDateTime(booking);
+      const bookingDateTime = getBookingDateTime(booking, config.app.timezone);
       const minutesAfter = getMinutesAfter(bookingDateTime, now);
 
-      const shouldSendExact = isInWindow(minutesAfter, 60);
-      const shouldSendLate = isPastThreshold(minutesAfter, 60, 180);
-
-      if (!shouldSendExact && !shouldSendLate) continue;
+      if (!isInWindow(minutesAfter, 60)) continue;
 
       const reviewExists = await hasReview(booking.id);
       if (reviewExists) continue;
