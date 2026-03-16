@@ -8,12 +8,17 @@ interface Review {
   rating: number;
   comment: string | null;
   created_at: string;
-  client_telegram_id: number;
-  master_id: string;
   booking_id: string;
-  master: {
-    name: string;
-  }[];
+  booking: {
+    client_phone: string | null;
+    client_username: string | null;
+    master: {
+      name: string;
+    }[] | null;
+    service: {
+      name: string;
+    }[] | null;
+  }[] | null;
 }
 
 interface MasterWithReviews {
@@ -35,7 +40,19 @@ export function ReviewsView() {
       const { data: reviews, error: reviewsError } = await supabase
         .from('reviews')
         .select(
-          'id, rating, comment, created_at, client_telegram_id, master_id, booking_id, master:masters(name)',
+          `
+            id,
+            rating,
+            comment,
+            created_at,
+            booking_id,
+            booking:bookings(
+              client_phone,
+              client_username,
+              master:masters(name),
+              service:services(name)
+            )
+          `,
         )
         .order('created_at', { ascending: false });
 
@@ -45,11 +62,10 @@ export function ReviewsView() {
 
       const groupedByMaster = new Map<string, Review[]>();
 
-      for (const review of reviews || []) {
-        const typedReview = review as Review;
-        const masterName = typedReview.master?.[0]?.name || 'Удаленный мастер';
+      for (const review of (reviews || []) as Review[]) {
+        const masterName = review.booking?.[0]?.master?.[0]?.name || 'Мастер не найден';
         const existing = groupedByMaster.get(masterName) || [];
-        existing.push(typedReview);
+        existing.push(review);
         groupedByMaster.set(masterName, existing);
       }
 
@@ -85,6 +101,33 @@ export function ReviewsView() {
 
   function renderStars(rating: number) {
     return '★'.repeat(rating);
+  }
+
+  function getClientLabel(review: Review) {
+    const phone = review.booking?.[0]?.client_phone;
+    const username = review.booking?.[0]?.client_username;
+
+    if (phone && username) {
+      return `${phone} · @${username}`;
+    }
+
+    if (phone) {
+      return phone;
+    }
+
+    if (username) {
+      return `@${username}`;
+    }
+
+    return 'Контакт клиента не указан';
+  }
+
+  function getServiceName(review: Review) {
+    return review.booking?.[0]?.service?.[0]?.name || 'Услуга не найдена';
+  }
+
+  function getMasterName(review: Review) {
+    return review.booking?.[0]?.master?.[0]?.name || 'Мастер не найден';
   }
 
   if (loading) {
@@ -129,7 +172,7 @@ export function ReviewsView() {
             </div>
 
             {reviews.length === 0 ? (
-              <AdminEmptyState text="Клиенты ещё не оставляли отзывов этому мастеру." />
+              <AdminEmptyState text="Клиенты еще не оставляли отзывов этому мастеру." />
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {reviews.map((review) => (
@@ -138,10 +181,11 @@ export function ReviewsView() {
                     style={{
                       padding: '14px',
                       borderRadius: '16px',
-                      backgroundColor: 'var(--app-surface-muted)',
+                      backgroundColor: 'rgba(226, 205, 181, 0.42)',
+                      border: '1px solid rgba(174, 122, 79, 0.12)',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '8px',
+                      gap: '10px',
                     }}
                   >
                     <div
@@ -154,15 +198,19 @@ export function ReviewsView() {
                       }}
                     >
                       <AdminChip label={renderStars(review.rating)} tone="orange" />
-                      <Text style={{ fontSize: '12px', opacity: 0.6 }}>{formatDate(review.created_at)}</Text>
+                      <Text style={{ fontSize: '12px', color: 'rgba(72, 49, 33, 0.72)' }}>
+                        {formatDate(review.created_at)}
+                      </Text>
                     </div>
 
-                    <Text style={{ fontSize: '13px', opacity: 0.7 }}>
-                      Клиент Telegram ID: {review.client_telegram_id}
-                    </Text>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <AdminChip label={getClientLabel(review)} tone="neutral" />
+                      <AdminChip label={getServiceName(review)} tone="blue" />
+                      <AdminChip label={getMasterName(review)} tone="orange" />
+                    </div>
 
-                    <Text style={{ fontSize: '14px', lineHeight: 1.45 }}>
-                      {review.comment || 'Комментарий не оставлен.'}
+                    <Text style={{ fontSize: '14px', lineHeight: 1.5, color: 'var(--app-text)' }}>
+                      {review.comment?.trim() || 'Комментарий не оставлен.'}
                     </Text>
                   </div>
                 ))}
