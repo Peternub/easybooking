@@ -3,6 +3,7 @@
 import { Bot, webhookCallback } from 'grammy';
 import { handleNotifyBooking } from './api/notify-booking.js';
 import { handleNotifyCancellation } from './api/notify-cancellation.js';
+import { handleSubmitReview } from './api/submit-review.js';
 import { handleValidatePromo } from './api/validate-promo.js';
 import { config, validateConfig } from './config.js';
 import { setupHandlers } from './handlers/index.js';
@@ -107,6 +108,29 @@ function startApiServer(bot: Bot) {
       }
 
       // Endpoint для уведомления об отмене записи
+      if (url.pathname === '/api/submit-review' && req.method === 'POST') {
+        try {
+          const data = await req.json();
+          console.log('Получен запрос на сохранение отзыва');
+
+          const result = await handleSubmitReview(data);
+
+          return new Response(JSON.stringify(result), {
+            status: result.success ? 200 : 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (error) {
+          console.error('Ошибка сохранения отзыва:', error);
+          return new Response(
+            JSON.stringify({ success: false, message: 'Не удалось сохранить отзыв' }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+      }
+
       if (url.pathname === '/api/notify-cancellation' && req.method === 'POST') {
         try {
           const data = await req.json();

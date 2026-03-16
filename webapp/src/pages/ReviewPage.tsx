@@ -8,8 +8,10 @@ export function ReviewPage() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0) {
       alert('Пожалуйста, поставьте оценку');
       return;
@@ -28,23 +30,45 @@ export function ReviewPage() {
     }
 
     setIsSubmitting(true);
+    setSubmitMessage('');
+    setIsSuccess(false);
 
     try {
-      webApp.sendData(
-        JSON.stringify({
-          type: 'review',
+      const clientTelegramId = webApp.initDataUnsafe.user?.id;
+
+      if (!clientTelegramId) {
+        throw new Error('Не удалось определить пользователя Telegram');
+      }
+
+      const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${botApiUrl}/api/submit-review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           bookingId,
+          clientTelegramId,
           rating,
           comment,
         }),
-      );
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Не удалось сохранить отзыв');
+      }
+
+      setIsSuccess(true);
+      setSubmitMessage('Отзыв успешно сохранен');
 
       window.setTimeout(() => {
         webApp.close();
-      }, 250);
+      }, 1500);
     } catch (error) {
       console.error('Ошибка отправки отзыва:', error);
-      alert('Не удалось отправить отзыв. Попробуйте еще раз.');
+      setSubmitMessage(
+        error instanceof Error ? error.message : 'Не удалось отправить отзыв. Попробуйте еще раз.',
+      );
       setIsSubmitting(false);
     }
   };
@@ -148,14 +172,22 @@ export function ReviewPage() {
       </div>
 
       <Text style={{ color: 'var(--app-text-soft)', fontSize: '14px' }}>
-        После отправки окно автоматически закроется.
+        После успешной отправки покажем подтверждение и закроем окно автоматически.
       </Text>
+
+      {submitMessage && (
+        <div style={softPanelStyle}>
+          <Text style={{ color: isSuccess ? 'var(--app-accent-strong)' : 'var(--app-danger)' }}>
+            {submitMessage}
+          </Text>
+        </div>
+      )}
 
       <Button
         size="l"
         stretched
         onClick={handleSubmit}
-        disabled={isSubmitting || rating === 0}
+        disabled={isSubmitting || rating === 0 || isSuccess}
         style={{
           backgroundColor: 'var(--app-accent)',
           color: '#fffaf3',
@@ -163,7 +195,7 @@ export function ReviewPage() {
           fontWeight: 700,
         }}
       >
-        {isSubmitting ? 'Отправка...' : 'Отправить отзыв'}
+        {isSubmitting ? 'Отправка...' : isSuccess ? 'Сохранено' : 'Отправить отзыв'}
       </Button>
     </div>
   );
