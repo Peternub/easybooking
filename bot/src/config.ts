@@ -10,16 +10,9 @@ export const config = {
     anonKey: process.env.SUPABASE_ANON_KEY || '',
     serviceKey: process.env.SUPABASE_SERVICE_KEY || '',
   },
-  google: {
-    clientId: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
-    refreshToken: process.env.GOOGLE_REFRESH_TOKEN || '',
-  },
   app: {
     webappUrl: process.env.WEBAPP_URL || '',
     timezone: process.env.TIMEZONE || 'Europe/Moscow',
-    googleCalendarId: process.env.GOOGLE_CALENDAR_ID || 'petrmolcanuk@gmail.com',
   },
 } as const;
 

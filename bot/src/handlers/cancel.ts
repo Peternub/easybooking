@@ -5,8 +5,7 @@ import { ru } from 'date-fns/locale';
 import type { CallbackQueryContext, Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
 import { config } from '../config.js';
-import { deleteCalendarEvent } from '../services/google-calendar.js';
-import { cancelBooking, getBookingById, getMasterById } from '../services/supabase.js';
+import { cancelBooking, getBookingById } from '../services/supabase.js';
 
 export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
   const data = ctx.callbackQuery.data;
@@ -16,7 +15,6 @@ export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
   if (!userId) return;
 
   try {
-    // Подтверждение отмены
     if (data.startsWith('cancel_booking:')) {
       const bookingId = data.split(':')[1];
       const booking = await getBookingById(bookingId);
@@ -46,7 +44,6 @@ export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
       return;
     }
 
-    // Выполнение отмены
     if (data.startsWith('confirm_cancel:')) {
       const bookingId = data.split(':')[1];
       const booking = await getBookingById(bookingId);
@@ -56,20 +53,8 @@ export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
         return;
       }
 
-      // Отменяем в базе данных
       await cancelBooking(bookingId, 'client');
 
-      // Удаляем из Google Calendar
-      if (booking.google_event_id) {
-        try {
-          await deleteCalendarEvent(config.app.googleCalendarId, booking.google_event_id);
-        } catch (error) {
-          console.error('Ошибка удаления из календаря:', error);
-          // Продолжаем даже если не удалось удалить из календаря
-        }
-      }
-
-      // Уведомляем администратора
       try {
         const date = format(new Date(booking.booking_date), 'd MMMM yyyy', { locale: ru });
         await ctx.api.sendMessage(
@@ -81,15 +66,13 @@ export async function handleCancelBooking(ctx: CallbackQueryContext<Context>) {
       }
 
       await ctx.editMessageText(
-        '✅ Запись успешно отменена.\n\n' +
-          'Если хотите записаться снова, используйте кнопку "Записаться на услугу".',
+        '✅ Запись успешно отменена.\n\nЕсли хотите записаться снова, используйте кнопку "Записаться на услугу".',
       );
 
       await ctx.answerCallbackQuery('Запись отменена');
       return;
     }
 
-    // Отмена действия
     if (data === 'cancel_action') {
       await ctx.editMessageText('Действие отменено');
       await ctx.answerCallbackQuery();

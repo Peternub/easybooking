@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Context } from 'grammy';
 import { config } from '../config.js';
-import { createCalendarEvent } from '../services/google-calendar.js';
 import {
   createBooking,
   createReview,
@@ -36,7 +35,7 @@ export async function handleWebApp(ctx: Context) {
   console.log('web_app_data:', webAppData);
 
   if (!webAppData) {
-    console.error('❌ Нет данных web_app_data');
+    console.error('Нет данных web_app_data');
     return;
   }
 
@@ -44,94 +43,66 @@ export async function handleWebApp(ctx: Context) {
   const userName = ctx.from?.first_name || 'Клиент';
   const username = ctx.from?.username;
 
-  console.log('User ID:', userId);
-  console.log('User Name:', userName);
-
   if (!userId) {
-    console.error('❌ Нет userId');
+    console.error('Нет userId');
     return;
   }
 
   try {
     const data = JSON.parse(webAppData) as BookingData | ReviewData;
-    console.log('✅ Распарсенные данные:', data);
+    console.log('Распарсенные данные:', data);
 
-    // Обработка создания записи
     if (data.type === 'booking') {
-      console.log('📝 Обработка создания записи...');
       const { serviceId, masterId, date, time } = data;
 
-      console.log('Получение данных мастера и услуги...');
-      // Получаем данные мастера и услуги
       const [master, service] = await Promise.all([
         getMasterById(masterId),
         getServiceById(serviceId),
       ]);
-      console.log('✅ Мастер:', master.name);
-      console.log('✅ Услуга:', service.name);
 
-      console.log('Создание записи в БД...');
-      // Создаем запись в базе данных
       const booking = await createBooking({
         client_telegram_id: userId,
         client_name: userName,
         client_username: username || null,
+        client_id: null,
         master_id: masterId,
         service_id: serviceId,
         booking_date: date,
         booking_time: time,
         status: 'active',
+        source: 'online',
         cancellation_reason: null,
         google_event_id: null,
+        original_price: service.price,
+        discount_amount: 0,
+        final_price: service.price,
+        promo_code: null,
+        admin_notes: null,
+        reminder_24h_sent_at: null,
+        reminder_1h_sent_at: null,
+        review_request_sent_at: null,
       });
-      console.log('✅ Запись создана:', booking.id);
 
-      // Создаем событие в Google Calendar
-      let eventId: string | null = null;
-      try {
-        console.log('Создание события в Google Calendar...');
-        eventId = await createCalendarEvent(
-          config.app.googleCalendarId,
-          booking,
-          service.duration_minutes,
-          master.name,
-        );
-        console.log('✅ Событие создано:', eventId);
-
-        // Обновляем запись с ID события
-        const { supabase } = await import('../services/supabase.js');
-        await supabase.from('bookings').update({ google_event_id: eventId }).eq('id', booking.id);
-      } catch (error) {
-        console.error('⚠️ Ошибка создания события в календаре:', error);
-        // Продолжаем даже если не удалось создать событие
-      }
+      console.log('Запись создана:', booking.id);
 
       const dateFormatted = format(new Date(date), 'd MMMM yyyy', { locale: ru });
 
-      console.log('Отправка подтверждения клиенту...');
-      // Отправляем подтверждение клиенту
       await ctx.reply(
         `✅ Запись успешно создана!\n\n📅 Дата: ${dateFormatted}\n⏰ Время: ${time}\n👤 Мастер: ${master.name}\n💇 Услуга: ${service.name}\n💰 Стоимость: ${service.price} ₽\n⏱ Длительность: ${service.duration_minutes} мин\n\nМы отправим вам напоминание за 24 часа и за 1 час до визита.`,
       );
-      console.log('✅ Подтверждение отправлено клиенту');
 
-      // Уведомляем администратора
       try {
-        console.log('Отправка уведомления администратору...');
         await ctx.api.sendMessage(
           config.telegram.adminId,
           `✅ Новая запись!\n\n👤 Клиент: ${userName} ${username ? `(@${username})` : ''}\n📅 Дата: ${dateFormatted}\n⏰ Время: ${time}\n💇 Услуга: ${service.name}\n👨‍💼 Мастер: ${master.name}\n💰 Стоимость: ${service.price} ₽`,
         );
-        console.log('✅ Уведомление администратору отправлено');
       } catch (error) {
-        console.error('⚠️ Ошибка уведомления администратора:', error);
+        console.error('Ошибка уведомления администратора:', error);
       }
     }
 
-    // Обработка отзыва
     if (data.type === 'review') {
       const { bookingId, rating, comment } = data;
-
       const booking = await getBookingById(bookingId);
 
       if (booking.client_telegram_id !== userId) {
@@ -139,7 +110,6 @@ export async function handleWebApp(ctx: Context) {
         return;
       }
 
-      // Создаем отзыв
       try {
         await createReview({
           booking_id: bookingId,
@@ -159,7 +129,6 @@ export async function handleWebApp(ctx: Context) {
         `⭐️ Спасибо за ваш отзыв!\n\nВаша оценка: ${'⭐️'.repeat(rating)}\n\nМы ценим ваше мнение и будем рады видеть вас снова!`,
       );
 
-      // Уведомляем администратора
       try {
         await ctx.api.sendMessage(
           config.telegram.adminId,
@@ -170,10 +139,8 @@ export async function handleWebApp(ctx: Context) {
       }
     }
   } catch (error) {
-    console.error('❌ ОШИБКА ОБРАБОТКИ ДАННЫХ WEB APP:', error);
+    console.error('Ошибка обработки данных WEB APP:', error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
-    await ctx.reply(
-      'Произошла ошибка при создании записи. Попробуйте еще раз или обратитесь к администратору.',
-    );
+    await ctx.reply('Произошла ошибка. Попробуйте еще раз или обратитесь к администратору.');
   }
 }
