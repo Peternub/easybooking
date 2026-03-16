@@ -9,17 +9,15 @@ interface Review {
   comment: string | null;
   created_at: string;
   client_telegram_id: number;
-  master_id: string | null;
+  master_id: string;
   booking_id: string;
-}
-
-interface Master {
-  id: string;
-  name: string;
+  master: {
+    name: string;
+  }[];
 }
 
 interface MasterWithReviews {
-  master: Master;
+  masterName: string;
   reviews: Review[];
   averageRating: number;
 }
@@ -34,37 +32,37 @@ export function ReviewsView() {
 
   async function loadReviews() {
     try {
-      const { data: masters, error: mastersError } = await supabase
-        .from('masters')
-        .select('id, name')
-        .order('name');
-
-      if (mastersError) {
-        throw mastersError;
-      }
-
       const { data: reviews, error: reviewsError } = await supabase
         .from('reviews')
-        .select('*')
+        .select(
+          'id, rating, comment, created_at, client_telegram_id, master_id, booking_id, master:masters(name)',
+        )
         .order('created_at', { ascending: false });
 
       if (reviewsError) {
         throw reviewsError;
       }
 
-      const mastersData: MasterWithReviews[] = (masters || []).map((master) => {
-        const masterReviews = (reviews || []).filter((review) => review.master_id === master.id);
-        const averageRating =
-          masterReviews.length > 0
-            ? masterReviews.reduce((sum, review) => sum + review.rating, 0) / masterReviews.length
-            : 0;
+      const groupedByMaster = new Map<string, Review[]>();
 
-        return {
-          master,
+      for (const review of reviews || []) {
+        const typedReview = review as Review;
+        const masterName = typedReview.master?.[0]?.name || 'Удаленный мастер';
+        const existing = groupedByMaster.get(masterName) || [];
+        existing.push(typedReview);
+        groupedByMaster.set(masterName, existing);
+      }
+
+      const mastersData: MasterWithReviews[] = Array.from(groupedByMaster.entries())
+        .map(([masterName, masterReviews]) => ({
+          masterName,
           reviews: masterReviews,
-          averageRating,
-        };
-      });
+          averageRating:
+            masterReviews.length > 0
+              ? masterReviews.reduce((sum, review) => sum + review.rating, 0) / masterReviews.length
+              : 0,
+        }))
+        .sort((a, b) => b.reviews.length - a.reviews.length);
 
       setMastersWithReviews(mastersData);
     } catch (error) {
@@ -103,14 +101,16 @@ export function ReviewsView() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {mastersWithReviews.map(({ master, reviews, averageRating }) => (
-        <AdminCard key={master.id}>
+      {mastersWithReviews.map(({ masterName, reviews, averageRating }) => (
+        <AdminCard key={masterName}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <AdminSectionTitle
-                title={master.name}
+                title={masterName}
                 subtitle={
-                  reviews.length > 0 ? 'Статистика по оценкам и комментариям.' : 'Отзывов пока нет.'
+                  reviews.length > 0
+                    ? 'Статистика по оценкам и комментариям.'
+                    : 'Отзывов пока нет.'
                 }
               />
 
@@ -154,9 +154,7 @@ export function ReviewsView() {
                       }}
                     >
                       <AdminChip label={renderStars(review.rating)} tone="orange" />
-                      <Text style={{ fontSize: '12px', opacity: 0.6 }}>
-                        {formatDate(review.created_at)}
-                      </Text>
+                      <Text style={{ fontSize: '12px', opacity: 0.6 }}>{formatDate(review.created_at)}</Text>
                     </div>
 
                     <Text style={{ fontSize: '13px', opacity: 0.7 }}>

@@ -140,14 +140,20 @@ export async function handleWebApp(ctx: Context) {
       }
 
       // Создаем отзыв
-      await createReview({
-        booking_id: bookingId,
-        client_telegram_id: userId,
-        master_id: booking.master_id,
-        service_id: booking.service_id,
-        rating,
-        comment: comment || null,
-      });
+      try {
+        await createReview({
+          booking_id: bookingId,
+          client_telegram_id: userId,
+          master_id: booking.master_id,
+          service_id: booking.service_id,
+          rating,
+          comment: comment || null,
+        });
+      } catch (reviewError) {
+        console.error('Ошибка сохранения отзыва:', reviewError);
+        await ctx.reply('Не удалось сохранить отзыв. Попробуйте еще раз позже.');
+        return;
+      }
 
       await ctx.reply(
         `⭐️ Спасибо за ваш отзыв!\n\nВаша оценка: ${'⭐️'.repeat(rating)}\n\nМы ценим ваше мнение и будем рады видеть вас снова!`,
