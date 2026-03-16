@@ -12,8 +12,7 @@
     "@supabase/supabase-js": "^2.47.10",
     "grammy": "^1.32.0",
     "googleapis": "^144.0.0",
-    "date-fns": "^4.1.0",
-    "date-fns-tz": "^3.2.0"
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
