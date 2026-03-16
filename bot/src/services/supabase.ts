@@ -121,6 +121,40 @@ export async function getUpcomingBookings(hoursAhead: number) {
   return data as BookingWithDetails[];
 }
 
+export async function getBookingsForDateRange(
+  fromDate: string,
+  toDate: string,
+  statuses: string[] = ['active'],
+) {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, master:masters(*), service:services(*)')
+    .in('status', statuses)
+    .gte('booking_date', fromDate)
+    .lte('booking_date', toDate)
+    .order('booking_date', { ascending: true })
+    .order('booking_time', { ascending: true });
+
+  if (error) throw error;
+  return data as BookingWithDetails[];
+}
+
+export async function markBookingNotificationSent(
+  bookingId: string,
+  type: 'reminder_24h' | 'reminder_1h' | 'review_request',
+) {
+  const updates =
+    type === 'reminder_24h'
+      ? { reminder_24h_sent_at: new Date().toISOString() }
+      : type === 'reminder_1h'
+        ? { reminder_1h_sent_at: new Date().toISOString() }
+        : { review_request_sent_at: new Date().toISOString() };
+
+  const { error } = await supabase.from('bookings').update(updates).eq('id', bookingId);
+
+  if (error) throw error;
+}
+
 export async function cancelBooking(id: string, cancelledBy: 'client' | 'admin', reason?: string) {
   const { data, error } = await supabase
     .from('bookings')

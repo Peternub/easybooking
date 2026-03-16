@@ -70,6 +70,9 @@ export interface Booking {
   final_price: number;
   promo_code: string | null;
   admin_notes: string | null;
+  reminder_24h_sent_at: string | null;
+  reminder_1h_sent_at: string | null;
+  review_request_sent_at: string | null;
   created_at: string;
   updated_at: string;
 }
