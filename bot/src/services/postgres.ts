@@ -551,7 +551,7 @@ export async function updateMasterPg(masterId: string, master: MasterPayload) {
   );
 
   if (result.rows.length === 0) {
-    throw new Error('РњР°СЃС‚РµСЂ РЅРµ РЅР°Р№РґРµРЅ');
+    throw new Error('Мастер не найден');
   }
 
   return mapMaster(result.rows[0]);
@@ -570,7 +570,7 @@ export async function toggleMasterActivePg(masterId: string, isActive: boolean) 
   );
 
   if (result.rows.length === 0) {
-    throw new Error('РњР°СЃС‚РµСЂ РЅРµ РЅР°Р№РґРµРЅ');
+    throw new Error('Мастер не найден');
   }
 
   return mapMaster(result.rows[0]);
@@ -759,7 +759,7 @@ export async function updateServicePg(serviceId: string, service: ServicePayload
   );
 
   if (result.rows.length === 0) {
-    throw new Error('РЈСЃР»СѓРіР° РЅРµ РЅР°Р№РґРµРЅР°');
+    throw new Error('Услуга не найдена');
   }
 
   return mapService(result.rows[0]);
@@ -778,7 +778,7 @@ export async function toggleServiceActivePg(serviceId: string, isActive: boolean
   );
 
   if (result.rows.length === 0) {
-    throw new Error('РЈСЃР»СѓРіР° РЅРµ РЅР°Р№РґРµРЅР°');
+    throw new Error('Услуга не найдена');
   }
 
   return mapService(result.rows[0]);
