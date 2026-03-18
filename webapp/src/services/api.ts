@@ -22,6 +22,20 @@ export type MasterAbsencePayload = Pick<
   'start_date' | 'end_date' | 'reason' | 'notes'
 >;
 
+export interface AdminReviewApi {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  booking_id: string;
+  master_id: string;
+  service_id: string;
+  client_phone: string | null;
+  client_username: string | null;
+  master_name: string;
+  service_name: string;
+}
+
 export async function uploadMasterPhotoApi(file: File) {
   const formData = new FormData();
   formData.append('file', file);
@@ -180,4 +194,8 @@ export function deleteMasterAbsenceApi(masterId: string, absenceId: string) {
   return requestJson<{ success: true }>(`/api/admin/masters/${masterId}/absences/${absenceId}`, {
     method: 'DELETE',
   });
+}
+
+export function getAdminReviewsApi() {
+  return fetchJson<AdminReviewApi[]>('/api/admin/reviews');
 }

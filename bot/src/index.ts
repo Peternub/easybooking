@@ -18,6 +18,7 @@ import {
   createService,
   deleteMasterAbsence,
   getAdminMasters,
+  getAdminReviews,
   getAdminServices,
   getMasterById,
   getMasterAbsences,
@@ -259,6 +260,16 @@ function startApiServer(bot: Bot) {
         } catch (error) {
           console.error('Ошибка создания мастера:', error);
           return jsonResponse({ message: 'Не удалось создать мастера' }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname === '/api/admin/reviews' && req.method === 'GET') {
+        try {
+          const reviews = await getAdminReviews();
+          return jsonResponse(reviews, 200, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка загрузки отзывов:', error);
+          return jsonResponse({ message: 'Не удалось загрузить отзывы' }, 500, corsHeaders);
         }
       }
 

@@ -70,6 +70,13 @@ type ReviewRow = {
   created_at: string | Date;
 };
 
+type AdminReviewRow = ReviewRow & {
+  client_phone: string | null;
+  client_username: string | null;
+  master_name: string | null;
+  service_name: string | null;
+};
+
 type PromoCodeRow = {
   id: string;
   code: string;
@@ -213,6 +220,39 @@ function mapReview(row: ReviewRow): Review {
     comment: row.comment,
     created_at: toIsoString(row.created_at) || '',
   };
+}
+
+export async function getAdminReviewsPg() {
+  const pool = requireDb();
+  const result = await pool.query<AdminReviewRow>(
+    `
+      SELECT
+        r.*,
+        b.client_phone,
+        b.client_username,
+        m.name AS master_name,
+        s.name AS service_name
+      FROM reviews r
+      LEFT JOIN bookings b ON b.id = r.booking_id
+      LEFT JOIN masters m ON m.id = r.master_id
+      LEFT JOIN services s ON s.id = r.service_id
+      ORDER BY r.created_at DESC
+    `,
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    rating: row.rating,
+    comment: row.comment,
+    created_at: toIsoString(row.created_at) || '',
+    booking_id: row.booking_id,
+    master_id: row.master_id,
+    service_id: row.service_id,
+    client_phone: row.client_phone,
+    client_username: row.client_username,
+    master_name: row.master_name || 'Мастер не найден',
+    service_name: row.service_name || 'Услуга не найдена',
+  }));
 }
 
 function mapMasterAbsence(row: MasterAbsenceRow): MasterAbsence {

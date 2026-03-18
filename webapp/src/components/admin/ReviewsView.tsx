@@ -1,33 +1,7 @@
 import { Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
-import { supabase } from '../../services/supabase';
+import { getAdminReviewsApi } from '../../services/api';
 import { AdminCard, AdminChip, AdminEmptyState, AdminSectionTitle } from './AdminTheme';
-
-interface ReviewRow {
-  id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  booking_id: string;
-  master_id: string;
-  service_id: string;
-}
-
-interface BookingRow {
-  id: string;
-  client_phone: string | null;
-  client_username: string | null;
-}
-
-interface MasterRow {
-  id: string;
-  name: string;
-}
-
-interface ServiceRow {
-  id: string;
-  name: string;
-}
 
 interface ReviewCard {
   id: string;
@@ -56,68 +30,25 @@ export function ReviewsView() {
 
   async function loadReviews() {
     try {
-      const { data: reviews, error: reviewsError } = await supabase
-        .from('reviews')
-        .select('id, rating, comment, created_at, booking_id, master_id, service_id')
-        .order('created_at', { ascending: false });
+      const reviews = await getAdminReviewsApi();
 
-      if (reviewsError) {
-        throw reviewsError;
-      }
-
-      const typedReviews = (reviews || []) as ReviewRow[];
-
-      if (typedReviews.length === 0) {
+      if (reviews.length === 0) {
         setMastersWithReviews([]);
         return;
       }
 
-      const bookingIds = Array.from(new Set(typedReviews.map((review) => review.booking_id)));
-      const masterIds = Array.from(new Set(typedReviews.map((review) => review.master_id)));
-      const serviceIds = Array.from(new Set(typedReviews.map((review) => review.service_id)));
-
-      const [
-        { data: bookings, error: bookingsError },
-        { data: masters, error: mastersError },
-        { data: services, error: servicesError },
-      ] = await Promise.all([
-        supabase.from('bookings').select('id, client_phone, client_username').in('id', bookingIds),
-        supabase.from('masters').select('id, name').in('id', masterIds),
-        supabase.from('services').select('id, name').in('id', serviceIds),
-      ]);
-
-      if (bookingsError) {
-        throw bookingsError;
-      }
-
-      if (mastersError) {
-        throw mastersError;
-      }
-
-      if (servicesError) {
-        throw servicesError;
-      }
-
-      const bookingsMap = new Map((bookings || []).map((booking) => [booking.id, booking as BookingRow]));
-      const mastersMap = new Map((masters || []).map((master) => [master.id, master as MasterRow]));
-      const servicesMap = new Map((services || []).map((service) => [service.id, service as ServiceRow]));
-
       const groupedByMaster = new Map<string, ReviewCard[]>();
 
-      for (const review of typedReviews) {
-        const booking = bookingsMap.get(review.booking_id);
-        const master = mastersMap.get(review.master_id);
-        const service = servicesMap.get(review.service_id);
-
+      for (const review of reviews) {
         const reviewCard: ReviewCard = {
           id: review.id,
           rating: review.rating,
           comment: review.comment,
           created_at: review.created_at,
-          clientPhone: booking?.client_phone || null,
-          clientUsername: booking?.client_username || null,
-          masterName: master?.name || 'Мастер не найден',
-          serviceName: service?.name || 'Услуга не найдена',
+          clientPhone: review.client_phone,
+          clientUsername: review.client_username,
+          masterName: review.master_name,
+          serviceName: review.service_name,
         };
 
         const existing = groupedByMaster.get(reviewCard.masterName) || [];
@@ -139,6 +70,7 @@ export function ReviewsView() {
       setMastersWithReviews(mastersData);
     } catch (error) {
       console.error('Ошибка загрузки отзывов:', error);
+      alert('Не удалось загрузить отзывы');
     } finally {
       setLoading(false);
     }

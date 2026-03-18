@@ -17,6 +17,7 @@ import {
   createMasterPg,
   createServicePg,
   createReviewPg,
+  getAdminReviewsPg,
   deleteMasterAbsencePg,
   addServiceToMasterPg,
   getAdminMastersPg,
@@ -573,6 +574,89 @@ export async function createReview(review: Omit<Review, 'id' | 'created_at'>) {
 
   if (error) throw error;
   return data as Review;
+}
+
+export async function getAdminReviews() {
+  if (hasPostgresConfig()) {
+    return getAdminReviewsPg();
+  }
+
+  const client = requireSupabaseClient();
+  const { data: reviews, error: reviewsError } = await client
+    .from('reviews')
+    .select('id, rating, comment, created_at, booking_id, master_id, service_id')
+    .order('created_at', { ascending: false });
+
+  if (reviewsError) {
+    throw reviewsError;
+  }
+
+  const typedReviews = (reviews || []) as Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    created_at: string;
+    booking_id: string;
+    master_id: string;
+    service_id: string;
+  }>;
+
+  if (typedReviews.length === 0) {
+    return [];
+  }
+
+  const bookingIds = Array.from(new Set(typedReviews.map((review) => review.booking_id)));
+  const masterIds = Array.from(new Set(typedReviews.map((review) => review.master_id)));
+  const serviceIds = Array.from(new Set(typedReviews.map((review) => review.service_id)));
+
+  const [
+    { data: bookings, error: bookingsError },
+    { data: masters, error: mastersError },
+    { data: services, error: servicesError },
+  ] = await Promise.all([
+    client.from('bookings').select('id, client_phone, client_username').in('id', bookingIds),
+    client.from('masters').select('id, name').in('id', masterIds),
+    client.from('services').select('id, name').in('id', serviceIds),
+  ]);
+
+  if (bookingsError) {
+    throw bookingsError;
+  }
+
+  if (mastersError) {
+    throw mastersError;
+  }
+
+  if (servicesError) {
+    throw servicesError;
+  }
+
+  const bookingsMap = new Map(
+    (bookings || []).map((booking) => [
+      booking.id,
+      booking as { id: string; client_phone: string | null; client_username: string | null },
+    ]),
+  );
+  const mastersMap = new Map(
+    (masters || []).map((master) => [master.id, master as { id: string; name: string }]),
+  );
+  const servicesMap = new Map(
+    (services || []).map((service) => [service.id, service as { id: string; name: string }]),
+  );
+
+  return typedReviews.map((review) => {
+    const booking = bookingsMap.get(review.booking_id);
+    const master = mastersMap.get(review.master_id);
+    const service = servicesMap.get(review.service_id);
+
+    return {
+      ...review,
+      client_phone: booking?.client_phone || null,
+      client_username: booking?.client_username || null,
+      master_name: master?.name || 'Мастер не найден',
+      service_name: service?.name || 'Услуга не найдена',
+    };
+  });
 }
 
 export async function hasReview(bookingId: string) {
