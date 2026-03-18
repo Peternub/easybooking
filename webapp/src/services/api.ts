@@ -3,7 +3,7 @@ import type { Master, Service } from '../../../shared/types';
 const apiBaseUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PATCH';
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
 };
 
@@ -110,5 +110,22 @@ export function toggleMasterActiveApi(masterId: string, isActive: boolean) {
   return requestJson<Master>(`/api/admin/masters/${masterId}/toggle-active`, {
     method: 'POST',
     body: { is_active: isActive },
+  });
+}
+
+export function getMasterServicesApi(masterId: string) {
+  return fetchJson<Service[]>(`/api/admin/masters/${masterId}/services`);
+}
+
+export function addServiceToMasterApi(masterId: string, serviceId: string) {
+  return requestJson<{ success: true }>(`/api/admin/masters/${masterId}/services`, {
+    method: 'POST',
+    body: { service_id: serviceId },
+  });
+}
+
+export function removeServiceFromMasterApi(masterId: string, serviceId: string) {
+  return requestJson<{ success: true }>(`/api/admin/masters/${masterId}/services/${serviceId}`, {
+    method: 'DELETE',
   });
 }

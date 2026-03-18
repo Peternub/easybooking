@@ -1,4 +1,4 @@
-﻿import { Bot } from 'grammy';
+import { Bot } from 'grammy';
 import { getAvailableDates, getAvailableSlots } from './api/availability.js';
 import { handleCreateBooking } from './api/create-booking.js';
 import { handleNotifyBooking } from './api/notify-booking.js';
@@ -9,14 +9,17 @@ import { config, validateConfig } from './config.js';
 import { setupHandlers } from './handlers/index.js';
 import { startNotificationScheduler } from './notifications/scheduler.js';
 import {
+  addServiceToMaster,
   createMaster,
   createService,
   getAdminMasters,
   getAdminServices,
   getMasterById,
+  getServicesByMaster,
   getMastersByService,
   getServices,
   getServiceById,
+  removeServiceFromMaster,
   toggleMasterActive,
   toggleServiceActive,
   updateMaster,
@@ -69,7 +72,7 @@ function startApiServer(bot: Bot) {
 
       const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       };
 
@@ -206,12 +209,36 @@ function startApiServer(bot: Bot) {
         }
       }
 
+      if (url.pathname.startsWith('/api/admin/masters/') && req.method === 'GET') {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        const masterId = pathParts[3];
+        const subResource = pathParts[4];
+
+        try {
+          if (subResource === 'services') {
+            const services = await getServicesByMaster(masterId);
+            return jsonResponse(services, 200, corsHeaders);
+          }
+
+          return jsonResponse({ message: 'Not Found' }, 404, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка загрузки услуг мастера:', error);
+          return jsonResponse({ message: 'Не удалось загрузить услуги мастера' }, 500, corsHeaders);
+        }
+      }
+
       if (url.pathname.startsWith('/api/admin/masters/') && (req.method === 'PATCH' || req.method === 'POST')) {
         const pathParts = url.pathname.split('/').filter(Boolean);
         const masterId = pathParts[3];
         const subResource = pathParts[4];
 
         try {
+          if (subResource === 'services' && req.method === 'POST') {
+            const data = await req.json();
+            await addServiceToMaster(masterId, String(data?.service_id));
+            return jsonResponse({ success: true }, 200, corsHeaders);
+          }
+
           if (subResource === 'toggle-active' && req.method === 'POST') {
             const data = await req.json();
             const master = await toggleMasterActive(masterId, Boolean(data?.is_active));
@@ -228,6 +255,25 @@ function startApiServer(bot: Bot) {
         } catch (error) {
           console.error('Ошибка обновления мастера:', error);
           return jsonResponse({ message: 'Не удалось обновить мастера' }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname.startsWith('/api/admin/masters/') && req.method === 'DELETE') {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        const masterId = pathParts[3];
+        const subResource = pathParts[4];
+        const serviceId = pathParts[5];
+
+        try {
+          if (subResource === 'services' && serviceId) {
+            await removeServiceFromMaster(masterId, serviceId);
+            return jsonResponse({ success: true }, 200, corsHeaders);
+          }
+
+          return jsonResponse({ message: 'Not Found' }, 404, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка удаления услуги мастера:', error);
+          return jsonResponse({ message: 'Не удалось удалить услугу мастера' }, 500, corsHeaders);
         }
       }
 

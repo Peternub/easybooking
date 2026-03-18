@@ -396,6 +396,31 @@ export async function getServicesByMasterPg(masterId: string) {
   return result.rows.map(mapService);
 }
 
+export async function addServiceToMasterPg(masterId: string, serviceId: string) {
+  const pool = requireDb();
+
+  await pool.query(
+    `
+      INSERT INTO master_services (master_id, service_id)
+      VALUES ($1, $2)
+      ON CONFLICT (master_id, service_id) DO NOTHING
+    `,
+    [masterId, serviceId],
+  );
+}
+
+export async function removeServiceFromMasterPg(masterId: string, serviceId: string) {
+  const pool = requireDb();
+
+  await pool.query(
+    `
+      DELETE FROM master_services
+      WHERE master_id = $1 AND service_id = $2
+    `,
+    [masterId, serviceId],
+  );
+}
+
 export async function createServicePg(service: ServicePayload) {
   const pool = requireDb();
   const result = await pool.query<ServiceRow>(

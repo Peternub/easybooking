@@ -15,6 +15,7 @@ import {
   createMasterPg,
   createServicePg,
   createReviewPg,
+  addServiceToMasterPg,
   getAdminMastersPg,
   getAdminServicesPg,
   getBookingByIdPg,
@@ -32,6 +33,7 @@ import {
   hasReviewPg,
   isAdminPg,
   markBookingNotificationSentPg,
+  removeServiceFromMasterPg,
   toggleMasterActivePg,
   toggleServiceActivePg,
   updateMasterPg,
@@ -248,6 +250,35 @@ export async function getServicesByMaster(masterId: string) {
       )
       .filter(Boolean) || []
   ) as Service[];
+}
+
+export async function addServiceToMaster(masterId: string, serviceId: string) {
+  if (hasPostgresConfig()) {
+    return addServiceToMasterPg(masterId, serviceId);
+  }
+
+  const client = requireSupabaseClient();
+  const { error } = await client.from('master_services').insert({
+    master_id: masterId,
+    service_id: serviceId,
+  });
+
+  if (error) throw error;
+}
+
+export async function removeServiceFromMaster(masterId: string, serviceId: string) {
+  if (hasPostgresConfig()) {
+    return removeServiceFromMasterPg(masterId, serviceId);
+  }
+
+  const client = requireSupabaseClient();
+  const { error } = await client
+    .from('master_services')
+    .delete()
+    .eq('master_id', masterId)
+    .eq('service_id', serviceId);
+
+  if (error) throw error;
 }
 
 export async function getMastersByService(serviceId: string) {

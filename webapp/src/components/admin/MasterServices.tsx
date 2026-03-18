@@ -1,7 +1,12 @@
 import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Master, Service } from '../../../../shared/types';
-import { supabase } from '../../services/supabase';
+import {
+  addServiceToMasterApi,
+  getMasterServicesApi,
+  getServicesApi,
+  removeServiceFromMasterApi,
+} from '../../services/api';
 import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 
 interface Props {
@@ -13,38 +18,22 @@ export function MasterServices({ master }: Props) {
   const [masterServices, setMasterServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: master.id нужен для перезагрузки
   useEffect(() => {
     loadServices();
   }, [master.id]);
 
   async function loadServices() {
     try {
-      const { data: services, error: servicesError } = await supabase
-        .from('services')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      if (servicesError) throw servicesError;
+      const [services, assignedServices] = await Promise.all([
+        getServicesApi(),
+        getMasterServicesApi(master.id),
+      ]);
 
-      const { data: masterServicesData, error: masterServicesError } = await supabase
-        .from('master_services')
-        .select('service_id, services(*)')
-        .eq('master_id', master.id);
-      if (masterServicesError) throw masterServicesError;
-
-      setAllServices(services || []);
-
-      const masterServicesList = (masterServicesData || [])
-        .map((item: { services: Service | Service[] }) => {
-          const serviceData = item.services;
-          return Array.isArray(serviceData) ? serviceData[0] : serviceData;
-        })
-        .filter((service): service is Service => service !== null && service !== undefined);
-
-      setMasterServices(masterServicesList);
+      setAllServices(services);
+      setMasterServices(assignedServices);
     } catch (error) {
       console.error('Ошибка загрузки услуг мастера:', error);
+      alert('Не удалось загрузить услуги мастера');
     } finally {
       setLoading(false);
     }
@@ -52,12 +41,7 @@ export function MasterServices({ master }: Props) {
 
   async function handleAddService(serviceId: string) {
     try {
-      const { error } = await supabase.from('master_services').insert({
-        master_id: master.id,
-        service_id: serviceId,
-      });
-      if (error) throw error;
-
+      await addServiceToMasterApi(master.id, serviceId);
       alert('Услуга добавлена');
       loadServices();
     } catch (error) {
@@ -67,16 +51,12 @@ export function MasterServices({ master }: Props) {
   }
 
   async function handleRemoveService(serviceId: string) {
-    if (!confirm('Удалить эту услугу у мастера?')) return;
+    if (!confirm('Удалить эту услугу у мастера?')) {
+      return;
+    }
 
     try {
-      const { error } = await supabase
-        .from('master_services')
-        .delete()
-        .eq('master_id', master.id)
-        .eq('service_id', serviceId);
-      if (error) throw error;
-
+      await removeServiceFromMasterApi(master.id, serviceId);
       alert('Услуга удалена');
       loadServices();
     } catch (error) {
