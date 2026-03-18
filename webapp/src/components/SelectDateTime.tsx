@@ -1,8 +1,8 @@
 import { Button, Placeholder, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
-import { addDays, format, isPast, parse, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
-import { supabase } from '../services/supabase';
+import { getAvailableDatesApi, getAvailableSlotsApi } from '../services/api';
 import { backButtonStyle, pageShellStyle, softPanelStyle, titleStyle } from './AppTheme';
 
 interface Props {
@@ -24,12 +24,10 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: masterId нужен при смене мастера
   useEffect(() => {
     loadAvailableDates();
   }, [masterId]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedDate и masterId нужны при смене мастера и даты
   useEffect(() => {
     if (selectedDate) {
       loadAvailableSlots(selectedDate);
@@ -37,40 +35,14 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
   }, [selectedDate, masterId]);
 
   async function loadAvailableDates() {
+    setLoading(true);
+
     try {
-      const dates: string[] = [];
-      const today = startOfDay(new Date());
-
-      for (let index = 0; index < 14; index++) {
-        const date = addDays(today, index);
-        dates.push(format(date, 'yyyy-MM-dd'));
-      }
-
-      const { data: absences, error } = await supabase
-        .from('master_absences')
-        .select('start_date, end_date')
-        .eq('master_id', masterId);
-
-      if (error) {
-        console.error('Ошибка загрузки отпусков:', error);
-      }
-
-      const availableDatesFiltered = dates.filter((date) => {
-        if (!absences) {
-          return true;
-        }
-
-        return !absences.some((absence) => {
-          const checkDate = new Date(date);
-          const startDate = new Date(absence.start_date);
-          const endDate = new Date(absence.end_date);
-          return checkDate >= startDate && checkDate <= endDate;
-        });
-      });
-
-      setAvailableDates(availableDatesFiltered);
+      const dates = await getAvailableDatesApi(masterId);
+      setAvailableDates(dates);
     } catch (err) {
       console.error('Ошибка загрузки дат:', err);
+      setAvailableDates([]);
     } finally {
       setLoading(false);
     }
@@ -80,82 +52,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
     setLoadingSlots(true);
 
     try {
-      const { data: master, error: masterError } = await supabase
-        .from('masters')
-        .select('work_schedule')
-        .eq('id', masterId)
-        .single();
-
-      if (masterError) {
-        console.error('Ошибка загрузки мастера:', masterError);
-        setTimeSlots([]);
-        return;
-      }
-
-      const dateObj = new Date(date);
-      const dayOfWeek = dateObj.getDay();
-      const dayNames = [
-        'sunday',
-        'monday',
-        'tuesday',
-        'wednesday',
-        'thursday',
-        'friday',
-        'saturday',
-      ];
-      const dayName = dayNames[dayOfWeek];
-
-      const workSchedule = master?.work_schedule || {};
-      const daySchedule = workSchedule[dayName] || [];
-
-      if (daySchedule.length === 0) {
-        setTimeSlots([]);
-        return;
-      }
-
-      const allSlots: string[] = [];
-
-      for (const timeRange of daySchedule) {
-        const [startTime, endTime] = timeRange.split('-');
-        if (!startTime || !endTime) {
-          continue;
-        }
-
-        const [startHour] = startTime.split(':').map(Number);
-        const [endHour] = endTime.split(':').map(Number);
-
-        for (let hour = startHour; hour < endHour; hour++) {
-          allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-        }
-      }
-
-      const { data: bookings, error } = await supabase
-        .from('bookings')
-        .select('booking_time')
-        .eq('master_id', masterId)
-        .eq('booking_date', date)
-        .in('status', ['pending', 'active', 'completed']);
-
-      if (error) {
-        console.error('Ошибка загрузки записей:', error);
-      }
-
-      const bookedTimes = new Set(
-        bookings?.map((booking) => booking.booking_time.substring(0, 5)) || [],
-      );
-
-      const slots: TimeSlot[] = allSlots.map((time) => {
-        const slotDateTime = parse(`${date} ${time}`, 'yyyy-MM-dd HH:mm', new Date());
-        const isBooked = bookedTimes.has(time);
-        const isTimePast = isPast(slotDateTime);
-
-        return {
-          time,
-          isAvailable: !isBooked && !isTimePast,
-          isPast: isTimePast,
-        };
-      });
-
+      const slots = await getAvailableSlotsApi(masterId, date);
       setTimeSlots(slots);
     } catch (err) {
       console.error('Ошибка загрузки слотов:', err);

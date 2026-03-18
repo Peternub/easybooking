@@ -27,3 +27,13 @@ export function getMastersByServiceApi(serviceId: string) {
 export function getMasterByIdApi(masterId: string) {
   return fetchJson<Master>(`/api/masters/${masterId}`);
 }
+
+export function getAvailableDatesApi(masterId: string) {
+  return fetchJson<string[]>(`/api/masters/${masterId}/available-dates`);
+}
+
+export function getAvailableSlotsApi(masterId: string, date: string) {
+  return fetchJson<Array<{ time: string; isAvailable: boolean; isPast: boolean }>>(
+    `/api/masters/${masterId}/available-slots?date=${encodeURIComponent(date)}`,
+  );
+}

@@ -87,6 +87,11 @@ type PromoCodeRow = {
   updated_at: string | Date;
 };
 
+type MasterAbsenceRow = {
+  start_date: string | Date;
+  end_date: string | Date;
+};
+
 function requireDb() {
   if (!db) {
     throw new Error('PostgreSQL не настроен');
@@ -306,6 +311,41 @@ export async function getMastersByServicePg(serviceId: string) {
   );
 
   return result.rows.map(mapMaster);
+}
+
+export async function getMasterAbsencesPg(masterId: string) {
+  const pool = requireDb();
+  const result = await pool.query<MasterAbsenceRow>(
+    `
+      SELECT start_date, end_date
+      FROM master_absences
+      WHERE master_id = $1
+      ORDER BY start_date ASC
+    `,
+    [masterId],
+  );
+
+  return result.rows.map((row) => ({
+    start_date: toDateString(row.start_date),
+    end_date: toDateString(row.end_date),
+  }));
+}
+
+export async function getBookedTimesForDatePg(masterId: string, date: string) {
+  const pool = requireDb();
+  const result = await pool.query<{ booking_time: string }>(
+    `
+      SELECT booking_time
+      FROM bookings
+      WHERE master_id = $1
+        AND booking_date = $2
+        AND status = ANY($3::text[])
+      ORDER BY booking_time ASC
+    `,
+    [masterId, date, ['pending', 'active', 'completed']],
+  );
+
+  return result.rows.map((row) => row.booking_time.substring(0, 5));
 }
 
 export async function createBookingPg(booking: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) {

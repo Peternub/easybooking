@@ -15,8 +15,10 @@ import {
   createReviewPg,
   getBookingByIdPg,
   getBookingsForDateRangePg,
+  getBookedTimesForDatePg,
   getClientBookingsPg,
   getMasterByIdPg,
+  getMasterAbsencesPg,
   getMastersByServicePg,
   getMastersPg,
   getServiceByIdPg,
@@ -147,6 +149,38 @@ export async function getMasterSchedule(masterId: string) {
 
   if (error) throw error;
   return data as MasterSchedule[];
+}
+
+export async function getMasterAbsences(masterId: string) {
+  if (hasPostgresConfig()) {
+    return getMasterAbsencesPg(masterId);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('master_absences')
+    .select('start_date, end_date')
+    .eq('master_id', masterId);
+
+  if (error) throw error;
+  return (data || []) as { start_date: string; end_date: string }[];
+}
+
+export async function getBookedTimesForDate(masterId: string, date: string) {
+  if (hasPostgresConfig()) {
+    return getBookedTimesForDatePg(masterId, date);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('bookings')
+    .select('booking_time')
+    .eq('master_id', masterId)
+    .eq('booking_date', date)
+    .in('status', ['pending', 'active', 'completed']);
+
+  if (error) throw error;
+  return (data || []).map((booking: { booking_time: string }) => booking.booking_time.substring(0, 5));
 }
 
 export async function createBooking(booking: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) {
