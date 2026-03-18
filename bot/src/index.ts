@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { getAvailableDates, getAvailableSlots } from './api/availability.js';
+import { handleCreateAdminBooking } from './api/create-admin-booking.js';
 import { handleCreateBooking } from './api/create-booking.js';
 import { handleNotifyBooking } from './api/notify-booking.js';
 import { handleNotifyCancellation } from './api/notify-cancellation.js';
@@ -282,6 +283,21 @@ function startApiServer(bot: Bot) {
         } catch (error) {
           console.error('Ошибка загрузки клиентов:', error);
           return jsonResponse({ message: 'Не удалось загрузить клиентов' }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname === '/api/admin/bookings' && req.method === 'POST') {
+        try {
+          const data = await req.json();
+          const result = await handleCreateAdminBooking(data);
+          return jsonResponse(
+            result.success ? { success: true, bookingId: result.bookingId } : { success: false, message: result.message },
+            result.status,
+            corsHeaders,
+          );
+        } catch (error) {
+          console.error('Ошибка создания записи из админки:', error);
+          return jsonResponse({ success: false, message: 'Не удалось создать запись' }, 500, corsHeaders);
         }
       }
 

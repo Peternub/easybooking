@@ -1,8 +1,13 @@
 import { Text } from '@telegram-apps/telegram-ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Master, Service } from '../../../../shared/types';
 import { backButtonStyle, inputStyle } from '../../components/AppTheme';
-import { supabase } from '../../services/supabase';
+import {
+  createAdminBookingApi,
+  getAdminMastersApi,
+  getAdminServicesApi,
+  getAvailableSlotsApi,
+} from '../../services/api';
 import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 
 interface Props {
@@ -25,6 +30,8 @@ const hintStyle = {
   marginTop: '8px',
 } as const;
 
+const defaultMinuteOptions = ['00', '15', '30', '45'];
+
 export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = false }: Props) {
   const [masters, setMasters] = useState<Master[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -37,12 +44,13 @@ export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = fa
   const [bookingMinute, setBookingMinute] = useState('00');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
-  const [availableHours, setAvailableHours] = useState<string[]>([]);
-  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState<
+    Array<{ time: string; isAvailable: boolean; isPast: boolean }>
+  >([]);
 
   useEffect(() => {
-    loadMasters();
-    loadServices();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
@@ -53,124 +61,109 @@ export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = fa
 
   useEffect(() => {
     if (selectedMasterId && bookingDate) {
-      updateAvailableHours();
-      loadBookedSlots();
+      loadAvailableSlots(selectedMasterId, bookingDate);
+      return;
     }
+
+    setAvailableSlots([]);
+    setBookingHour('');
+    setBookingMinute('00');
   }, [selectedMasterId, bookingDate]);
 
-  async function loadMasters() {
-    try {
-      const { data, error } = await supabase
-        .from('masters')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+  const availableHours = useMemo(() => {
+    const hours = new Set<string>();
 
-      if (error) throw error;
-      setMasters(data || []);
-    } catch (error) {
-      console.error('Ошибка загрузки мастеров:', error);
-    }
-  }
-
-  async function loadServices() {
-    try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw error;
-      setServices(data || []);
-    } catch (error) {
-      console.error('Ошибка загрузки услуг:', error);
-    }
-  }
-
-  async function loadBookedSlots() {
-    if (!selectedMasterId || !bookingDate) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('booking_time')
-        .eq('master_id', selectedMasterId)
-        .eq('booking_date', bookingDate)
-        .in('status', ['active', 'pending']);
-
-      if (error) throw error;
-
-      const slots = new Set<string>();
-      for (const booking of data || []) {
-        const time = booking.booking_time.substring(0, 5);
-        slots.add(time);
+    for (const slot of availableSlots) {
+      if (slot.isPast) {
+        continue;
       }
 
-      setBookedSlots(slots);
+      hours.add(slot.time.substring(0, 2));
+    }
+
+    return Array.from(hours);
+  }, [availableSlots]);
+
+  const bookedSlots = useMemo(() => {
+    const slots = new Set<string>();
+
+    for (const slot of availableSlots) {
+      if (!slot.isAvailable || slot.isPast) {
+        slots.add(slot.time.substring(0, 5));
+      }
+    }
+
+    return slots;
+  }, [availableSlots]);
+
+  const minuteOptions = useMemo(() => {
+    if (!bookingHour) {
+      return defaultMinuteOptions.map((value) => ({
+        value,
+        label: `${value} мин`,
+        disabled: false,
+      }));
+    }
+
+    return defaultMinuteOptions.map((value) => ({
+      value,
+      label: `${value} мин`,
+      disabled: bookedSlots.has(`${bookingHour}:${value}`),
+    }));
+  }, [bookingHour, bookedSlots]);
+
+  useEffect(() => {
+    if (!bookingHour) {
+      return;
+    }
+
+    if (!availableHours.includes(bookingHour)) {
+      setBookingHour('');
+      setBookingMinute('00');
+      return;
+    }
+
+    const selectedMinuteOption = minuteOptions.find((item) => item.value === bookingMinute);
+    if (selectedMinuteOption && !selectedMinuteOption.disabled) {
+      return;
+    }
+
+    const firstAvailableMinute = minuteOptions.find((item) => !item.disabled)?.value || '00';
+    setBookingMinute(firstAvailableMinute);
+  }, [availableHours, bookingHour, bookingMinute, minuteOptions]);
+
+  async function loadInitialData() {
+    try {
+      const [mastersData, servicesData] = await Promise.all([
+        getAdminMastersApi(),
+        getAdminServicesApi(),
+      ]);
+
+      setMasters(mastersData.filter((master) => master.is_active));
+      setServices(servicesData.filter((service) => service.is_active));
     } catch (error) {
-      console.error('Ошибка загрузки занятых слотов:', error);
+      console.error('Ошибка загрузки данных формы записи:', error);
+      alert('Не удалось загрузить данные формы');
     }
   }
 
-  function updateAvailableHours() {
-    const master = masters.find((item) => item.id === selectedMasterId);
-    if (!master || !master.work_schedule || !bookingDate) {
-      setAvailableHours([]);
-      return;
+  async function loadAvailableSlots(masterId: string, date: string) {
+    setLoadingSlots(true);
+
+    try {
+      const slots = await getAvailableSlotsApi(masterId, date);
+      setAvailableSlots(slots.filter((slot) => !slot.isPast));
+    } catch (error) {
+      console.error('Ошибка загрузки свободных слотов:', error);
+      setAvailableSlots([]);
+      alert('Не удалось загрузить свободное время');
+    } finally {
+      setLoadingSlots(false);
     }
-
-    const date = new Date(bookingDate);
-    const dayOfWeek = date.getDay();
-    const dayNames = [
-      'sunday',
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-    ] as const;
-    const dayName = dayNames[dayOfWeek];
-
-    const schedule = master.work_schedule[dayName];
-    if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
-      setAvailableHours([]);
-      return;
-    }
-
-    const [startTime, endTime] = schedule[0].split('-');
-    const [startHour] = startTime.split(':').map(Number);
-    const [endHour] = endTime.split(':').map(Number);
-
-    const hours: string[] = [];
-    for (let hour = startHour; hour < endHour; hour += 1) {
-      hours.push(hour.toString().padStart(2, '0'));
-    }
-
-    setAvailableHours(hours);
   }
 
   function isTimeSlotBooked(hour: string, minute: string): boolean {
     return bookedSlots.has(`${hour}:${minute}`);
-  }
-
-  function getAvailableMinutes(): Array<{ value: string; label: string; disabled: boolean }> {
-    const minutes = [
-      { value: '00', label: '00 мин' },
-      { value: '15', label: '15 мин' },
-      { value: '30', label: '30 мин' },
-      { value: '45', label: '45 мин' },
-    ];
-
-    if (!bookingHour) {
-      return minutes.map((item) => ({ ...item, disabled: false }));
-    }
-
-    return minutes.map((item) => ({
-      ...item,
-      disabled: isTimeSlotBooked(bookingHour, item.value),
-    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -181,113 +174,34 @@ export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = fa
       return;
     }
 
-    const bookingTime = `${bookingHour}:${bookingMinute}`;
+    const bookingTime = `${bookingHour}:${bookingMinute}:00`;
 
     if (isTimeSlotBooked(bookingHour, bookingMinute)) {
-      alert('Это время уже занято. Выберите другое время.');
+      alert('Это время уже занято. Выберите другой слот.');
       return;
     }
 
     setSaving(true);
 
     try {
-      const service = services.find((item) => item.id === selectedServiceId);
-      if (!service) {
-        alert('Услуга не найдена');
-        return;
-      }
-
-      let clientId = null;
-      if (clientPhone) {
-        const { data: existingClient } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('phone', clientPhone)
-          .single();
-
-        if (existingClient) {
-          clientId = existingClient.id;
-        } else {
-          const { data: newClient, error: clientError } = await supabase
-            .from('clients')
-            .insert({
-              name: clientName,
-              phone: clientPhone,
-              telegram_id: null,
-              username: null,
-              notes: notes || null,
-            })
-            .select()
-            .single();
-
-          if (clientError) throw clientError;
-          clientId = newClient.id;
-        }
-      }
-
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
-        .insert({
-          client_telegram_id: 0,
-          client_name: clientName,
-          client_username: null,
-          client_id: clientId,
-          master_id: selectedMasterId,
-          service_id: selectedServiceId,
-          booking_date: bookingDate,
-          booking_time: `${bookingTime}:00`,
-          status: 'active',
-          source: 'manual',
-          original_price: service.price,
-          discount_amount: 0,
-          final_price: service.price,
-          promo_code: null,
-          admin_notes: notes || null,
-          google_event_id: null,
-        })
-        .select()
-        .single();
-
-      if (bookingError) {
-        if (bookingError.code === '23505') {
-          alert('Мастер уже занят в это время. Выберите другое время или другого мастера.');
-          return;
-        }
-        throw bookingError;
-      }
-
-      try {
-        await fetch(
-          `${import.meta.env.VITE_BOT_API_URL || 'http://localhost:3000'}/api/notify-booking`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              bookingId: booking.id,
-              clientTelegramId: 0,
-              clientName,
-              clientUsername: null,
-              masterId: selectedMasterId,
-              serviceId: selectedServiceId,
-              bookingDate,
-              bookingTime: `${bookingTime}:00`,
-              originalPrice: service.price,
-              discountAmount: 0,
-              finalPrice: service.price,
-              promoCode: null,
-            }),
-          },
-        );
-      } catch (error) {
-        console.error('Ошибка создания события в календаре:', error);
-      }
+      await createAdminBookingApi({
+        clientName: clientName.trim(),
+        clientPhone: clientPhone.trim() || null,
+        masterId: selectedMasterId,
+        serviceId: selectedServiceId,
+        bookingDate,
+        bookingTime,
+        notes: notes.trim() || null,
+        source: 'manual',
+      });
 
       alert('Запись создана');
       onSaved?.();
       onClose?.();
     } catch (error) {
       console.error('Ошибка создания записи:', error);
-      alert('Не удалось создать запись');
+      const message = error instanceof Error ? error.message : 'Не удалось создать запись';
+      alert(message);
     } finally {
       setSaving(false);
     }
@@ -419,14 +333,15 @@ export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = fa
                   setBookingMinute('00');
                 }}
                 required
-                disabled={!selectedMasterId || !bookingDate}
+                disabled={!selectedMasterId || !bookingDate || loadingSlots}
                 style={{ ...selectStyle, flex: 1 }}
               >
-                <option value="">Час</option>
+                <option value="">{loadingSlots ? 'Загрузка...' : 'Час'}</option>
                 {availableHours.map((hour) => {
-                  const hasAvailableSlot = ['00', '15', '30', '45'].some(
+                  const hasAvailableSlot = defaultMinuteOptions.some(
                     (minute) => !isTimeSlotBooked(hour, minute),
                   );
+
                   return (
                     <option key={hour} value={hour} disabled={!hasAvailableSlot}>
                       {hour}:00 {!hasAvailableSlot ? '(занято)' : ''}
@@ -440,10 +355,10 @@ export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = fa
                 value={bookingMinute}
                 onChange={(e) => setBookingMinute(e.target.value)}
                 required
-                disabled={!bookingHour}
+                disabled={!bookingHour || loadingSlots}
                 style={{ ...selectStyle, flex: 1 }}
               >
-                {getAvailableMinutes().map((minute) => (
+                {minuteOptions.map((minute) => (
                   <option key={minute.value} value={minute.value} disabled={minute.disabled}>
                     {minute.label} {minute.disabled ? '(занято)' : ''}
                   </option>
@@ -453,9 +368,9 @@ export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = fa
 
             {!selectedMasterId && <p style={hintStyle}>Сначала выберите мастера</p>}
             {selectedMasterId && !bookingDate && <p style={hintStyle}>Сначала выберите дату</p>}
-            {selectedMasterId && bookingDate && availableHours.length === 0 && (
+            {selectedMasterId && bookingDate && !loadingSlots && availableHours.length === 0 && (
               <p style={{ ...hintStyle, color: 'var(--app-danger)' }}>
-                Мастер не работает в этот день
+                У мастера нет свободных слотов на эту дату
               </p>
             )}
             {bookingHour && bookingMinute && isTimeSlotBooked(bookingHour, bookingMinute) && (
@@ -479,7 +394,7 @@ export function BookingForm({ onClose, initialDate, onSaved, hideBackButton = fa
         </div>
       </AdminCard>
 
-      <AdminPrimaryButton type="submit" stretched disabled={saving}>
+      <AdminPrimaryButton type="submit" stretched disabled={saving || loadingSlots}>
         {saving ? 'Создание...' : 'Создать запись'}
       </AdminPrimaryButton>
     </form>

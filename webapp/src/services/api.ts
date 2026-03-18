@@ -22,6 +22,17 @@ export type MasterAbsencePayload = Pick<
   'start_date' | 'end_date' | 'reason' | 'notes'
 >;
 
+export interface AdminBookingPayload {
+  clientName: string;
+  clientPhone: string | null;
+  masterId: string;
+  serviceId: string;
+  bookingDate: string;
+  bookingTime: string;
+  notes: string | null;
+  source?: 'manual' | 'phone' | 'walk_in';
+}
+
 export interface AdminReviewApi {
   id: string;
   rating: number;
@@ -36,6 +47,10 @@ export interface AdminReviewApi {
   service_name: string;
 }
 
+function buildApiErrorMessage(status: number, message?: string) {
+  return message || `Ошибка API: ${status}`;
+}
+
 export async function uploadMasterPhotoApi(file: File) {
   const formData = new FormData();
   formData.append('file', file);
@@ -46,7 +61,7 @@ export async function uploadMasterPhotoApi(file: File) {
   });
 
   if (!response.ok) {
-    throw new Error(`Ошибка API: ${response.status}`);
+    throw new Error(buildApiErrorMessage(response.status));
   }
 
   return response.json() as Promise<{ url: string }>;
@@ -62,7 +77,16 @@ async function requestJson<T>(path: string, options: RequestOptions = {}): Promi
   });
 
   if (!response.ok) {
-    throw new Error(`Ошибка API: ${response.status}`);
+    let message: string | undefined;
+
+    try {
+      const errorBody = (await response.json()) as { message?: string };
+      message = errorBody.message;
+    } catch {
+      message = undefined;
+    }
+
+    throw new Error(buildApiErrorMessage(response.status, message));
   }
 
   return response.json() as Promise<T>;
@@ -216,4 +240,11 @@ export function getAdminBookingsApi(
   });
 
   return fetchJson<BookingReadable[]>(`/api/admin/bookings?${params.toString()}`);
+}
+
+export function createAdminBookingApi(payload: AdminBookingPayload) {
+  return requestJson<{ success: true; bookingId: string }>('/api/admin/bookings', {
+    method: 'POST',
+    body: payload,
+  });
 }

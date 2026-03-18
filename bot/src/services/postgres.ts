@@ -2,6 +2,7 @@ import type {
   Booking,
   BookingReadable,
   BookingWithDetails,
+  Client,
   ClientWithStats,
   Master,
   MasterAbsence,
@@ -102,6 +103,17 @@ type ClientStatsRow = {
   last_visit: string | Date | null;
 };
 
+type ClientRow = {
+  id: string;
+  telegram_id: number | null;
+  name: string;
+  username: string | null;
+  phone: string | null;
+  notes: string | null;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
 type BookingReadableRow = {
   id: string;
   booking_date: string | Date;
@@ -158,6 +170,17 @@ type MasterPayload = Pick<
   Master,
   'name' | 'description' | 'phone' | 'photo_url' | 'is_active'
 >;
+
+type ManualBookingPayload = {
+  client_name: string;
+  client_phone: string | null;
+  master_id: string;
+  service_id: string;
+  booking_date: string;
+  booking_time: string;
+  admin_notes: string | null;
+  source?: Booking['source'];
+};
 
 type MasterWorkSchedulePayload = Master['work_schedule'];
 type MasterAbsencePayload = Pick<MasterAbsence, 'start_date' | 'end_date' | 'reason' | 'notes'>;
@@ -282,6 +305,23 @@ function mapClientWithStats(row: ClientStatsRow): ClientWithStats {
     total_spent: Number(row.total_spent || 0),
     last_visit: toIsoString(row.last_visit),
   };
+}
+
+function mapClient(row: ClientRow): Client {
+  return {
+    id: row.id,
+    telegram_id: row.telegram_id,
+    name: row.name,
+    username: row.username,
+    phone: row.phone,
+    notes: row.notes,
+    created_at: toIsoString(row.created_at) || '',
+    updated_at: toIsoString(row.updated_at) || '',
+  };
+}
+
+function generateManualTelegramId() {
+  return -(Date.now() * 1000 + Math.floor(Math.random() * 1000));
 }
 
 function mapBookingReadable(row: BookingReadableRow): BookingReadable {
@@ -886,6 +926,115 @@ export async function createBookingPg(booking: Omit<Booking, 'id' | 'created_at'
   );
 
   return mapBooking(result.rows[0]);
+}
+
+async function upsertManualClientPg(
+  clientName: string,
+  clientPhone: string | null,
+  notes: string | null,
+) {
+  const pool = requireDb();
+  const normalizedPhone = clientPhone?.trim() || null;
+
+  if (!normalizedPhone) {
+    return {
+      client: null,
+      clientTelegramId: generateManualTelegramId(),
+    };
+  }
+
+  const existingClientResult = await pool.query<ClientRow>(
+    `
+      SELECT *
+      FROM clients
+      WHERE phone = $1
+      ORDER BY created_at ASC
+      LIMIT 1
+    `,
+    [normalizedPhone],
+  );
+
+  if (existingClientResult.rows.length > 0) {
+    const existingClient = mapClient(existingClientResult.rows[0]);
+    const clientTelegramId =
+      existingClient.telegram_id && existingClient.telegram_id !== 0
+        ? existingClient.telegram_id
+        : generateManualTelegramId();
+
+    const updatedClientResult = await pool.query<ClientRow>(
+      `
+        UPDATE clients
+        SET
+          telegram_id = COALESCE(telegram_id, $2),
+          name = $3,
+          phone = $4,
+          notes = COALESCE($5, notes),
+          updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `,
+      [existingClient.id, clientTelegramId, clientName, normalizedPhone, notes],
+    );
+
+    return {
+      client: mapClient(updatedClientResult.rows[0]),
+      clientTelegramId,
+    };
+  }
+
+  const clientTelegramId = generateManualTelegramId();
+  const createdClientResult = await pool.query<ClientRow>(
+    `
+      INSERT INTO clients (
+        telegram_id,
+        name,
+        username,
+        phone,
+        notes
+      )
+      VALUES ($1, $2, NULL, $3, $4)
+      RETURNING *
+    `,
+    [clientTelegramId, clientName, normalizedPhone, notes],
+  );
+
+  return {
+    client: mapClient(createdClientResult.rows[0]),
+    clientTelegramId,
+  };
+}
+
+export async function createManualBookingPg(data: ManualBookingPayload) {
+  const service = await getServiceByIdPg(data.service_id);
+  const { client, clientTelegramId } = await upsertManualClientPg(
+    data.client_name.trim(),
+    data.client_phone,
+    data.admin_notes,
+  );
+
+  return createBookingPg({
+    client_telegram_id: clientTelegramId,
+    client_name: data.client_name.trim(),
+    client_phone: data.client_phone?.trim() || null,
+    client_username: null,
+    client_id: client?.id || null,
+    master_id: data.master_id,
+    service_id: data.service_id,
+    booking_date: data.booking_date,
+    booking_time: data.booking_time,
+    status: 'active',
+    source: data.source || 'manual',
+    cancellation_reason: null,
+    google_event_id: null,
+    original_price: service.price,
+    discount_amount: 0,
+    final_price: service.price,
+    promo_code: null,
+    admin_notes: data.admin_notes,
+    reminder_24h_sent_at: null,
+    reminder_1h_sent_at: null,
+    review_request_sent_at: null,
+  });
 }
 
 export async function getBookingByIdPg(id: string) {

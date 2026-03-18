@@ -15,6 +15,7 @@ import {
   cancelBookingPg,
   completeBookingPg,
   createBookingPg,
+  createManualBookingPg,
   createMasterAbsencePg,
   createMasterPg,
   createServicePg,
@@ -124,6 +125,16 @@ type MasterPayload = Pick<
   Master,
   'name' | 'description' | 'phone' | 'photo_url' | 'is_active'
 >;
+type ManualBookingPayload = {
+  client_name: string;
+  client_phone: string | null;
+  master_id: string;
+  service_id: string;
+  booking_date: string;
+  booking_time: string;
+  admin_notes: string | null;
+  source?: Booking['source'];
+};
 type MasterAbsencePayload = Pick<MasterAbsence, 'start_date' | 'end_date' | 'reason' | 'notes'>;
 
 export async function getAdminMasters() {
@@ -433,6 +444,84 @@ export async function createBooking(booking: Omit<Booking, 'id' | 'created_at' |
 
   if (error) throw error;
   return data as Booking;
+}
+
+export async function createManualBooking(data: ManualBookingPayload) {
+  if (hasPostgresConfig()) {
+    return createManualBookingPg(data);
+  }
+
+  const client = requireSupabaseClient();
+  const service = await getServiceById(data.service_id);
+  const normalizedPhone = data.client_phone?.trim() || null;
+  let clientId: string | null = null;
+  let clientTelegramId = 0;
+
+  if (normalizedPhone) {
+    const { data: existingClient, error: existingClientError } = await client
+      .from('clients')
+      .select('id, telegram_id')
+      .eq('phone', normalizedPhone)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingClientError) throw existingClientError;
+
+    if (existingClient) {
+      clientId = String(existingClient.id);
+      clientTelegramId = Number(existingClient.telegram_id || 0);
+
+      const { error: updateClientError } = await client
+        .from('clients')
+        .update({
+          name: data.client_name.trim(),
+          phone: normalizedPhone,
+          notes: data.admin_notes,
+        })
+        .eq('id', clientId);
+
+      if (updateClientError) throw updateClientError;
+    } else {
+      const { data: createdClient, error: createClientError } = await client
+        .from('clients')
+        .insert({
+          telegram_id: null,
+          name: data.client_name.trim(),
+          username: null,
+          phone: normalizedPhone,
+          notes: data.admin_notes,
+        })
+        .select('id')
+        .single();
+
+      if (createClientError) throw createClientError;
+      clientId = String(createdClient.id);
+    }
+  }
+
+  return createBooking({
+    client_telegram_id: clientTelegramId,
+    client_name: data.client_name.trim(),
+    client_phone: normalizedPhone,
+    client_username: null,
+    client_id: clientId,
+    master_id: data.master_id,
+    service_id: data.service_id,
+    booking_date: data.booking_date,
+    booking_time: data.booking_time,
+    status: 'active',
+    source: data.source || 'manual',
+    cancellation_reason: null,
+    google_event_id: null,
+    original_price: service.price,
+    discount_amount: 0,
+    final_price: service.price,
+    promo_code: null,
+    admin_notes: data.admin_notes,
+    reminder_24h_sent_at: null,
+    reminder_1h_sent_at: null,
+    review_request_sent_at: null,
+  });
 }
 
 export async function getBookingById(id: string) {
