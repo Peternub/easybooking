@@ -1,4 +1,4 @@
-import type { ClientWithStats, Master, MasterAbsence, Service } from '../../../shared/types';
+import type { BookingReadable, ClientWithStats, Master, MasterAbsence, Service } from '../../../shared/types';
 
 const apiBaseUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
 
@@ -202,4 +202,18 @@ export function getAdminReviewsApi() {
 
 export function getAdminClientsApi() {
   return fetchJson<ClientWithStats[]>('/api/admin/clients');
+}
+
+export function getAdminBookingsApi(
+  fromDate: string,
+  toDate: string,
+  statuses: Array<'active' | 'pending' | 'completed' | 'cancelled' | 'no_show'> = ['active', 'pending'],
+) {
+  const params = new URLSearchParams({
+    from: fromDate,
+    to: toDate,
+    statuses: statuses.join(','),
+  });
+
+  return fetchJson<BookingReadable[]>(`/api/admin/bookings?${params.toString()}`);
 }

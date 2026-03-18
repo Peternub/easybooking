@@ -1,5 +1,6 @@
 import type {
   Booking,
+  BookingReadable,
   BookingWithDetails,
   ClientWithStats,
   Master,
@@ -99,6 +100,25 @@ type ClientStatsRow = {
   cancelled_bookings: number;
   total_spent: number;
   last_visit: string | Date | null;
+};
+
+type BookingReadableRow = {
+  id: string;
+  booking_date: string | Date;
+  booking_time: string;
+  status: Booking['status'];
+  source: Booking['source'];
+  client_name: string;
+  client_username: string | null;
+  client_phone: string | null;
+  client_notes: string | null;
+  master_name: string;
+  service_name: string;
+  service_price: number;
+  final_price: number;
+  promo_code: string | null;
+  admin_notes: string | null;
+  created_at: string | Date;
 };
 
 type PromoCodeRow = {
@@ -264,6 +284,27 @@ function mapClientWithStats(row: ClientStatsRow): ClientWithStats {
   };
 }
 
+function mapBookingReadable(row: BookingReadableRow): BookingReadable {
+  return {
+    id: row.id,
+    booking_date: toDateString(row.booking_date),
+    booking_time: row.booking_time,
+    status: row.status,
+    source: row.source,
+    client_name: row.client_name,
+    client_username: row.client_username,
+    client_phone: row.client_phone,
+    client_notes: row.client_notes,
+    master_name: row.master_name,
+    service_name: row.service_name,
+    service_price: row.service_price,
+    final_price: row.final_price,
+    promo_code: row.promo_code,
+    admin_notes: row.admin_notes,
+    created_at: toIsoString(row.created_at) || '',
+  };
+}
+
 export async function getAdminReviewsPg() {
   const pool = requireDb();
   const result = await pool.query<AdminReviewRow>(
@@ -316,6 +357,46 @@ export async function getAdminClientsPg() {
   );
 
   return result.rows.map(mapClientWithStats);
+}
+
+export async function getAdminBookingsPg(
+  fromDate: string,
+  toDate: string,
+  statuses: Booking['status'][] = ['active', 'pending'],
+) {
+  const pool = requireDb();
+  const result = await pool.query<BookingReadableRow>(
+    `
+      SELECT
+        b.id,
+        b.booking_date,
+        b.booking_time,
+        b.status,
+        b.source,
+        b.client_name,
+        b.client_username,
+        b.client_phone,
+        c.notes AS client_notes,
+        m.name AS master_name,
+        s.name AS service_name,
+        s.price AS service_price,
+        COALESCE(b.final_price, 0) AS final_price,
+        b.promo_code,
+        b.admin_notes,
+        b.created_at
+      FROM bookings b
+      INNER JOIN masters m ON m.id = b.master_id
+      INNER JOIN services s ON s.id = b.service_id
+      LEFT JOIN clients c ON c.id = b.client_id
+      WHERE b.booking_date >= $1
+        AND b.booking_date <= $2
+        AND b.status = ANY($3::text[])
+      ORDER BY b.booking_date ASC, b.booking_time ASC
+    `,
+    [fromDate, toDate, statuses],
+  );
+
+  return result.rows.map(mapBookingReadable);
 }
 
 function mapMasterAbsence(row: MasterAbsenceRow): MasterAbsence {

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type {
   Booking,
+  BookingReadable,
   BookingWithDetails,
   ClientWithStats,
   Master,
@@ -18,6 +19,7 @@ import {
   createMasterPg,
   createServicePg,
   createReviewPg,
+  getAdminBookingsPg,
   getAdminClientsPg,
   getAdminReviewsPg,
   deleteMasterAbsencePg,
@@ -702,6 +704,32 @@ export async function getAdminClients() {
   );
 
   return clientsWithStats;
+}
+
+export async function getAdminBookings(
+  fromDate: string,
+  toDate: string,
+  statuses: Booking['status'][] = ['active', 'pending'],
+) {
+  if (hasPostgresConfig()) {
+    return getAdminBookingsPg(fromDate, toDate, statuses);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('bookings_readable')
+    .select('*')
+    .gte('booking_date', fromDate)
+    .lte('booking_date', toDate)
+    .in('status', statuses)
+    .order('booking_date', { ascending: true })
+    .order('booking_time', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []) as BookingReadable[];
 }
 
 export async function hasReview(bookingId: string) {

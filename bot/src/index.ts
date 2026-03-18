@@ -17,6 +17,7 @@ import {
   createMaster,
   createService,
   deleteMasterAbsence,
+  getAdminBookings,
   getAdminClients,
   getAdminMasters,
   getAdminReviews,
@@ -281,6 +282,26 @@ function startApiServer(bot: Bot) {
         } catch (error) {
           console.error('Ошибка загрузки клиентов:', error);
           return jsonResponse({ message: 'Не удалось загрузить клиентов' }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname === '/api/admin/bookings' && req.method === 'GET') {
+        try {
+          const fromDate = String(url.searchParams.get('from') || '');
+          const toDate = String(url.searchParams.get('to') || '');
+          const statuses = (url.searchParams.get('statuses') || 'active,pending')
+            .split(',')
+            .filter(Boolean) as Array<'active' | 'pending' | 'completed' | 'cancelled' | 'no_show'>;
+
+          if (!fromDate || !toDate) {
+            return jsonResponse({ message: 'Не передан диапазон дат' }, 400, corsHeaders);
+          }
+
+          const bookings = await getAdminBookings(fromDate, toDate, statuses);
+          return jsonResponse(bookings, 200, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка загрузки записей:', error);
+          return jsonResponse({ message: 'Не удалось загрузить записи' }, 500, corsHeaders);
         }
       }
 

@@ -16,7 +16,7 @@ import {
 import { ru } from 'date-fns/locale';
 import { useEffect, useMemo, useState } from 'react';
 import type { BookingReadable } from '../../../../shared/types';
-import { supabase } from '../../services/supabase';
+import { getAdminBookingsApi } from '../../services/api';
 import { AdminCard, AdminChip, AdminDetailRow, AdminEmptyState } from './AdminTheme';
 import { BookingForm } from './BookingForm';
 
@@ -121,22 +121,8 @@ export function BookingsList() {
     try {
       const today = new Date().toISOString().split('T')[0];
       const monthAhead = addMonths(new Date(), 3).toISOString().split('T')[0];
-
-      const { data, error } = await supabase
-        .from('bookings_readable')
-        .select('*')
-        .gte('booking_date', today)
-        .lte('booking_date', monthAhead)
-        .in('status', ['active', 'pending'])
-        .order('booking_date', { ascending: true })
-        .order('booking_time', { ascending: true })
-        .limit(300);
-
-      if (error) {
-        throw error;
-      }
-
-      setBookings((data || []).filter(isUpcomingBooking));
+      const data = await getAdminBookingsApi(today, monthAhead, ['active', 'pending']);
+      setBookings(data.filter(isUpcomingBooking));
     } catch (error) {
       console.error('Ошибка загрузки записей:', error);
       alert('Не удалось загрузить записи');
@@ -268,18 +254,10 @@ export function BookingsList() {
               </Text>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <Button
-                  mode="outline"
-                  size="s"
-                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                >
+                <Button mode="outline" size="s" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
                   Назад
                 </Button>
-                <Button
-                  mode="outline"
-                  size="s"
-                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                >
+                <Button mode="outline" size="s" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
                   Вперед
                 </Button>
               </div>
@@ -490,10 +468,7 @@ export function BookingsList() {
                     {booking.client_phone && (
                       <AdminChip label={booking.client_phone} tone="neutral" />
                     )}
-                    <AdminChip
-                      label={getSourceText(booking.source)}
-                      tone={getSourceTone(booking.source)}
-                    />
+                    <AdminChip label={getSourceText(booking.source)} tone={getSourceTone(booking.source)} />
                   </div>
                 </div>
               </AdminCard>
