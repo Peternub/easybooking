@@ -52,7 +52,6 @@ export async function handleCreateBooking(bot: Bot, data: CreateBookingRequest) 
     status: 'active',
     source: 'online',
     cancellation_reason: null,
-    google_event_id: null,
     original_price: originalPrice,
     discount_amount: discountAmount,
     final_price: finalPrice,

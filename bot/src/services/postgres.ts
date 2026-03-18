@@ -17,7 +17,6 @@ type MasterRow = {
   photo_url: string | null;
   description: string | null;
   specialization: string | null;
-  google_calendar_id: string | null;
   phone: string | null;
   is_active: boolean;
   work_schedule: Master['work_schedule'] | null;
@@ -51,7 +50,6 @@ type BookingRow = {
   status: Booking['status'];
   source: Booking['source'];
   cancellation_reason: string | null;
-  google_event_id: string | null;
   original_price: number | null;
   discount_amount: number | null;
   final_price: number | null;
@@ -216,7 +214,6 @@ function mapMaster(row: MasterRow): Master {
     photo_url: row.photo_url,
     description: row.description,
     specialization: row.specialization,
-    google_calendar_id: row.google_calendar_id,
     phone: row.phone,
     is_active: row.is_active,
     work_schedule: row.work_schedule || {},
@@ -254,7 +251,6 @@ function mapBooking(row: BookingRow): Booking {
     status: row.status,
     source: row.source,
     cancellation_reason: row.cancellation_reason,
-    google_event_id: row.google_event_id,
     original_price: row.original_price ?? 0,
     discount_amount: row.discount_amount ?? 0,
     final_price: row.final_price ?? 0,
@@ -884,7 +880,6 @@ export async function createBookingPg(booking: Omit<Booking, 'id' | 'created_at'
         status,
         source,
         cancellation_reason,
-        google_event_id,
         original_price,
         discount_amount,
         final_price,
@@ -913,7 +908,6 @@ export async function createBookingPg(booking: Omit<Booking, 'id' | 'created_at'
       booking.status,
       booking.source,
       booking.cancellation_reason,
-      booking.google_event_id,
       booking.original_price,
       booking.discount_amount,
       booking.final_price,
@@ -1025,7 +1019,6 @@ export async function createManualBookingPg(data: ManualBookingPayload) {
     status: 'active',
     source: data.source || 'manual',
     cancellation_reason: null,
-    google_event_id: null,
     original_price: service.price,
     discount_amount: 0,
     final_price: service.price,

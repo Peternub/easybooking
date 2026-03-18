@@ -6,7 +6,6 @@ export interface Master {
   photo_url: string | null;
   description: string | null;
   specialization: string | null;
-  google_calendar_id: string | null;
   phone: string | null;
   is_active: boolean;
   work_schedule: {
@@ -65,7 +64,6 @@ export interface Booking {
   status: BookingStatus;
   source: BookingSource;
   cancellation_reason: string | null;
-  google_event_id: string | null;
   original_price: number;
   discount_amount: number;
   final_price: number;
