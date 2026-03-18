@@ -1,4 +1,4 @@
-import { Bot } from 'grammy';
+﻿import { Bot } from 'grammy';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -369,8 +369,8 @@ function startApiServer(bot: Bot) {
 
           return jsonResponse({ message: 'Not Found' }, 404, corsHeaders);
         } catch (error) {
-          console.error('Ошибка загрузки услуг мастера:', error);
-          return jsonResponse({ message: 'Не удалось загрузить услуги мастера' }, 500, corsHeaders);
+          console.error('Ошибка загрузки данных мастера:', error);
+          return jsonResponse({ message: 'Не удалось загрузить данные мастера' }, 500, corsHeaders);
         }
       }
 
@@ -442,8 +442,8 @@ function startApiServer(bot: Bot) {
 
           return jsonResponse({ message: 'Not Found' }, 404, corsHeaders);
         } catch (error) {
-          console.error('Ошибка удаления услуги мастера:', error);
-          return jsonResponse({ message: 'Не удалось удалить услугу мастера' }, 500, corsHeaders);
+          console.error('Ошибка удаления данных мастера:', error);
+          return jsonResponse({ message: 'Не удалось удалить данные мастера' }, 500, corsHeaders);
         }
       }
 
