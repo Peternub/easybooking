@@ -1,5 +1,5 @@
--- Базовая схема EasyBooking для обычного PostgreSQL
--- Этот файл заменяет цепочку миграций Supabase при разворачивании нового проекта.
+﻿-- Базовая схема EasyBooking для PostgreSQL.
+-- Этот файл используется для разворачивания нового проекта.
 
 BEGIN;
 
@@ -270,13 +270,13 @@ LEFT JOIN masters m ON b.master_id = m.id
 LEFT JOIN services s ON b.service_id = s.id
 ORDER BY b.booking_date DESC, b.booking_time DESC;
 
-COMMENT ON TABLE masters IS 'Мастера салона';
-COMMENT ON TABLE services IS 'Услуги салона';
-COMMENT ON TABLE clients IS 'Клиенты салона';
-COMMENT ON TABLE bookings IS 'Записи клиентов';
-COMMENT ON TABLE reviews IS 'Отзывы клиентов';
-COMMENT ON TABLE promo_codes IS 'Промокоды салона';
-COMMENT ON TABLE master_absences IS 'Отпуска и больничные мастеров';
-COMMENT ON VIEW bookings_readable IS 'Удобное представление записей для админки';
+COMMENT ON TABLE masters IS 'РњР°СЃС‚РµСЂР° СЃР°Р»РѕРЅР°';
+COMMENT ON TABLE services IS 'РЈСЃР»СѓРіРё СЃР°Р»РѕРЅР°';
+COMMENT ON TABLE clients IS 'РљР»РёРµРЅС‚С‹ СЃР°Р»РѕРЅР°';
+COMMENT ON TABLE bookings IS 'Р—Р°РїРёСЃРё РєР»РёРµРЅС‚РѕРІ';
+COMMENT ON TABLE reviews IS 'РћС‚Р·С‹РІС‹ РєР»РёРµРЅС‚РѕРІ';
+COMMENT ON TABLE promo_codes IS 'РџСЂРѕРјРѕРєРѕРґС‹ СЃР°Р»РѕРЅР°';
+COMMENT ON TABLE master_absences IS 'РћС‚РїСѓСЃРєР° Рё Р±РѕР»СЊРЅРёС‡РЅС‹Рµ РјР°СЃС‚РµСЂРѕРІ';
+COMMENT ON VIEW bookings_readable IS 'РЈРґРѕР±РЅРѕРµ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ Р·Р°РїРёСЃРµР№ РґР»СЏ Р°РґРјРёРЅРєРё';
 
 COMMIT;
