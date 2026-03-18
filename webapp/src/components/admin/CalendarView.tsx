@@ -3,7 +3,7 @@ import { addDays, format, startOfDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import type { BookingReadable, Master } from '../../../../shared/types';
-import { supabase } from '../../services/supabase';
+import { getAdminBookingsApi, getAdminMastersApi } from '../../services/api';
 import { AdminCard, AdminChip, AdminEmptyState } from './AdminTheme';
 
 function getStatusText(status: string) {
@@ -17,7 +17,7 @@ function getStatusText(status: string) {
     case 'cancelled':
       return 'Отменена';
     case 'no_show':
-      return 'Не пришёл';
+      return 'Не пришел';
     default:
       return status;
   }
@@ -72,54 +72,19 @@ export function CalendarView() {
     setLoading(true);
 
     try {
-      let bookingsData: BookingReadable[] = [];
+      const startDate = format(date, 'yyyy-MM-dd');
+      const endDate = mode === 'day' ? startDate : format(addDays(date, 6), 'yyyy-MM-dd');
 
-      if (mode === 'day') {
-        const dateStr = format(date, 'yyyy-MM-dd');
-        const { data, error } = await supabase
-          .from('bookings_readable')
-          .select('*')
-          .eq('booking_date', dateStr)
-          .order('booking_time');
-
-        if (error) {
-          throw error;
-        }
-
-        bookingsData = data || [];
-      } else {
-        const startDate = format(date, 'yyyy-MM-dd');
-        const endDate = format(addDays(date, 6), 'yyyy-MM-dd');
-
-        const { data, error } = await supabase
-          .from('bookings_readable')
-          .select('*')
-          .gte('booking_date', startDate)
-          .lte('booking_date', endDate)
-          .order('booking_date')
-          .order('booking_time');
-
-        if (error) {
-          throw error;
-        }
-
-        bookingsData = data || [];
-      }
-
-      const { data: mastersData, error: mastersError } = await supabase
-        .from('masters')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (mastersError) {
-        throw mastersError;
-      }
+      const [bookingsData, mastersData] = await Promise.all([
+        getAdminBookingsApi(startDate, endDate, ['active', 'pending']),
+        getAdminMastersApi(),
+      ]);
 
       setBookings(bookingsData.filter(isUpcomingBooking));
-      setMasters(mastersData || []);
+      setMasters(mastersData.filter((master) => master.is_active));
     } catch (error) {
       console.error('Ошибка загрузки календаря:', error);
+      alert('Не удалось загрузить календарь');
     } finally {
       setLoading(false);
     }
@@ -191,7 +156,7 @@ export function CalendarView() {
             size="s"
             onClick={() => setSelectedDate(addDays(selectedDate, viewMode === 'day' ? 1 : 7))}
           >
-            Вперёд
+            Вперед
           </Button>
         </div>
       </AdminCard>
