@@ -1,4 +1,7 @@
 import { Bot } from 'grammy';
+import { randomUUID } from 'node:crypto';
+import { mkdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { getAvailableDates, getAvailableSlots } from './api/availability.js';
 import { handleCreateBooking } from './api/create-booking.js';
 import { handleNotifyBooking } from './api/notify-booking.js';
@@ -32,6 +35,11 @@ import {
 } from './services/supabase.js';
 
 declare const Bun: any;
+
+const uploadsRoot = resolve(process.cwd(), 'uploads');
+const masterUploadsDir = join(uploadsRoot, 'masters');
+
+mkdirSync(masterUploadsDir, { recursive: true });
 
 try {
   validateConfig();
@@ -67,6 +75,19 @@ function jsonResponse(body: unknown, status: number, headers: Record<string, str
   });
 }
 
+function getFileExtension(fileName: string) {
+  const parts = fileName.split('.');
+  return parts.length > 1 ? parts.at(-1)?.toLowerCase() || 'jpg' : 'jpg';
+}
+
+function buildUploadUrl(origin: string, fileName: string) {
+  return `${origin}/uploads/masters/${fileName}`;
+}
+
+function getUploadFilePath(fileName: string) {
+  return join(masterUploadsDir, fileName);
+}
+
 function startApiServer(bot: Bot) {
   const port = process.env.API_PORT || 3001;
 
@@ -83,6 +104,58 @@ function startApiServer(bot: Bot) {
 
       if (req.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: corsHeaders });
+      }
+
+      if (url.pathname.startsWith('/uploads/')) {
+        const relativePath = url.pathname.replace(/^\/uploads\//, '');
+        const fullPath = resolve(uploadsRoot, relativePath);
+
+        if (!fullPath.startsWith(uploadsRoot)) {
+          return new Response('Forbidden', { status: 403, headers: corsHeaders });
+        }
+
+        const file = Bun.file(fullPath);
+        if (!(await file.exists())) {
+          return new Response('Not Found', { status: 404, headers: corsHeaders });
+        }
+
+        return new Response(file, { status: 200, headers: corsHeaders });
+      }
+
+      if (url.pathname === '/api/upload/master-photo' && req.method === 'POST') {
+        try {
+          const formData = await req.formData();
+          const file = formData.get('file');
+
+          if (!(file instanceof File)) {
+            return jsonResponse({ message: 'Файл не передан' }, 400, corsHeaders);
+          }
+
+          if (!file.type.startsWith('image/')) {
+            return jsonResponse({ message: 'Можно загружать только изображения' }, 400, corsHeaders);
+          }
+
+          if (file.size > 5 * 1024 * 1024) {
+            return jsonResponse({ message: 'Файл слишком большой' }, 400, corsHeaders);
+          }
+
+          const extension = getFileExtension(file.name);
+          const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
+          const filePath = getUploadFilePath(fileName);
+
+          await Bun.write(filePath, file);
+
+          return jsonResponse(
+            {
+              url: buildUploadUrl(url.origin, fileName),
+            },
+            200,
+            corsHeaders,
+          );
+        } catch (error) {
+          console.error('Ошибка загрузки фото мастера:', error);
+          return jsonResponse({ message: 'Не удалось загрузить фото' }, 500, corsHeaders);
+        }
       }
 
       if (url.pathname === '/api/bookings' && req.method === 'POST') {

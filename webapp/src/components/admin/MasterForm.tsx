@@ -2,8 +2,7 @@ import { Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Master } from '../../../../shared/types';
 import { backButtonStyle, inputStyle } from '../../components/AppTheme';
-import { createMasterApi, type MasterPayload, updateMasterApi } from '../../services/api';
-import { supabase } from '../../services/supabase';
+import { createMasterApi, type MasterPayload, updateMasterApi, uploadMasterPhotoApi } from '../../services/api';
 import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 import { MasterAbsences } from './MasterAbsences';
 import { MasterServices } from './MasterServices';
@@ -33,7 +32,6 @@ export function MasterForm({ master, onClose }: Props) {
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'schedule' | 'services' | 'absences'>('info');
 
-  // Сбрасываем локальные поля при открытии другого мастера.
   useEffect(() => {
     setName(master?.name || '');
     setDescription(master?.description || '');
@@ -49,7 +47,9 @@ export function MasterForm({ master, onClose }: Props) {
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     if (!file.type.startsWith('image/')) {
       alert('Пожалуйста, выберите изображение');
@@ -72,25 +72,14 @@ export function MasterForm({ master, onClose }: Props) {
   }
 
   async function uploadPhoto(): Promise<string | null> {
-    if (!photoFile) return photoUrl || null;
+    if (!photoFile) {
+      return photoUrl || null;
+    }
 
     setUploading(true);
     try {
-      const fileExt = photoFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `masters/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('master-photos')
-        .upload(filePath, photoFile);
-
-      if (uploadError) {
-        console.error('Ошибка загрузки:', uploadError);
-        throw uploadError;
-      }
-
-      const { data } = supabase.storage.from('master-photos').getPublicUrl(filePath);
-      return data.publicUrl;
+      const result = await uploadMasterPhotoApi(photoFile);
+      return result.url;
     } catch (error) {
       console.error('Ошибка загрузки фото:', error);
       alert('Не удалось загрузить фото');

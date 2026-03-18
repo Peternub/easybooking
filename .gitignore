@@ -11,3 +11,5 @@ build
 # Google Service Account (содержит приватный ключ!)
 google-service-account.json
 bot/google-service-account.json
+
+bot/uploads/

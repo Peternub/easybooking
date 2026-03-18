@@ -22,6 +22,22 @@ export type MasterAbsencePayload = Pick<
   'start_date' | 'end_date' | 'reason' | 'notes'
 >;
 
+export async function uploadMasterPhotoApi(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${apiBaseUrl}/api/upload/master-photo`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Ошибка API: ${response.status}`);
+  }
+
+  return response.json() as Promise<{ url: string }>;
+}
+
 async function requestJson<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method: options.method || 'GET',
