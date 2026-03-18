@@ -1,4 +1,4 @@
-import type { Master, Service } from '../../../shared/types';
+import type { Master, MasterAbsence, Service } from '../../../shared/types';
 
 const apiBaseUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
 
@@ -15,6 +15,11 @@ export type ServicePayload = Pick<
 export type MasterPayload = Pick<
   Master,
   'name' | 'description' | 'phone' | 'photo_url' | 'is_active'
+>;
+
+export type MasterAbsencePayload = Pick<
+  MasterAbsence,
+  'start_date' | 'end_date' | 'reason' | 'notes'
 >;
 
 async function requestJson<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -141,5 +146,22 @@ export function updateMasterWorkScheduleApi(
   return requestJson<Master>(`/api/admin/masters/${masterId}/work-schedule`, {
     method: 'PATCH',
     body: { work_schedule: workSchedule },
+  });
+}
+
+export function getMasterAbsencesApi(masterId: string) {
+  return fetchJson<MasterAbsence[]>(`/api/admin/masters/${masterId}/absences`);
+}
+
+export function createMasterAbsenceApi(masterId: string, absence: MasterAbsencePayload) {
+  return requestJson<MasterAbsence>(`/api/admin/masters/${masterId}/absences`, {
+    method: 'POST',
+    body: absence,
+  });
+}
+
+export function deleteMasterAbsenceApi(masterId: string, absenceId: string) {
+  return requestJson<{ success: true }>(`/api/admin/masters/${masterId}/absences/${absenceId}`, {
+    method: 'DELETE',
   });
 }

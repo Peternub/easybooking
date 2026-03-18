@@ -1,4 +1,4 @@
-import type { Booking, BookingWithDetails, Master, Review, Service } from '../../../shared/types.js';
+import type { Booking, BookingWithDetails, Master, MasterAbsence, Review, Service } from '../../../shared/types.js';
 import { db } from './db.js';
 
 type MasterRow = {
@@ -88,8 +88,14 @@ type PromoCodeRow = {
 };
 
 type MasterAbsenceRow = {
+  id: string;
+  master_id: string;
   start_date: string | Date;
   end_date: string | Date;
+  reason: MasterAbsence['reason'];
+  notes: string | null;
+  created_at: string | Date;
+  updated_at: string | Date;
 };
 
 type ServicePayload = Pick<
@@ -103,6 +109,7 @@ type MasterPayload = Pick<
 >;
 
 type MasterWorkSchedulePayload = Master['work_schedule'];
+type MasterAbsencePayload = Pick<MasterAbsence, 'start_date' | 'end_date' | 'reason' | 'notes'>;
 
 function requireDb() {
   if (!db) {
@@ -205,6 +212,19 @@ function mapReview(row: ReviewRow): Review {
     rating: row.rating,
     comment: row.comment,
     created_at: toIsoString(row.created_at) || '',
+  };
+}
+
+function mapMasterAbsence(row: MasterAbsenceRow): MasterAbsence {
+  return {
+    id: row.id,
+    master_id: row.master_id,
+    start_date: toDateString(row.start_date),
+    end_date: toDateString(row.end_date),
+    reason: row.reason,
+    notes: row.notes,
+    created_at: toIsoString(row.created_at) || '',
+    updated_at: toIsoString(row.updated_at) || '',
   };
 }
 
@@ -564,18 +584,46 @@ export async function getMasterAbsencesPg(masterId: string) {
   const pool = requireDb();
   const result = await pool.query<MasterAbsenceRow>(
     `
-      SELECT start_date, end_date
+      SELECT *
       FROM master_absences
       WHERE master_id = $1
-      ORDER BY start_date ASC
+      ORDER BY start_date DESC
     `,
     [masterId],
   );
 
-  return result.rows.map((row) => ({
-    start_date: toDateString(row.start_date),
-    end_date: toDateString(row.end_date),
-  }));
+  return result.rows.map(mapMasterAbsence);
+}
+
+export async function createMasterAbsencePg(masterId: string, absence: MasterAbsencePayload) {
+  const pool = requireDb();
+  const result = await pool.query<MasterAbsenceRow>(
+    `
+      INSERT INTO master_absences (
+        master_id,
+        start_date,
+        end_date,
+        reason,
+        notes
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `,
+    [masterId, absence.start_date, absence.end_date, absence.reason, absence.notes],
+  );
+
+  return mapMasterAbsence(result.rows[0]);
+}
+
+export async function deleteMasterAbsencePg(absenceId: string) {
+  const pool = requireDb();
+  await pool.query(
+    `
+      DELETE FROM master_absences
+      WHERE id = $1
+    `,
+    [absenceId],
+  );
 }
 
 export async function getBookedTimesForDatePg(masterId: string, date: string) {

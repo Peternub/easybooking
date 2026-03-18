@@ -3,6 +3,7 @@ import type {
   Booking,
   BookingWithDetails,
   Master,
+  MasterAbsence,
   MasterSchedule,
   Review,
   Service,
@@ -12,9 +13,11 @@ import {
   cancelBookingPg,
   completeBookingPg,
   createBookingPg,
+  createMasterAbsencePg,
   createMasterPg,
   createServicePg,
   createReviewPg,
+  deleteMasterAbsencePg,
   addServiceToMasterPg,
   getAdminMastersPg,
   getAdminServicesPg,
@@ -116,6 +119,7 @@ type MasterPayload = Pick<
   Master,
   'name' | 'description' | 'phone' | 'photo_url' | 'is_active'
 >;
+type MasterAbsencePayload = Pick<MasterAbsence, 'start_date' | 'end_date' | 'reason' | 'notes'>;
 
 export async function getAdminMasters() {
   if (hasPostgresConfig()) {
@@ -357,11 +361,44 @@ export async function getMasterAbsences(masterId: string) {
   const client = requireSupabaseClient();
   const { data, error } = await client
     .from('master_absences')
-    .select('start_date, end_date')
+    .select('*')
     .eq('master_id', masterId);
 
   if (error) throw error;
-  return (data || []) as { start_date: string; end_date: string }[];
+  return (data || []) as MasterAbsence[];
+}
+
+export async function createMasterAbsence(masterId: string, absence: MasterAbsencePayload) {
+  if (hasPostgresConfig()) {
+    return createMasterAbsencePg(masterId, absence);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('master_absences')
+    .insert({
+      master_id: masterId,
+      start_date: absence.start_date,
+      end_date: absence.end_date,
+      reason: absence.reason,
+      notes: absence.notes,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as MasterAbsence;
+}
+
+export async function deleteMasterAbsence(absenceId: string) {
+  if (hasPostgresConfig()) {
+    return deleteMasterAbsencePg(absenceId);
+  }
+
+  const client = requireSupabaseClient();
+  const { error } = await client.from('master_absences').delete().eq('id', absenceId);
+
+  if (error) throw error;
 }
 
 export async function getBookedTimesForDate(masterId: string, date: string) {

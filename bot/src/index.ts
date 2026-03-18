@@ -10,11 +10,14 @@ import { setupHandlers } from './handlers/index.js';
 import { startNotificationScheduler } from './notifications/scheduler.js';
 import {
   addServiceToMaster,
+  createMasterAbsence,
   createMaster,
   createService,
+  deleteMasterAbsence,
   getAdminMasters,
   getAdminServices,
   getMasterById,
+  getMasterAbsences,
   getMasterWorkSchedule,
   getServicesByMaster,
   getMastersByService,
@@ -227,6 +230,11 @@ function startApiServer(bot: Bot) {
             return jsonResponse(workSchedule, 200, corsHeaders);
           }
 
+          if (subResource === 'absences') {
+            const absences = await getMasterAbsences(masterId);
+            return jsonResponse(absences, 200, corsHeaders);
+          }
+
           return jsonResponse({ message: 'Not Found' }, 404, corsHeaders);
         } catch (error) {
           console.error('Ошибка загрузки услуг мастера:', error);
@@ -244,6 +252,17 @@ function startApiServer(bot: Bot) {
             const data = await req.json();
             await addServiceToMaster(masterId, String(data?.service_id));
             return jsonResponse({ success: true }, 200, corsHeaders);
+          }
+
+          if (subResource === 'absences' && req.method === 'POST') {
+            const data = await req.json();
+            const absence = await createMasterAbsence(masterId, {
+              start_date: String(data?.start_date || ''),
+              end_date: String(data?.end_date || ''),
+              reason: data?.reason || 'vacation',
+              notes: data?.notes || null,
+            });
+            return jsonResponse(absence, 200, corsHeaders);
           }
 
           if (subResource === 'work-schedule' && req.method === 'PATCH') {
@@ -276,10 +295,16 @@ function startApiServer(bot: Bot) {
         const masterId = pathParts[3];
         const subResource = pathParts[4];
         const serviceId = pathParts[5];
+        const absenceId = pathParts[5];
 
         try {
           if (subResource === 'services' && serviceId) {
             await removeServiceFromMaster(masterId, serviceId);
+            return jsonResponse({ success: true }, 200, corsHeaders);
+          }
+
+          if (subResource === 'absences' && absenceId) {
+            await deleteMasterAbsence(absenceId);
             return jsonResponse({ success: true }, 200, corsHeaders);
           }
 

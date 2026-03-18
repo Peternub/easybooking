@@ -2,9 +2,13 @@ import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
-import type { Master, MasterAbsence } from '../../../../shared/types';
+import type { AbsenceReason, Master, MasterAbsence } from '../../../../shared/types';
 import { inputStyle } from '../../components/AppTheme';
-import { supabase } from '../../services/supabase';
+import {
+  createMasterAbsenceApi,
+  deleteMasterAbsenceApi,
+  getMasterAbsencesApi,
+} from '../../services/api';
 import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 
 interface Props {
@@ -17,27 +21,21 @@ export function MasterAbsences({ master }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [reason, setReason] = useState<'vacation' | 'sick_leave' | 'other'>('vacation');
+  const [reason, setReason] = useState<AbsenceReason>('vacation');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: master.id нужен для перезагрузки
   useEffect(() => {
     loadAbsences();
   }, [master.id]);
 
   async function loadAbsences() {
     try {
-      const { data, error } = await supabase
-        .from('master_absences')
-        .select('*')
-        .eq('master_id', master.id)
-        .order('start_date', { ascending: false });
-
-      if (error) throw error;
-      setAbsences(data || []);
+      const data = await getMasterAbsencesApi(master.id);
+      setAbsences(data);
     } catch (error) {
       console.error('Ошибка загрузки отпусков:', error);
+      alert('Не удалось загрузить отпуска');
     } finally {
       setLoading(false);
     }
@@ -57,21 +55,19 @@ export function MasterAbsences({ master }: Props) {
     setSaving(true);
 
     try {
-      const { error } = await supabase.from('master_absences').insert({
-        master_id: master.id,
+      await createMasterAbsenceApi(master.id, {
         start_date: startDate,
         end_date: endDate,
         reason,
         notes: notes.trim() || null,
       });
 
-      if (error) throw error;
-
       alert('Отпуск/больничный добавлен');
       setShowForm(false);
       setStartDate('');
       setEndDate('');
       setNotes('');
+      setReason('vacation');
       loadAbsences();
     } catch (error) {
       console.error('Ошибка добавления отпуска:', error);
@@ -82,12 +78,12 @@ export function MasterAbsences({ master }: Props) {
   }
 
   async function handleDelete(absenceId: string) {
-    if (!confirm('Удалить этот отпуск/больничный?')) return;
+    if (!confirm('Удалить этот отпуск/больничный?')) {
+      return;
+    }
 
     try {
-      const { error } = await supabase.from('master_absences').delete().eq('id', absenceId);
-      if (error) throw error;
-
+      await deleteMasterAbsenceApi(master.id, absenceId);
       alert('Удалено');
       loadAbsences();
     } catch (error) {
@@ -96,7 +92,7 @@ export function MasterAbsences({ master }: Props) {
     }
   }
 
-  const getReasonText = (value: string) => {
+  const getReasonText = (value: AbsenceReason) => {
     switch (value) {
       case 'vacation':
         return 'Отпуск';
@@ -200,7 +196,7 @@ export function MasterAbsences({ master }: Props) {
             </Text>
             <select
               value={reason}
-              onChange={(e) => setReason(e.target.value as typeof reason)}
+              onChange={(e) => setReason(e.target.value as AbsenceReason)}
               style={{ ...inputStyle, appearance: 'none' }}
             >
               <option value="vacation">Отпуск</option>
