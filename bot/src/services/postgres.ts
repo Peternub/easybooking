@@ -69,6 +69,23 @@ type ReviewRow = {
   created_at: string | Date;
 };
 
+type PromoCodeRow = {
+  id: string;
+  code: string;
+  client_telegram_id: number | null;
+  discount_percent: number;
+  valid_from: string | Date;
+  valid_until: string | Date;
+  is_used: boolean;
+  used_at: string | Date | null;
+  booking_id: string | null;
+  is_reusable: boolean;
+  usage_limit: number | null;
+  usage_count: number;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
 function requireDb() {
   if (!db) {
     throw new Error('PostgreSQL не настроен');
@@ -508,4 +525,141 @@ export async function isAdminPg(telegramId: number) {
   );
 
   return result.rows.length > 0;
+}
+
+export async function createPromoCodePg(
+  code: string,
+  clientTelegramId: number,
+  discountPercent: number,
+  validUntilIso: string,
+) {
+  const pool = requireDb();
+  const result = await pool.query<PromoCodeRow>(
+    `
+      INSERT INTO promo_codes (
+        code,
+        client_telegram_id,
+        discount_percent,
+        valid_until
+      )
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `,
+    [code, clientTelegramId, discountPercent, validUntilIso],
+  );
+
+  return result.rows[0];
+}
+
+export async function validatePromoCodePg(code: string, clientTelegramId: number) {
+  const pool = requireDb();
+  const upperCode = code.toUpperCase();
+
+  const reusableResult = await pool.query<PromoCodeRow>(
+    `
+      SELECT *
+      FROM promo_codes
+      WHERE code = $1
+        AND is_reusable = TRUE
+        AND valid_until >= NOW()
+      LIMIT 1
+    `,
+    [upperCode],
+  );
+
+  if (reusableResult.rows.length > 0) {
+    const reusablePromo = reusableResult.rows[0];
+    if (reusablePromo.usage_limit && reusablePromo.usage_count >= reusablePromo.usage_limit) {
+      return null;
+    }
+
+    return reusablePromo;
+  }
+
+  const result = await pool.query<PromoCodeRow>(
+    `
+      SELECT *
+      FROM promo_codes
+      WHERE code = $1
+        AND client_telegram_id = $2
+        AND is_used = FALSE
+        AND valid_until >= NOW()
+      LIMIT 1
+    `,
+    [upperCode, clientTelegramId],
+  );
+
+  return result.rows[0] || null;
+}
+
+export async function usePromoCodePg(code: string, bookingId: string) {
+  const pool = requireDb();
+  const upperCode = code.toUpperCase();
+
+  const promoResult = await pool.query<PromoCodeRow>(
+    `
+      SELECT *
+      FROM promo_codes
+      WHERE code = $1
+      LIMIT 1
+    `,
+    [upperCode],
+  );
+
+  const promo = promoResult.rows[0];
+  if (!promo) {
+    throw new Error('Промокод не найден');
+  }
+
+  if (promo.is_reusable) {
+    const result = await pool.query<PromoCodeRow>(
+      `
+        UPDATE promo_codes
+        SET usage_count = usage_count + 1
+        WHERE code = $1
+        RETURNING *
+      `,
+      [upperCode],
+    );
+
+    return result.rows[0];
+  }
+
+  const result = await pool.query<PromoCodeRow>(
+    `
+      UPDATE promo_codes
+      SET
+        is_used = TRUE,
+        used_at = NOW(),
+        booking_id = $2
+      WHERE code = $1
+      RETURNING *
+    `,
+    [upperCode, bookingId],
+  );
+
+  return result.rows[0];
+}
+
+export async function getInactiveClientsPg(daysInactive = 60) {
+  const pool = requireDb();
+  const result = await pool.query<{ client_telegram_id: number }>(
+    `
+      SELECT b.client_telegram_id
+      FROM bookings b
+      WHERE b.client_telegram_id IS NOT NULL
+        AND b.status = 'active'
+      GROUP BY b.client_telegram_id
+      HAVING MAX(b.booking_date) < CURRENT_DATE - ($1::int * INTERVAL '1 day')
+        AND NOT EXISTS (
+          SELECT 1
+          FROM promo_codes p
+          WHERE p.client_telegram_id = b.client_telegram_id
+            AND p.created_at >= NOW() - ($1::int * INTERVAL '1 day')
+        )
+    `,
+    [daysInactive],
+  );
+
+  return result.rows.map((row) => row.client_telegram_id);
 }

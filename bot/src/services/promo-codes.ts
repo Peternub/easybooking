@@ -1,3 +1,10 @@
+import { hasPostgresConfig } from '../config.js';
+import {
+  createPromoCodePg,
+  getInactiveClientsPg,
+  usePromoCodePg,
+  validatePromoCodePg,
+} from './postgres.js';
 import { requireSupabaseClient } from './supabase.js';
 
 export function generatePromoCode(): string {
@@ -14,11 +21,15 @@ export async function createPromoCode(
   discountPercent: number,
   validDays = 7,
 ) {
-  const supabase = requireSupabaseClient();
   const code = generatePromoCode();
   const validUntil = new Date();
   validUntil.setDate(validUntil.getDate() + validDays);
 
+  if (hasPostgresConfig()) {
+    return createPromoCodePg(code, clientTelegramId, discountPercent, validUntil.toISOString());
+  }
+
+  const supabase = requireSupabaseClient();
   const { data, error } = await supabase
     .from('promo_codes')
     .insert({
@@ -39,6 +50,10 @@ export async function createPromoCode(
 }
 
 export async function validatePromoCode(code: string, clientTelegramId: number) {
+  if (hasPostgresConfig()) {
+    return validatePromoCodePg(code, clientTelegramId);
+  }
+
   const supabase = requireSupabaseClient();
   const upperCode = code.toUpperCase();
 
@@ -75,9 +90,12 @@ export async function validatePromoCode(code: string, clientTelegramId: number) 
 }
 
 export async function usePromoCode(code: string, bookingId: string) {
+  if (hasPostgresConfig()) {
+    return usePromoCodePg(code, bookingId);
+  }
+
   const supabase = requireSupabaseClient();
   const upperCode = code.toUpperCase();
-
   const { data: promo } = await supabase.from('promo_codes').select('*').eq('code', upperCode).single();
 
   if (!promo) {
@@ -122,6 +140,10 @@ export async function usePromoCode(code: string, bookingId: string) {
 }
 
 export async function getInactiveClients(daysInactive = 60) {
+  if (hasPostgresConfig()) {
+    return getInactiveClientsPg(daysInactive);
+  }
+
   const supabase = requireSupabaseClient();
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysInactive);
