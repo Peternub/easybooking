@@ -15,6 +15,7 @@ import {
   getAdminMasters,
   getAdminServices,
   getMasterById,
+  getMasterWorkSchedule,
   getServicesByMaster,
   getMastersByService,
   getServices,
@@ -23,6 +24,7 @@ import {
   toggleMasterActive,
   toggleServiceActive,
   updateMaster,
+  updateMasterWorkSchedule,
   updateService,
 } from './services/supabase.js';
 
@@ -220,6 +222,11 @@ function startApiServer(bot: Bot) {
             return jsonResponse(services, 200, corsHeaders);
           }
 
+          if (subResource === 'work-schedule') {
+            const workSchedule = await getMasterWorkSchedule(masterId);
+            return jsonResponse(workSchedule, 200, corsHeaders);
+          }
+
           return jsonResponse({ message: 'Not Found' }, 404, corsHeaders);
         } catch (error) {
           console.error('Ошибка загрузки услуг мастера:', error);
@@ -237,6 +244,12 @@ function startApiServer(bot: Bot) {
             const data = await req.json();
             await addServiceToMaster(masterId, String(data?.service_id));
             return jsonResponse({ success: true }, 200, corsHeaders);
+          }
+
+          if (subResource === 'work-schedule' && req.method === 'PATCH') {
+            const data = await req.json();
+            const master = await updateMasterWorkSchedule(masterId, data?.work_schedule || {});
+            return jsonResponse(master, 200, corsHeaders);
           }
 
           if (subResource === 'toggle-active' && req.method === 'POST') {

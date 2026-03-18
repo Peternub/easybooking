@@ -23,6 +23,7 @@ import {
   getBookedTimesForDatePg,
   getClientBookingsPg,
   getMasterByIdPg,
+  getMasterWorkSchedulePg,
   getMasterAbsencesPg,
   getMastersByServicePg,
   getMastersPg,
@@ -37,6 +38,7 @@ import {
   toggleMasterActivePg,
   toggleServiceActivePg,
   updateMasterPg,
+  updateMasterWorkSchedulePg,
   updateServicePg,
 } from './postgres.js';
 
@@ -313,6 +315,38 @@ export async function getMasterSchedule(masterId: string) {
 
   if (error) throw error;
   return data as MasterSchedule[];
+}
+
+export async function getMasterWorkSchedule(masterId: string) {
+  if (hasPostgresConfig()) {
+    return getMasterWorkSchedulePg(masterId);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('masters').select('work_schedule').eq('id', masterId).single();
+
+  if (error) throw error;
+  return (data?.work_schedule || {}) as Master['work_schedule'];
+}
+
+export async function updateMasterWorkSchedule(
+  masterId: string,
+  workSchedule: Master['work_schedule'],
+) {
+  if (hasPostgresConfig()) {
+    return updateMasterWorkSchedulePg(masterId, workSchedule);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('masters')
+    .update({ work_schedule: workSchedule })
+    .eq('id', masterId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Master;
 }
 
 export async function getMasterAbsences(masterId: string) {

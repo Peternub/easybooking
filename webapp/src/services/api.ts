@@ -129,3 +129,17 @@ export function removeServiceFromMasterApi(masterId: string, serviceId: string) 
     method: 'DELETE',
   });
 }
+
+export function getMasterWorkScheduleApi(masterId: string) {
+  return fetchJson<Master['work_schedule']>(`/api/admin/masters/${masterId}/work-schedule`);
+}
+
+export function updateMasterWorkScheduleApi(
+  masterId: string,
+  workSchedule: Master['work_schedule'],
+) {
+  return requestJson<Master>(`/api/admin/masters/${masterId}/work-schedule`, {
+    method: 'PATCH',
+    body: { work_schedule: workSchedule },
+  });
+}

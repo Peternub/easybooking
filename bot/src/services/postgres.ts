@@ -102,6 +102,8 @@ type MasterPayload = Pick<
   'name' | 'description' | 'phone' | 'photo_url' | 'is_active'
 >;
 
+type MasterWorkSchedulePayload = Master['work_schedule'];
+
 function requireDb() {
   if (!db) {
     throw new Error('PostgreSQL не настроен');
@@ -329,6 +331,47 @@ export async function toggleMasterActivePg(masterId: string, isActive: boolean) 
 
   if (result.rows.length === 0) {
     throw new Error('РњР°СЃС‚РµСЂ РЅРµ РЅР°Р№РґРµРЅ');
+  }
+
+  return mapMaster(result.rows[0]);
+}
+
+export async function getMasterWorkSchedulePg(masterId: string) {
+  const pool = requireDb();
+  const result = await pool.query<{ work_schedule: MasterWorkSchedulePayload | null }>(
+    `
+      SELECT work_schedule
+      FROM masters
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [masterId],
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('Мастер не найден');
+  }
+
+  return result.rows[0].work_schedule || {};
+}
+
+export async function updateMasterWorkSchedulePg(
+  masterId: string,
+  workSchedule: MasterWorkSchedulePayload,
+) {
+  const pool = requireDb();
+  const result = await pool.query<MasterRow>(
+    `
+      UPDATE masters
+      SET work_schedule = $2
+      WHERE id = $1
+      RETURNING *
+    `,
+    [masterId, JSON.stringify(workSchedule)],
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('Мастер не найден');
   }
 
   return mapMaster(result.rows[0]);
