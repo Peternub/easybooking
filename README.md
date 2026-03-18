@@ -13,9 +13,9 @@ Telegram Mini App для записи на услуги салона.
 
 ## Стек
 
-- `bot`: Grammy + Supabase
+- `bot`: Grammy + PostgreSQL
 - `webapp`: React + Vite + TypeScript
-- `database`: Supabase PostgreSQL
+- `database`: PostgreSQL
 - `ui`: `@telegram-apps/telegram-ui`
 
 ## Структура
@@ -62,9 +62,7 @@ bun run dev
 
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_ADMIN_ID`
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_KEY`
+- `POSTGRES_URL` или набор `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD`
 - `WEBAPP_URL`
 - `TIMEZONE`
 

@@ -12,11 +12,6 @@ export const config = {
     password: process.env.POSTGRES_PASSWORD || '',
     ssl: process.env.POSTGRES_SSL === 'true',
   },
-  supabase: {
-    url: process.env.SUPABASE_URL || '',
-    anonKey: process.env.SUPABASE_ANON_KEY || '',
-    serviceKey: process.env.SUPABASE_SERVICE_KEY || '',
-  },
   app: {
     webappUrl: process.env.WEBAPP_URL || '',
     timezone: process.env.TIMEZONE || 'Europe/Moscow',
@@ -31,15 +26,9 @@ export function validateConfig() {
     throw new Error(`Отсутствуют обязательные переменные окружения: ${missing.join(', ')}`);
   }
 
-  if (!hasSupabaseConfig() && !hasPostgresConfig()) {
-    throw new Error('Нужно настроить Supabase или PostgreSQL');
+  if (!hasPostgresConfig()) {
+    throw new Error('Нужно настроить PostgreSQL');
   }
-}
-
-export function hasSupabaseConfig() {
-  return Boolean(
-    config.supabase.url && config.supabase.anonKey && config.supabase.serviceKey,
-  );
 }
 
 export function hasPostgresConfig() {

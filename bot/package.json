@@ -9,7 +9,6 @@
     "lint:fix": "biome check --write ."
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.47.10",
     "date-fns": "^4.1.0",
     "grammy": "^1.32.0",
     "pg": "^8.13.3"
