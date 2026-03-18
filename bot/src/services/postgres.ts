@@ -1,4 +1,4 @@
-import type { Booking, BookingWithDetails, Master, Service } from '../../../shared/types.js';
+import type { Booking, BookingWithDetails, Master, Review, Service } from '../../../shared/types.js';
 import { db } from './db.js';
 
 type MasterRow = {
@@ -56,6 +56,17 @@ type BookingRow = {
 type BookingDetailsRow = BookingRow & {
   master: MasterRow;
   service: ServiceRow;
+};
+
+type ReviewRow = {
+  id: string;
+  booking_id: string;
+  client_telegram_id: number;
+  master_id: string;
+  service_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string | Date;
 };
 
 function requireDb() {
@@ -146,6 +157,38 @@ function mapBookingWithDetails(row: BookingDetailsRow): BookingWithDetails {
     master: mapMaster(row.master),
     service: mapService(row.service),
   };
+}
+
+function mapReview(row: ReviewRow): Review {
+  return {
+    id: row.id,
+    booking_id: row.booking_id,
+    client_telegram_id: row.client_telegram_id,
+    master_id: row.master_id,
+    service_id: row.service_id,
+    rating: row.rating,
+    comment: row.comment,
+    created_at: toIsoString(row.created_at) || '',
+  };
+}
+
+async function queryBookingsWithDetails(whereClause: string, values: unknown[] = []) {
+  const pool = requireDb();
+  const result = await pool.query<BookingDetailsRow>(
+    `
+      SELECT
+        b.*,
+        row_to_json(m) AS master,
+        row_to_json(s) AS service
+      FROM bookings b
+      INNER JOIN masters m ON m.id = b.master_id
+      INNER JOIN services s ON s.id = b.service_id
+      ${whereClause}
+    `,
+    values,
+  );
+
+  return result.rows.map(mapBookingWithDetails);
 }
 
 export async function getMastersPg() {
@@ -290,18 +333,109 @@ export async function createBookingPg(booking: Omit<Booking, 'id' | 'created_at'
 }
 
 export async function getBookingByIdPg(id: string) {
-  const pool = requireDb();
-  const result = await pool.query<BookingDetailsRow>(
+  const bookings = await queryBookingsWithDetails('WHERE b.id = $1 LIMIT 1', [id]);
+
+  if (bookings.length === 0) {
+    throw new Error('Запись не найдена');
+  }
+
+  return bookings[0];
+}
+
+export async function getClientBookingsPg(telegramId: number) {
+  return queryBookingsWithDetails(
     `
-      SELECT
-        b.*,
-        row_to_json(m) AS master,
-        row_to_json(s) AS service
-      FROM bookings b
-      INNER JOIN masters m ON m.id = b.master_id
-      INNER JOIN services s ON s.id = b.service_id
-      WHERE b.id = $1
-      LIMIT 1
+      WHERE b.client_telegram_id = $1
+      ORDER BY b.booking_date DESC, b.booking_time DESC
+    `,
+    [telegramId],
+  );
+}
+
+export async function getUpcomingBookingsPg(hoursAhead: number) {
+  const now = new Date();
+  const targetTime = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
+  const fromDate = now.toISOString().split('T')[0];
+  const toDate = targetTime.toISOString().split('T')[0];
+
+  return queryBookingsWithDetails(
+    `
+      WHERE b.status = 'active'
+        AND b.booking_date >= $1
+        AND b.booking_date <= $2
+      ORDER BY b.booking_date ASC, b.booking_time ASC
+    `,
+    [fromDate, toDate],
+  );
+}
+
+export async function getBookingsForDateRangePg(
+  fromDate: string,
+  toDate: string,
+  statuses: string[] = ['active'],
+) {
+  return queryBookingsWithDetails(
+    `
+      WHERE b.status = ANY($3::text[])
+        AND b.booking_date >= $1
+        AND b.booking_date <= $2
+      ORDER BY b.booking_date ASC, b.booking_time ASC
+    `,
+    [fromDate, toDate, statuses],
+  );
+}
+
+export async function markBookingNotificationSentPg(
+  bookingId: string,
+  type: 'reminder_24h' | 'reminder_1h' | 'review_request',
+) {
+  const pool = requireDb();
+  const column =
+    type === 'reminder_24h'
+      ? 'reminder_24h_sent_at'
+      : type === 'reminder_1h'
+        ? 'reminder_1h_sent_at'
+        : 'review_request_sent_at';
+
+  await pool.query(
+    `
+      UPDATE bookings
+      SET ${column} = NOW()
+      WHERE id = $1
+    `,
+    [bookingId],
+  );
+}
+
+export async function cancelBookingPg(id: string, reason?: string) {
+  const pool = requireDb();
+  const result = await pool.query<BookingRow>(
+    `
+      UPDATE bookings
+      SET
+        status = 'cancelled',
+        cancellation_reason = $2
+      WHERE id = $1
+      RETURNING *
+    `,
+    [id, reason || null],
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('Запись не найдена');
+  }
+
+  return mapBooking(result.rows[0]);
+}
+
+export async function completeBookingPg(id: string) {
+  const pool = requireDb();
+  const result = await pool.query<BookingRow>(
+    `
+      UPDATE bookings
+      SET status = 'completed'
+      WHERE id = $1
+      RETURNING *
     `,
     [id],
   );
@@ -310,5 +444,68 @@ export async function getBookingByIdPg(id: string) {
     throw new Error('Запись не найдена');
   }
 
-  return mapBookingWithDetails(result.rows[0]);
+  return mapBooking(result.rows[0]);
+}
+
+export async function createReviewPg(review: Omit<Review, 'id' | 'created_at'>) {
+  const pool = requireDb();
+  const result = await pool.query<ReviewRow>(
+    `
+      INSERT INTO reviews (
+        booking_id,
+        client_telegram_id,
+        master_id,
+        service_id,
+        rating,
+        comment
+      )
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `,
+    [
+      review.booking_id,
+      review.client_telegram_id,
+      review.master_id,
+      review.service_id,
+      review.rating,
+      review.comment,
+    ],
+  );
+
+  return mapReview(result.rows[0]);
+}
+
+export async function hasReviewPg(bookingId: string) {
+  const pool = requireDb();
+  const result = await pool.query<{ id: string }>(
+    `
+      SELECT id
+      FROM reviews
+      WHERE booking_id = $1
+      LIMIT 1
+    `,
+    [bookingId],
+  );
+
+  return result.rows.length > 0;
+}
+
+export async function isAdminPg(telegramId: number) {
+  const adminId = process.env.TELEGRAM_ADMIN_ID;
+  if (adminId && String(telegramId) === String(adminId)) {
+    return true;
+  }
+
+  const pool = requireDb();
+  const result = await pool.query<{ telegram_id: number }>(
+    `
+      SELECT telegram_id
+      FROM admins
+      WHERE telegram_id = $1
+      LIMIT 1
+    `,
+    [telegramId],
+  );
+
+  return result.rows.length > 0;
 }

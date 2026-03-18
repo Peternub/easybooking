@@ -1,8 +1,5 @@
-// Сервис для работы с промокодами
+import { requireSupabaseClient } from './supabase.js';
 
-import { supabase } from './supabase.js';
-
-// Генерация уникального промокода
 export function generatePromoCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = 'COMEBACK';
@@ -12,12 +9,12 @@ export function generatePromoCode(): string {
   return code;
 }
 
-// Создать промокод для клиента
 export async function createPromoCode(
   clientTelegramId: number,
   discountPercent: number,
   validDays = 7,
 ) {
+  const supabase = requireSupabaseClient();
   const code = generatePromoCode();
   const validUntil = new Date();
   validUntil.setDate(validUntil.getDate() + validDays);
@@ -41,11 +38,10 @@ export async function createPromoCode(
   return data;
 }
 
-// Проверить промокод
 export async function validatePromoCode(code: string, clientTelegramId: number) {
+  const supabase = requireSupabaseClient();
   const upperCode = code.toUpperCase();
-  
-  // Сначала проверяем многоразовые промокоды
+
   const { data: reusablePromo, error: reusableError } = await supabase
     .from('promo_codes')
     .select('*')
@@ -55,14 +51,13 @@ export async function validatePromoCode(code: string, clientTelegramId: number) 
     .single();
 
   if (reusablePromo && !reusableError) {
-    // Проверяем лимит использований
     if (reusablePromo.usage_limit && reusablePromo.usage_count >= reusablePromo.usage_limit) {
       return null;
     }
+
     return reusablePromo;
   }
 
-  // Если не нашли многоразовый, проверяем одноразовый для конкретного клиента
   const { data, error } = await supabase
     .from('promo_codes')
     .select('*')
@@ -79,22 +74,16 @@ export async function validatePromoCode(code: string, clientTelegramId: number) 
   return data;
 }
 
-// Использовать промокод
 export async function usePromoCode(code: string, bookingId: string) {
+  const supabase = requireSupabaseClient();
   const upperCode = code.toUpperCase();
-  
-  // Получаем промокод
-  const { data: promo } = await supabase
-    .from('promo_codes')
-    .select('*')
-    .eq('code', upperCode)
-    .single();
+
+  const { data: promo } = await supabase.from('promo_codes').select('*').eq('code', upperCode).single();
 
   if (!promo) {
     throw new Error('Промокод не найден');
   }
 
-  // Если многоразовый - увеличиваем счётчик
   if (promo.is_reusable) {
     const { data, error } = await supabase
       .from('promo_codes')
@@ -113,7 +102,6 @@ export async function usePromoCode(code: string, bookingId: string) {
     return data;
   }
 
-  // Если одноразовый - помечаем как использованный
   const { data, error } = await supabase
     .from('promo_codes')
     .update({
@@ -133,12 +121,11 @@ export async function usePromoCode(code: string, bookingId: string) {
   return data;
 }
 
-// Получить неактивных клиентов (60+ дней без записи)
 export async function getInactiveClients(daysInactive = 60) {
+  const supabase = requireSupabaseClient();
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysInactive);
 
-  // Получаем всех клиентов с их последней записью
   const { data: bookings, error } = await supabase
     .from('bookings')
     .select('client_telegram_id, booking_date')
@@ -150,7 +137,6 @@ export async function getInactiveClients(daysInactive = 60) {
     return [];
   }
 
-  // Группируем по клиентам и находим последнюю запись
   const clientLastBooking = new Map<number, string>();
   for (const booking of bookings || []) {
     if (!clientLastBooking.has(booking.client_telegram_id)) {
@@ -158,11 +144,9 @@ export async function getInactiveClients(daysInactive = 60) {
     }
   }
 
-  // Фильтруем неактивных клиентов
   const inactiveClients: number[] = [];
   for (const [clientId, lastBookingDate] of clientLastBooking.entries()) {
     if (new Date(lastBookingDate) < cutoffDate) {
-      // Проверяем что клиенту ещё не отправляли промокод недавно
       const { data: existingPromo } = await supabase
         .from('promo_codes')
         .select('created_at')

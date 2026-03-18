@@ -1,5 +1,3 @@
-// Сервис для работы с Supabase
-
 import { createClient } from '@supabase/supabase-js';
 import type {
   Booking,
@@ -9,39 +7,81 @@ import type {
   Review,
   Service,
 } from '../../../shared/types.js';
-import { config } from '../config.js';
+import { config, hasPostgresConfig, hasSupabaseConfig } from '../config.js';
+import {
+  cancelBookingPg,
+  completeBookingPg,
+  createBookingPg,
+  createReviewPg,
+  getBookingByIdPg,
+  getBookingsForDateRangePg,
+  getClientBookingsPg,
+  getMasterByIdPg,
+  getMastersPg,
+  getServiceByIdPg,
+  getServicesByMasterPg,
+  getServicesPg,
+  getUpcomingBookingsPg,
+  hasReviewPg,
+  isAdminPg,
+  markBookingNotificationSentPg,
+} from './postgres.js';
 
-export const supabase = createClient(config.supabase.url, config.supabase.serviceKey);
+export const supabase = hasSupabaseConfig()
+  ? createClient(config.supabase.url, config.supabase.serviceKey)
+  : null;
 
-// Мастера
+export function requireSupabaseClient() {
+  if (!supabase) {
+    throw new Error('Supabase не настроен');
+  }
+
+  return supabase;
+}
+
 export async function getMasters() {
-  const { data, error } = await supabase
-    .from('masters')
-    .select('*')
-    .eq('is_active', true)
-    .order('name');
+  if (hasPostgresConfig()) {
+    return getMastersPg();
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('masters').select('*').eq('is_active', true).order('name');
 
   if (error) throw error;
   return data as Master[];
 }
 
 export async function getMasterById(id: string) {
-  const { data, error } = await supabase.from('masters').select('*').eq('id', id).single();
+  if (hasPostgresConfig()) {
+    return getMasterByIdPg(id);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('masters').select('*').eq('id', id).single();
 
   if (error) throw error;
   return data as Master;
 }
 
 export async function getServiceById(id: string) {
-  const { data, error } = await supabase.from('services').select('*').eq('id', id).single();
+  if (hasPostgresConfig()) {
+    return getServiceByIdPg(id);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('services').select('*').eq('id', id).single();
 
   if (error) throw error;
   return data as Service;
 }
 
-// Услуги
 export async function getServices() {
-  const { data, error } = await supabase
+  if (hasPostgresConfig()) {
+    return getServicesPg();
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('services')
     .select('*')
     .eq('is_active', true)
@@ -53,19 +93,30 @@ export async function getServices() {
 }
 
 export async function getServicesByMaster(masterId: string) {
-  const { data, error } = await supabase
+  if (hasPostgresConfig()) {
+    return getServicesByMasterPg(masterId);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('master_services')
     .select('service_id, services(*)')
     .eq('master_id', masterId);
 
   if (error) throw error;
-  return (data?.map((item: { services: Service }) => item.services).filter(Boolean) ||
-    []) as Service[];
+
+  return (
+    data
+      ?.map((item: { services: Service | Service[] | null }) =>
+        Array.isArray(item.services) ? item.services[0] : item.services,
+      )
+      .filter(Boolean) || []
+  ) as Service[];
 }
 
-// График работы
 export async function getMasterSchedule(masterId: string) {
-  const { data, error } = await supabase
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('master_schedules')
     .select('*')
     .eq('master_id', masterId)
@@ -75,16 +126,25 @@ export async function getMasterSchedule(masterId: string) {
   return data as MasterSchedule[];
 }
 
-// Записи
 export async function createBooking(booking: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) {
-  const { data, error } = await supabase.from('bookings').insert(booking).select().single();
+  if (hasPostgresConfig()) {
+    return createBookingPg(booking);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('bookings').insert(booking).select().single();
 
   if (error) throw error;
   return data as Booking;
 }
 
 export async function getBookingById(id: string) {
-  const { data, error } = await supabase
+  if (hasPostgresConfig()) {
+    return getBookingByIdPg(id);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('bookings')
     .select('*, master:masters(*), service:services(*)')
     .eq('id', id)
@@ -95,7 +155,12 @@ export async function getBookingById(id: string) {
 }
 
 export async function getClientBookings(telegramId: number) {
-  const { data, error } = await supabase
+  if (hasPostgresConfig()) {
+    return getClientBookingsPg(telegramId);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('bookings')
     .select('*, master:masters(*), service:services(*)')
     .eq('client_telegram_id', telegramId)
@@ -107,10 +172,14 @@ export async function getClientBookings(telegramId: number) {
 }
 
 export async function getUpcomingBookings(hoursAhead: number) {
+  if (hasPostgresConfig()) {
+    return getUpcomingBookingsPg(hoursAhead);
+  }
+
   const now = new Date();
   const targetTime = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
-
-  const { data, error } = await supabase
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('bookings')
     .select('*, master:masters(*), service:services(*)')
     .eq('status', 'active')
@@ -126,7 +195,12 @@ export async function getBookingsForDateRange(
   toDate: string,
   statuses: string[] = ['active'],
 ) {
-  const { data, error } = await supabase
+  if (hasPostgresConfig()) {
+    return getBookingsForDateRangePg(fromDate, toDate, statuses);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('bookings')
     .select('*, master:masters(*), service:services(*)')
     .in('status', statuses)
@@ -143,6 +217,10 @@ export async function markBookingNotificationSent(
   bookingId: string,
   type: 'reminder_24h' | 'reminder_1h' | 'review_request',
 ) {
+  if (hasPostgresConfig()) {
+    return markBookingNotificationSentPg(bookingId, type);
+  }
+
   const updates =
     type === 'reminder_24h'
       ? { reminder_24h_sent_at: new Date().toISOString() }
@@ -150,13 +228,19 @@ export async function markBookingNotificationSent(
         ? { reminder_1h_sent_at: new Date().toISOString() }
         : { review_request_sent_at: new Date().toISOString() };
 
-  const { error } = await supabase.from('bookings').update(updates).eq('id', bookingId);
+  const client = requireSupabaseClient();
+  const { error } = await client.from('bookings').update(updates).eq('id', bookingId);
 
   if (error) throw error;
 }
 
 export async function cancelBooking(id: string, cancelledBy: 'client' | 'admin', reason?: string) {
-  const { data, error } = await supabase
+  if (hasPostgresConfig()) {
+    return cancelBookingPg(id, reason);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('bookings')
     .update({
       status: 'cancelled',
@@ -171,7 +255,12 @@ export async function cancelBooking(id: string, cancelledBy: 'client' | 'admin',
 }
 
 export async function completeBooking(id: string) {
-  const { data, error } = await supabase
+  if (hasPostgresConfig()) {
+    return completeBookingPg(id);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('bookings')
     .update({ status: 'completed' })
     .eq('id', id)
@@ -182,34 +271,41 @@ export async function completeBooking(id: string) {
   return data as Booking;
 }
 
-// Отзывы
 export async function createReview(review: Omit<Review, 'id' | 'created_at'>) {
-  const { data, error } = await supabase.from('reviews').insert(review).select().single();
+  if (hasPostgresConfig()) {
+    return createReviewPg(review);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('reviews').insert(review).select().single();
 
   if (error) throw error;
   return data as Review;
 }
 
 export async function hasReview(bookingId: string) {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('id')
-    .eq('booking_id', bookingId)
-    .single();
+  if (hasPostgresConfig()) {
+    return hasReviewPg(bookingId);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('reviews').select('id').eq('booking_id', bookingId).single();
 
   return !!data && !error;
 }
 
-// Проверка администратора
 export async function isAdmin(telegramId: number) {
-  // Проверяем по переменной окружения
+  if (hasPostgresConfig()) {
+    return isAdminPg(telegramId);
+  }
+
   const adminId = process.env.TELEGRAM_ADMIN_ID;
   if (adminId && String(telegramId) === String(adminId)) {
     return true;
   }
 
-  // Дополнительно проверяем таблицу admins (если она существует)
-  const { data, error } = await supabase
+  const client = requireSupabaseClient();
+  const { data, error } = await client
     .from('admins')
     .select('telegram_id')
     .eq('telegram_id', telegramId)

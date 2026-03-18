@@ -30,6 +30,10 @@ export function validateConfig() {
   if (missing.length > 0) {
     throw new Error(`Отсутствуют обязательные переменные окружения: ${missing.join(', ')}`);
   }
+
+  if (!hasSupabaseConfig() && !hasPostgresConfig()) {
+    throw new Error('Нужно настроить Supabase или PostgreSQL');
+  }
 }
 
 export function hasSupabaseConfig() {
