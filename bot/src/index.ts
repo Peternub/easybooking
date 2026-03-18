@@ -8,7 +8,16 @@ import { handleValidatePromo } from './api/validate-promo.js';
 import { config, validateConfig } from './config.js';
 import { setupHandlers } from './handlers/index.js';
 import { startNotificationScheduler } from './notifications/scheduler.js';
-import { getMasterById, getMastersByService, getServices, getServiceById } from './services/supabase.js';
+import {
+  createService,
+  getAdminServices,
+  getMasterById,
+  getMastersByService,
+  getServices,
+  getServiceById,
+  toggleServiceActive,
+  updateService,
+} from './services/supabase.js';
 
 declare const Bun: any;
 
@@ -56,7 +65,7 @@ function startApiServer(bot: Bot) {
 
       const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       };
 
@@ -125,6 +134,51 @@ function startApiServer(bot: Bot) {
           return jsonResponse(services, 200, corsHeaders);
         } catch (error) {
           return jsonResponse({ message: String(error) }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname === '/api/admin/services' && req.method === 'GET') {
+        try {
+          const services = await getAdminServices();
+          return jsonResponse(services, 200, corsHeaders);
+        } catch (error) {
+          return jsonResponse({ message: String(error) }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname === '/api/admin/services' && req.method === 'POST') {
+        try {
+          const data = await req.json();
+          const service = await createService(data);
+          return jsonResponse(service, 200, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка создания услуги:', error);
+          return jsonResponse({ message: 'Не удалось создать услугу' }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname.startsWith('/api/admin/services/') && (req.method === 'PATCH' || req.method === 'POST')) {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        const serviceId = pathParts[3];
+        const subResource = pathParts[4];
+
+        try {
+          if (subResource === 'toggle-active' && req.method === 'POST') {
+            const data = await req.json();
+            const service = await toggleServiceActive(serviceId, Boolean(data?.is_active));
+            return jsonResponse(service, 200, corsHeaders);
+          }
+
+          if (!subResource && req.method === 'PATCH') {
+            const data = await req.json();
+            const service = await updateService(serviceId, data);
+            return jsonResponse(service, 200, corsHeaders);
+          }
+
+          return jsonResponse({ message: 'Not Found' }, 404, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка обновления услуги:', error);
+          return jsonResponse({ message: 'Не удалось обновить услугу' }, 500, corsHeaders);
         }
       }
 

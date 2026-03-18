@@ -1,7 +1,7 @@
 import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Service } from '../../../../shared/types';
-import { supabase } from '../../services/supabase';
+import { getAdminServicesApi, toggleServiceActiveApi } from '../../services/api';
 import {
   AdminCard,
   AdminChip,
@@ -10,11 +10,6 @@ import {
   AdminPrimaryButton,
 } from './AdminTheme';
 import { ServiceForm } from './ServiceForm';
-
-interface RelatedBooking {
-  id: string;
-  admin_notes: string | null;
-}
 
 export function ServicesList() {
   const [services, setServices] = useState<Service[]>([]);
@@ -28,13 +23,8 @@ export function ServicesList() {
 
   async function loadServices() {
     try {
-      const { data, error } = await supabase.from('services').select('*').order('name');
-
-      if (error) {
-        throw error;
-      }
-
-      setServices(data || []);
+      const data = await getAdminServicesApi();
+      setServices(data);
     } catch (error) {
       console.error('Ошибка загрузки услуг:', error);
       alert('Не удалось загрузить услуги');
@@ -45,15 +35,7 @@ export function ServicesList() {
 
   async function handleToggleActive(service: Service) {
     try {
-      const { error } = await supabase
-        .from('services')
-        .update({ is_active: !service.is_active })
-        .eq('id', service.id);
-
-      if (error) {
-        throw error;
-      }
-
+      await toggleServiceActiveApi(service.id, !service.is_active);
       alert(service.is_active ? 'Услуга деактивирована' : 'Услуга активирована');
       loadServices();
     } catch (error) {
@@ -62,76 +44,8 @@ export function ServicesList() {
     }
   }
 
-  async function handleDelete(serviceId: string) {
-    if (
-      !confirm('Удалить эту услугу? История записей сохранится, но услуга исчезнет из каталога.')
-    ) {
-      return;
-    }
-
-    try {
-      const service = services.find((item) => item.id === serviceId);
-      const deletedServiceNote = service?.name
-        ? `[Удалена услуга: ${service.name}]`
-        : '[Удалена услуга]';
-
-      const { data: relatedBookings, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('id, admin_notes')
-        .eq('service_id', serviceId);
-
-      if (bookingsError) {
-        throw bookingsError;
-      }
-
-      for (const booking of (relatedBookings || []) as RelatedBooking[]) {
-        const nextAdminNotes = booking.admin_notes
-          ? `${booking.admin_notes}\n${deletedServiceNote}`
-          : deletedServiceNote;
-
-        const { error: bookingUpdateError } = await supabase
-          .from('bookings')
-          .update({
-            service_id: null,
-            admin_notes: nextAdminNotes,
-          })
-          .eq('id', booking.id);
-
-        if (bookingUpdateError) {
-          throw bookingUpdateError;
-        }
-      }
-
-      const { error: reviewsError } = await supabase
-        .from('reviews')
-        .update({ service_id: null })
-        .eq('service_id', serviceId);
-
-      if (reviewsError) {
-        throw reviewsError;
-      }
-
-      const { error: masterServicesError } = await supabase
-        .from('master_services')
-        .delete()
-        .eq('service_id', serviceId);
-
-      if (masterServicesError) {
-        throw masterServicesError;
-      }
-
-      const { error: deleteError } = await supabase.from('services').delete().eq('id', serviceId);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      alert('Услуга удалена');
-      loadServices();
-    } catch (error) {
-      console.error('Ошибка удаления услуги:', error);
-      alert('Не удалось удалить услугу');
-    }
+  function handleDelete() {
+    alert('Удаление услуги сделаем отдельным шагом после настройки новой схемы базы');
   }
 
   function handleEdit(service: Service) {
@@ -228,12 +142,7 @@ export function ServicesList() {
                 >
                   {service.is_active ? 'Деактивировать' : 'Активировать'}
                 </Button>
-                <Button
-                  mode="outline"
-                  size="s"
-                  onClick={() => handleDelete(service.id)}
-                  style={{ color: 'var(--app-danger)' }}
-                >
+                <Button mode="outline" size="s" onClick={handleDelete} style={{ color: 'var(--app-danger)' }}>
                   Удалить
                 </Button>
               </div>

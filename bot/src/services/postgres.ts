@@ -92,6 +92,11 @@ type MasterAbsenceRow = {
   end_date: string | Date;
 };
 
+type ServicePayload = Pick<
+  Service,
+  'name' | 'description' | 'price' | 'duration_minutes' | 'category' | 'is_active'
+>;
+
 function requireDb() {
   if (!db) {
     throw new Error('PostgreSQL не настроен');
@@ -262,6 +267,19 @@ export async function getServicesPg() {
   return result.rows.map(mapService);
 }
 
+export async function getAdminServicesPg() {
+  const pool = requireDb();
+  const result = await pool.query<ServiceRow>(
+    `
+      SELECT *
+      FROM services
+      ORDER BY category ASC NULLS LAST, name ASC
+    `,
+  );
+
+  return result.rows.map(mapService);
+}
+
 export async function getServiceByIdPg(id: string) {
   const pool = requireDb();
   const result = await pool.query<ServiceRow>(
@@ -295,6 +313,86 @@ export async function getServicesByMasterPg(masterId: string) {
   );
 
   return result.rows.map(mapService);
+}
+
+export async function createServicePg(service: ServicePayload) {
+  const pool = requireDb();
+  const result = await pool.query<ServiceRow>(
+    `
+      INSERT INTO services (
+        name,
+        description,
+        price,
+        duration_minutes,
+        category,
+        is_active
+      )
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `,
+    [
+      service.name,
+      service.description,
+      service.price,
+      service.duration_minutes,
+      service.category,
+      service.is_active,
+    ],
+  );
+
+  return mapService(result.rows[0]);
+}
+
+export async function updateServicePg(serviceId: string, service: ServicePayload) {
+  const pool = requireDb();
+  const result = await pool.query<ServiceRow>(
+    `
+      UPDATE services
+      SET
+        name = $2,
+        description = $3,
+        price = $4,
+        duration_minutes = $5,
+        category = $6,
+        is_active = $7
+      WHERE id = $1
+      RETURNING *
+    `,
+    [
+      serviceId,
+      service.name,
+      service.description,
+      service.price,
+      service.duration_minutes,
+      service.category,
+      service.is_active,
+    ],
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('РЈСЃР»СѓРіР° РЅРµ РЅР°Р№РґРµРЅР°');
+  }
+
+  return mapService(result.rows[0]);
+}
+
+export async function toggleServiceActivePg(serviceId: string, isActive: boolean) {
+  const pool = requireDb();
+  const result = await pool.query<ServiceRow>(
+    `
+      UPDATE services
+      SET is_active = $2
+      WHERE id = $1
+      RETURNING *
+    `,
+    [serviceId, isActive],
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('РЈСЃР»СѓРіР° РЅРµ РЅР°Р№РґРµРЅР°');
+  }
+
+  return mapService(result.rows[0]);
 }
 
 export async function getMastersByServicePg(serviceId: string) {

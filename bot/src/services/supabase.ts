@@ -12,7 +12,9 @@ import {
   cancelBookingPg,
   completeBookingPg,
   createBookingPg,
+  createServicePg,
   createReviewPg,
+  getAdminServicesPg,
   getBookingByIdPg,
   getBookingsForDateRangePg,
   getBookedTimesForDatePg,
@@ -28,6 +30,8 @@ import {
   hasReviewPg,
   isAdminPg,
   markBookingNotificationSentPg,
+  toggleServiceActivePg,
+  updateServicePg,
 } from './postgres.js';
 
 export const supabase = hasSupabaseConfig()
@@ -93,6 +97,73 @@ export async function getServices() {
 
   if (error) throw error;
   return data as Service[];
+}
+
+type ServicePayload = Pick<
+  Service,
+  'name' | 'description' | 'price' | 'duration_minutes' | 'category' | 'is_active'
+>;
+
+export async function getAdminServices() {
+  if (hasPostgresConfig()) {
+    return getAdminServicesPg();
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('services')
+    .select('*')
+    .order('category', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  return data as Service[];
+}
+
+export async function createService(service: ServicePayload) {
+  if (hasPostgresConfig()) {
+    return createServicePg(service);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('services').insert(service).select().single();
+
+  if (error) throw error;
+  return data as Service;
+}
+
+export async function updateService(serviceId: string, service: ServicePayload) {
+  if (hasPostgresConfig()) {
+    return updateServicePg(serviceId, service);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('services')
+    .update(service)
+    .eq('id', serviceId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Service;
+}
+
+export async function toggleServiceActive(serviceId: string, isActive: boolean) {
+  if (hasPostgresConfig()) {
+    return toggleServiceActivePg(serviceId, isActive);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('services')
+    .update({ is_active: isActive })
+    .eq('id', serviceId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Service;
 }
 
 export async function getServicesByMaster(masterId: string) {

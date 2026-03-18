@@ -2,7 +2,7 @@ import { Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Service } from '../../../../shared/types';
 import { backButtonStyle, inputStyle } from '../../components/AppTheme';
-import { supabase } from '../../services/supabase';
+import { createServiceApi, type ServicePayload, updateServiceApi } from '../../services/api';
 import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 
 interface Props {
@@ -53,7 +53,7 @@ export function ServiceForm({ service, onClose }: Props) {
     setSaved(false);
 
     try {
-      const serviceData = {
+      const serviceData: ServicePayload = {
         name: name.trim(),
         description: description.trim() || null,
         price: Number.parseFloat(price),
@@ -63,11 +63,9 @@ export function ServiceForm({ service, onClose }: Props) {
       };
 
       if (service) {
-        const { error } = await supabase.from('services').update(serviceData).eq('id', service.id);
-        if (error) throw error;
+        await updateServiceApi(service.id, serviceData);
       } else {
-        const { error } = await supabase.from('services').insert(serviceData);
-        if (error) throw error;
+        await createServiceApi(serviceData);
       }
 
       setSaved(true);
