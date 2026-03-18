@@ -1,9 +1,16 @@
-// Конфигурация бота
-
 export const config = {
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || '',
     adminId: Number(process.env.TELEGRAM_ADMIN_ID) || 0,
+  },
+  postgres: {
+    url: process.env.POSTGRES_URL || '',
+    host: process.env.POSTGRES_HOST || 'localhost',
+    port: Number(process.env.POSTGRES_PORT) || 5432,
+    database: process.env.POSTGRES_DB || '',
+    user: process.env.POSTGRES_USER || '',
+    password: process.env.POSTGRES_PASSWORD || '',
+    ssl: process.env.POSTGRES_SSL === 'true',
   },
   supabase: {
     url: process.env.SUPABASE_URL || '',
@@ -16,20 +23,27 @@ export const config = {
   },
 } as const;
 
-// Валидация конфигурации
 export function validateConfig() {
-  const required = [
-    'TELEGRAM_BOT_TOKEN',
-    'TELEGRAM_ADMIN_ID',
-    'SUPABASE_URL',
-    'SUPABASE_ANON_KEY',
-    'SUPABASE_SERVICE_KEY',
-    'WEBAPP_URL',
-  ];
-
+  const required = ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_ADMIN_ID', 'WEBAPP_URL'];
   const missing = required.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
     throw new Error(`Отсутствуют обязательные переменные окружения: ${missing.join(', ')}`);
   }
+}
+
+export function hasSupabaseConfig() {
+  return Boolean(
+    config.supabase.url && config.supabase.anonKey && config.supabase.serviceKey,
+  );
+}
+
+export function hasPostgresConfig() {
+  return Boolean(
+    config.postgres.url ||
+      (config.postgres.host &&
+        config.postgres.database &&
+        config.postgres.user &&
+        config.postgres.password),
+  );
 }

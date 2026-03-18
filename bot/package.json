@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",
+    "date-fns": "^4.1.0",
     "grammy": "^1.32.0",
-    "date-fns": "^4.1.0"
+    "pg": "^8.13.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/pg": "^8.15.1",
     "typescript": "^5.7.2"
   }
 }
