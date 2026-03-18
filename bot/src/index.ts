@@ -36,7 +36,7 @@ import {
   updateMaster,
   updateMasterWorkSchedule,
   updateService,
-} from './services/supabase.js';
+} from './services/data.js';
 
 declare const Bun: any;
 

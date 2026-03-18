@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { CommandContext, Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
-import { getClientBookings } from '../services/supabase.js';
+import { getClientBookings } from '../services/data.js';
 
 export async function handleMyBookings(ctx: CommandContext<Context>) {
   const userId = ctx.from?.id;

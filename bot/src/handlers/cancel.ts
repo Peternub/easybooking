@@ -3,7 +3,7 @@ import { ru } from 'date-fns/locale';
 import type { CallbackQueryContext, Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
 import { config } from '../config.js';
-import { cancelBooking, getBookingById } from '../services/supabase.js';
+import { cancelBooking, getBookingById } from '../services/data.js';
 
 async function replaceOrReply(ctx: CallbackQueryContext<Context>, text: string, keyboard?: InlineKeyboard) {
   try {

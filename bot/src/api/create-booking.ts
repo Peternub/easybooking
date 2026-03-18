@@ -1,6 +1,6 @@
 import type { Bot } from 'grammy';
 import { handleNotifyBooking } from './notify-booking.js';
-import { createBooking, getMasterById, getServiceById } from '../services/supabase.js';
+import { createBooking, getMasterById, getServiceById } from '../services/data.js';
 import { validatePromoCode } from '../services/promo-codes.js';
 
 interface CreateBookingRequest {

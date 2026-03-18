@@ -1,5 +1,5 @@
 import { addDays, format, isPast, parse, startOfDay } from 'date-fns';
-import { getBookedTimesForDate, getMasterAbsences, getMasterById } from '../services/supabase.js';
+import { getBookedTimesForDate, getMasterAbsences, getMasterById } from '../services/data.js';
 
 interface AbsenceRange {
   start_date: string;

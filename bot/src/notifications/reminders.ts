@@ -10,7 +10,7 @@ import {
   getBookingsForDateRange,
   hasReview,
   markBookingNotificationSent,
-} from '../services/supabase.js';
+} from '../services/data.js';
 
 const CHECK_TOLERANCE_MINUTES = 1;
 

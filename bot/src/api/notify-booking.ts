@@ -5,7 +5,7 @@ import { ru } from 'date-fns/locale';
 import type { Bot } from 'grammy';
 import { config } from '../config.js';
 import { usePromoCode } from '../services/promo-codes.js';
-import { getMasterById, getServiceById } from '../services/supabase.js';
+import { getMasterById, getServiceById } from '../services/data.js';
 
 interface NotifyBookingRequest {
   bookingId: string;

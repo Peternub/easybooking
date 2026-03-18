@@ -10,7 +10,7 @@ import {
   getBookingById,
   getMasterById,
   getServiceById,
-} from '../services/supabase.js';
+} from '../services/data.js';
 
 interface BookingData {
   type: 'booking';

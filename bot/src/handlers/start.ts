@@ -3,7 +3,7 @@
 import type { CommandContext, Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
 import { config } from '../config.js';
-import { isAdmin } from '../services/supabase.js';
+import { isAdmin } from '../services/data.js';
 
 export async function handleStart(ctx: CommandContext<Context>) {
   const userId = ctx.from?.id;

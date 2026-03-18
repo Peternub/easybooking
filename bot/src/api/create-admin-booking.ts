@@ -1,4 +1,4 @@
-import { createManualBooking, getMasterById, getServiceById } from '../services/supabase.js';
+import { createManualBooking, getMasterById, getServiceById } from '../services/data.js';
 
 interface CreateAdminBookingRequest {
   clientName: string;
