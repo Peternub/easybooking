@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   status TEXT NOT NULL CHECK (status IN ('pending', 'active', 'completed', 'cancelled', 'no_show')),
   source TEXT NOT NULL DEFAULT 'online' CHECK (source IN ('online', 'manual', 'phone', 'walk_in')),
   cancellation_reason TEXT,
+  google_event_id TEXT,
   admin_notes TEXT,
   original_price INTEGER,
   discount_amount INTEGER NOT NULL DEFAULT 0,
