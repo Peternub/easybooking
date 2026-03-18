@@ -55,6 +55,7 @@ export interface Booking {
   id: string;
   client_telegram_id: number;
   client_name: string;
+  client_phone: string | null;
   client_username: string | null;
   client_id: string | null;
   master_id: string;

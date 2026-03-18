@@ -63,6 +63,7 @@ export async function handleWebApp(ctx: Context) {
       const booking = await createBooking({
         client_telegram_id: userId,
         client_name: userName,
+        client_phone: null,
         client_username: username || null,
         client_id: null,
         master_id: masterId,

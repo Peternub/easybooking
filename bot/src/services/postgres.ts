@@ -31,6 +31,7 @@ type BookingRow = {
   id: string;
   client_telegram_id: number;
   client_name: string;
+  client_phone: string | null;
   client_username: string | null;
   client_id: string | null;
   master_id: string;
@@ -145,6 +146,7 @@ function mapBooking(row: BookingRow): Booking {
     id: row.id,
     client_telegram_id: row.client_telegram_id,
     client_name: row.client_name,
+    client_phone: row.client_phone,
     client_username: row.client_username,
     client_id: row.client_id,
     master_id: row.master_id,
@@ -313,6 +315,7 @@ export async function createBookingPg(booking: Omit<Booking, 'id' | 'created_at'
       INSERT INTO bookings (
         client_telegram_id,
         client_name,
+        client_phone,
         client_username,
         client_id,
         master_id,
@@ -334,13 +337,14 @@ export async function createBookingPg(booking: Omit<Booking, 'id' | 'created_at'
       )
       VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
       )
       RETURNING *
     `,
     [
       booking.client_telegram_id,
       booking.client_name,
+      booking.client_phone,
       booking.client_username,
       booking.client_id,
       booking.master_id,

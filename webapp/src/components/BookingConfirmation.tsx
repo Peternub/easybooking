@@ -4,7 +4,6 @@ import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import type { Master, Service } from '../../../shared/types';
 import { getMasterByIdApi, getServiceByIdApi } from '../services/api';
-import { supabase } from '../services/supabase';
 import {
   backButtonStyle,
   inputStyle,
@@ -126,61 +125,29 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     }
 
     try {
-      const originalPrice = service.price;
-      const discountAmount = Math.round((originalPrice * promoDiscount) / 100);
-      const finalPrice = originalPrice - discountAmount;
+      const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${botApiUrl}/api/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientTelegramId,
+          clientName,
+          clientPhone,
+          clientUsername,
+          masterId,
+          serviceId,
+          bookingDate: date,
+          bookingTime: time,
+          promoCode: promoCode.toUpperCase() || undefined,
+        }),
+      });
 
-      const { data: booking, error } = await supabase
-        .from('bookings')
-        .insert({
-          client_telegram_id: clientTelegramId,
-          client_name: clientName,
-          client_phone: clientPhone,
-          client_username: clientUsername,
-          master_id: masterId,
-          service_id: serviceId,
-          booking_date: date,
-          booking_time: time,
-          status: 'active',
-          source: 'online',
-          cancellation_reason: null,
-          google_event_id: null,
-          original_price: originalPrice,
-          discount_amount: discountAmount,
-          final_price: finalPrice,
-          promo_code: promoCode.toUpperCase() || null,
-        })
-        .select()
-        .single();
+      const result = await response.json();
 
-      if (error || !booking) {
-        alert(`Ошибка создания записи: ${error?.message || 'неизвестная ошибка'}`);
+      if (!response.ok || !result.success) {
+        alert(result.message || '�� ������� ������� ������');
         setSubmitting(false);
         return;
-      }
-
-      try {
-        const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
-        await fetch(`${botApiUrl}/api/notify-booking`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingId: booking.id,
-            clientTelegramId,
-            clientName,
-            clientUsername,
-            masterId,
-            serviceId,
-            bookingDate: date,
-            bookingTime: time,
-            originalPrice,
-            discountAmount,
-            finalPrice,
-            promoCode: promoCode.toUpperCase() || undefined,
-          }),
-        });
-      } catch (notifyError) {
-        console.warn('Ошибка отправки уведомлений:', notifyError);
       }
 
       setBookingSuccess(true);
@@ -449,5 +416,6 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     </div>
   );
 }
+
 
 

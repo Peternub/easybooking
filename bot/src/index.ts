@@ -1,6 +1,7 @@
 // Ð“Ð»Ð°Ð²Ð½Ñ‹Ð¹ Ñ„Ð°Ð¹Ð» Telegram Ð±Ð¾Ñ‚Ð°
 
 import { Bot, webhookCallback } from 'grammy';
+import { handleCreateBooking } from './api/create-booking.js';
 import { handleNotifyBooking } from './api/notify-booking.js';
 import { handleNotifyCancellation } from './api/notify-cancellation.js';
 import { handleSubmitReview } from './api/submit-review.js';
@@ -66,6 +67,25 @@ function startApiServer(bot: Bot) {
         return new Response(null, { status: 204, headers: corsHeaders });
       }
 
+      if (url.pathname === '/api/bookings' && req.method === 'POST') {
+        try {
+          const data = await req.json();
+          const result = await handleCreateBooking(bot, data);
+
+          return new Response(JSON.stringify(result), {
+            status: result.success ? 200 : 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (error) {
+          return new Response(
+            JSON.stringify({ success: false, message: 'Íå óäàëîñü ñîçäàòü çàïèñü' }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          );
+        }
+      }
       // Endpoint Ð´Ð»Ñ ÑƒÐ²ÐµÐ´Ð¾Ð¼Ð»ÐµÐ½Ð¸Ð¹ Ð¾ Ð·Ð°Ð¿Ð¸ÑÐ¸
       if (url.pathname === '/api/notify-booking' && req.method === 'POST') {
         try {
@@ -242,3 +262,4 @@ process.once('SIGTERM', () => {
 });
 
 export { bot };
+
