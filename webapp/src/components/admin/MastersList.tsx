@@ -1,7 +1,7 @@
 import { Button, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Master } from '../../../../shared/types';
-import { supabase } from '../../services/supabase';
+import { getAdminMastersApi, toggleMasterActiveApi } from '../../services/api';
 import {
   AdminCard,
   AdminChip,
@@ -10,23 +10,6 @@ import {
   AdminPrimaryButton,
 } from './AdminTheme';
 import { MasterForm } from './MasterForm';
-
-interface RelatedBooking {
-  id: string;
-  booking_date: string;
-  booking_time: string;
-  status: string;
-  admin_notes: string | null;
-}
-
-function isUpcomingBooking(booking: RelatedBooking, now: Date) {
-  if (!['active', 'pending'].includes(booking.status)) {
-    return false;
-  }
-
-  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
-  return bookingDateTime.getTime() > now.getTime();
-}
 
 export function MastersList() {
   const [masters, setMasters] = useState<Master[]>([]);
@@ -40,107 +23,23 @@ export function MastersList() {
 
   async function loadMasters() {
     try {
-      const { data, error } = await supabase.from('masters').select('*').order('name');
-
-      if (error) {
-        throw error;
-      }
-
-      setMasters(data || []);
+      const data = await getAdminMastersApi();
+      setMasters(data);
     } catch (error) {
       console.error('Ошибка загрузки мастеров:', error);
+      alert('Не удалось загрузить мастеров');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleDelete(masterId: string) {
-    if (
-      !confirm('Удалить мастера? Если у него есть будущие записи, удаление будет заблокировано.')
-    ) {
-      return;
-    }
-
-    try {
-      const master = masters.find((item) => item.id === masterId);
-      const now = new Date();
-
-      const { data: relatedBookings, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('id, booking_date, booking_time, status, admin_notes')
-        .eq('master_id', masterId);
-
-      if (bookingsError) {
-        throw bookingsError;
-      }
-
-      const futureBookings = ((relatedBookings || []) as RelatedBooking[]).filter((booking) =>
-        isUpcomingBooking(booking, now),
-      );
-
-      if (futureBookings.length > 0) {
-        alert('Нельзя удалить мастера, пока у него есть будущие записи.');
-        return;
-      }
-
-      if ((relatedBookings || []).length > 0) {
-        const deletedMasterNote = master?.name
-          ? `[Удалён мастер: ${master.name}]`
-          : '[Удалён мастер]';
-
-        for (const booking of (relatedBookings || []) as RelatedBooking[]) {
-          const nextAdminNotes = booking.admin_notes
-            ? `${booking.admin_notes}\n${deletedMasterNote}`
-            : deletedMasterNote;
-
-          const { error: bookingUpdateError } = await supabase
-            .from('bookings')
-            .update({
-              master_id: null,
-              admin_notes: nextAdminNotes,
-            })
-            .eq('id', booking.id);
-
-          if (bookingUpdateError) {
-            throw bookingUpdateError;
-          }
-        }
-      }
-
-      const { error: reviewsError } = await supabase
-        .from('reviews')
-        .update({ master_id: null })
-        .eq('master_id', masterId);
-
-      if (reviewsError) {
-        throw reviewsError;
-      }
-
-      const { error: deleteError } = await supabase.from('masters').delete().eq('id', masterId);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      alert('Мастер удалён');
-      loadMasters();
-    } catch (error) {
-      console.error('Ошибка удаления мастера:', error);
-      alert('Не удалось удалить мастера');
-    }
+  function handleDelete() {
+    alert('Удаление мастера сделаем отдельным шагом после настройки новой схемы базы');
   }
 
   async function handleToggleActive(master: Master) {
     try {
-      const { error } = await supabase
-        .from('masters')
-        .update({ is_active: !master.is_active })
-        .eq('id', master.id);
-
-      if (error) {
-        throw error;
-      }
-
+      await toggleMasterActiveApi(master.id, !master.is_active);
       alert(master.is_active ? 'Мастер деактивирован' : 'Мастер активирован');
       loadMasters();
     } catch (error) {
@@ -190,7 +89,7 @@ export function MastersList() {
       </AdminPrimaryButton>
 
       {masters.length === 0 ? (
-        <AdminEmptyState text="Мастера ещё не добавлены." />
+        <AdminEmptyState text="Мастера еще не добавлены." />
       ) : (
         masters.map((master) => (
           <AdminCard key={master.id}>
@@ -292,7 +191,7 @@ export function MastersList() {
                 <Button
                   mode="outline"
                   size="s"
-                  onClick={() => handleDelete(master.id)}
+                  onClick={handleDelete}
                   style={{ color: 'var(--app-danger)' }}
                 >
                   Удалить

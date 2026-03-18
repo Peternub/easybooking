@@ -12,6 +12,11 @@ export type ServicePayload = Pick<
   'name' | 'description' | 'price' | 'duration_minutes' | 'category' | 'is_active'
 >;
 
+export type MasterPayload = Pick<
+  Master,
+  'name' | 'description' | 'phone' | 'photo_url' | 'is_active'
+>;
+
 async function requestJson<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method: options.method || 'GET',
@@ -78,6 +83,31 @@ export function updateServiceApi(serviceId: string, service: ServicePayload) {
 
 export function toggleServiceActiveApi(serviceId: string, isActive: boolean) {
   return requestJson<Service>(`/api/admin/services/${serviceId}/toggle-active`, {
+    method: 'POST',
+    body: { is_active: isActive },
+  });
+}
+
+export function getAdminMastersApi() {
+  return fetchJson<Master[]>('/api/admin/masters');
+}
+
+export function createMasterApi(master: MasterPayload) {
+  return requestJson<Master>('/api/admin/masters', {
+    method: 'POST',
+    body: master,
+  });
+}
+
+export function updateMasterApi(masterId: string, master: MasterPayload) {
+  return requestJson<Master>(`/api/admin/masters/${masterId}`, {
+    method: 'PATCH',
+    body: master,
+  });
+}
+
+export function toggleMasterActiveApi(masterId: string, isActive: boolean) {
+  return requestJson<Master>(`/api/admin/masters/${masterId}/toggle-active`, {
     method: 'POST',
     body: { is_active: isActive },
   });

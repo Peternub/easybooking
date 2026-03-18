@@ -9,13 +9,17 @@ import { config, validateConfig } from './config.js';
 import { setupHandlers } from './handlers/index.js';
 import { startNotificationScheduler } from './notifications/scheduler.js';
 import {
+  createMaster,
   createService,
+  getAdminMasters,
   getAdminServices,
   getMasterById,
   getMastersByService,
   getServices,
   getServiceById,
+  toggleMasterActive,
   toggleServiceActive,
+  updateMaster,
   updateService,
 } from './services/supabase.js';
 
@@ -157,6 +161,26 @@ function startApiServer(bot: Bot) {
         }
       }
 
+      if (url.pathname === '/api/admin/masters' && req.method === 'GET') {
+        try {
+          const masters = await getAdminMasters();
+          return jsonResponse(masters, 200, corsHeaders);
+        } catch (error) {
+          return jsonResponse({ message: String(error) }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname === '/api/admin/masters' && req.method === 'POST') {
+        try {
+          const data = await req.json();
+          const master = await createMaster(data);
+          return jsonResponse(master, 200, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка создания мастера:', error);
+          return jsonResponse({ message: 'Не удалось создать мастера' }, 500, corsHeaders);
+        }
+      }
+
       if (url.pathname.startsWith('/api/admin/services/') && (req.method === 'PATCH' || req.method === 'POST')) {
         const pathParts = url.pathname.split('/').filter(Boolean);
         const serviceId = pathParts[3];
@@ -179,6 +203,31 @@ function startApiServer(bot: Bot) {
         } catch (error) {
           console.error('Ошибка обновления услуги:', error);
           return jsonResponse({ message: 'Не удалось обновить услугу' }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname.startsWith('/api/admin/masters/') && (req.method === 'PATCH' || req.method === 'POST')) {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        const masterId = pathParts[3];
+        const subResource = pathParts[4];
+
+        try {
+          if (subResource === 'toggle-active' && req.method === 'POST') {
+            const data = await req.json();
+            const master = await toggleMasterActive(masterId, Boolean(data?.is_active));
+            return jsonResponse(master, 200, corsHeaders);
+          }
+
+          if (!subResource && req.method === 'PATCH') {
+            const data = await req.json();
+            const master = await updateMaster(masterId, data);
+            return jsonResponse(master, 200, corsHeaders);
+          }
+
+          return jsonResponse({ message: 'Not Found' }, 404, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка обновления мастера:', error);
+          return jsonResponse({ message: 'Не удалось обновить мастера' }, 500, corsHeaders);
         }
       }
 

@@ -97,6 +97,11 @@ type ServicePayload = Pick<
   'name' | 'description' | 'price' | 'duration_minutes' | 'category' | 'is_active'
 >;
 
+type MasterPayload = Pick<
+  Master,
+  'name' | 'description' | 'phone' | 'photo_url' | 'is_active'
+>;
+
 function requireDb() {
   if (!db) {
     throw new Error('PostgreSQL не настроен');
@@ -234,6 +239,19 @@ export async function getMastersPg() {
   return result.rows.map(mapMaster);
 }
 
+export async function getAdminMastersPg() {
+  const pool = requireDb();
+  const result = await pool.query<MasterRow>(
+    `
+      SELECT *
+      FROM masters
+      ORDER BY name
+    `,
+  );
+
+  return result.rows.map(mapMaster);
+}
+
 export async function getMasterByIdPg(id: string) {
   const pool = requireDb();
   const result = await pool.query<MasterRow>(
@@ -248,6 +266,69 @@ export async function getMasterByIdPg(id: string) {
 
   if (result.rows.length === 0) {
     throw new Error('Мастер не найден');
+  }
+
+  return mapMaster(result.rows[0]);
+}
+
+export async function createMasterPg(master: MasterPayload) {
+  const pool = requireDb();
+  const result = await pool.query<MasterRow>(
+    `
+      INSERT INTO masters (
+        name,
+        description,
+        phone,
+        photo_url,
+        is_active
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `,
+    [master.name, master.description, master.phone, master.photo_url, master.is_active],
+  );
+
+  return mapMaster(result.rows[0]);
+}
+
+export async function updateMasterPg(masterId: string, master: MasterPayload) {
+  const pool = requireDb();
+  const result = await pool.query<MasterRow>(
+    `
+      UPDATE masters
+      SET
+        name = $2,
+        description = $3,
+        phone = $4,
+        photo_url = $5,
+        is_active = $6
+      WHERE id = $1
+      RETURNING *
+    `,
+    [masterId, master.name, master.description, master.phone, master.photo_url, master.is_active],
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('РњР°СЃС‚РµСЂ РЅРµ РЅР°Р№РґРµРЅ');
+  }
+
+  return mapMaster(result.rows[0]);
+}
+
+export async function toggleMasterActivePg(masterId: string, isActive: boolean) {
+  const pool = requireDb();
+  const result = await pool.query<MasterRow>(
+    `
+      UPDATE masters
+      SET is_active = $2
+      WHERE id = $1
+      RETURNING *
+    `,
+    [masterId, isActive],
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('РњР°СЃС‚РµСЂ РЅРµ РЅР°Р№РґРµРЅ');
   }
 
   return mapMaster(result.rows[0]);

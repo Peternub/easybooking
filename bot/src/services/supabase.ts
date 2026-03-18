@@ -12,8 +12,10 @@ import {
   cancelBookingPg,
   completeBookingPg,
   createBookingPg,
+  createMasterPg,
   createServicePg,
   createReviewPg,
+  getAdminMastersPg,
   getAdminServicesPg,
   getBookingByIdPg,
   getBookingsForDateRangePg,
@@ -30,7 +32,9 @@ import {
   hasReviewPg,
   isAdminPg,
   markBookingNotificationSentPg,
+  toggleMasterActivePg,
   toggleServiceActivePg,
+  updateMasterPg,
   updateServicePg,
 } from './postgres.js';
 
@@ -103,6 +107,64 @@ type ServicePayload = Pick<
   Service,
   'name' | 'description' | 'price' | 'duration_minutes' | 'category' | 'is_active'
 >;
+
+type MasterPayload = Pick<
+  Master,
+  'name' | 'description' | 'phone' | 'photo_url' | 'is_active'
+>;
+
+export async function getAdminMasters() {
+  if (hasPostgresConfig()) {
+    return getAdminMastersPg();
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('masters').select('*').order('name');
+
+  if (error) throw error;
+  return data as Master[];
+}
+
+export async function createMaster(master: MasterPayload) {
+  if (hasPostgresConfig()) {
+    return createMasterPg(master);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('masters').insert(master).select().single();
+
+  if (error) throw error;
+  return data as Master;
+}
+
+export async function updateMaster(masterId: string, master: MasterPayload) {
+  if (hasPostgresConfig()) {
+    return updateMasterPg(masterId, master);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('masters').update(master).eq('id', masterId).select().single();
+
+  if (error) throw error;
+  return data as Master;
+}
+
+export async function toggleMasterActive(masterId: string, isActive: boolean) {
+  if (hasPostgresConfig()) {
+    return toggleMasterActivePg(masterId, isActive);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('masters')
+    .update({ is_active: isActive })
+    .eq('id', masterId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Master;
+}
 
 export async function getAdminServices() {
   if (hasPostgresConfig()) {

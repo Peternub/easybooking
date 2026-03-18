@@ -2,6 +2,7 @@ import { Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Master } from '../../../../shared/types';
 import { backButtonStyle, inputStyle } from '../../components/AppTheme';
+import { createMasterApi, type MasterPayload, updateMasterApi } from '../../services/api';
 import { supabase } from '../../services/supabase';
 import { AdminCard, AdminPrimaryButton } from './AdminTheme';
 import { MasterAbsences } from './MasterAbsences';
@@ -117,7 +118,7 @@ export function MasterForm({ master, onClose }: Props) {
         }
       }
 
-      const masterData = {
+      const masterData: MasterPayload = {
         name: name.trim(),
         description: description.trim() || null,
         phone: phone.trim() || null,
@@ -126,11 +127,9 @@ export function MasterForm({ master, onClose }: Props) {
       };
 
       if (master) {
-        const { error } = await supabase.from('masters').update(masterData).eq('id', master.id);
-        if (error) throw error;
+        await updateMasterApi(master.id, masterData);
       } else {
-        const { error } = await supabase.from('masters').insert(masterData);
-        if (error) throw error;
+        await createMasterApi(masterData);
       }
 
       setSaved(true);
