@@ -1,7 +1,7 @@
 import { Card, Placeholder, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Service } from '../../../shared/types';
-import { supabase } from '../services/supabase';
+import { getServicesApi } from '../services/api';
 import { pageShellStyle, surfaceCardStyle, titleStyle } from './AppTheme';
 
 interface Props {
@@ -19,17 +19,7 @@ export function SelectService({ onSelect }: Props) {
 
   async function loadServices() {
     try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('is_active', true)
-        .order('category')
-        .order('name');
-
-      if (error) {
-        throw error;
-      }
-
+      const data = await getServicesApi();
       setServices(data || []);
     } catch (err) {
       console.error('Ошибка загрузки услуг:', err);

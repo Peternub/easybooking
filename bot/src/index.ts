@@ -8,6 +8,7 @@ import { handleValidatePromo } from './api/validate-promo.js';
 import { config, validateConfig } from './config.js';
 import { setupHandlers } from './handlers/index.js';
 import { startNotificationScheduler } from './notifications/scheduler.js';
+import { getMasterById, getMastersByService, getServices, getServiceById } from './services/supabase.js';
 
 // Валидация конфигурации
 try {
@@ -56,7 +57,7 @@ function startApiServer(bot: Bot) {
       // CORS headers
       const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       };
 
@@ -145,6 +146,70 @@ function startApiServer(bot: Bot) {
         } catch (error) {
           console.error('❌ Ошибка отправки уведомления об отмене:', error);
           return new Response(JSON.stringify({ success: false, error: String(error) }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
+      if (url.pathname === '/api/services' && req.method === 'GET') {
+        try {
+          const services = await getServices();
+
+          return new Response(JSON.stringify(services), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ message: String(error) }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
+      if (url.pathname.startsWith('/api/services/') && req.method === 'GET') {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        const serviceId = pathParts[2];
+        const subResource = pathParts[3];
+
+        try {
+          if (subResource === 'masters') {
+            const masters = await getMastersByService(serviceId);
+
+            return new Response(JSON.stringify(masters), {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+
+          const service = await getServiceById(serviceId);
+
+          return new Response(JSON.stringify(service), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ message: String(error) }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
+      if (url.pathname.startsWith('/api/masters/') && req.method === 'GET') {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        const masterId = pathParts[2];
+
+        try {
+          const master = await getMasterById(masterId);
+
+          return new Response(JSON.stringify(master), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ message: String(error) }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });

@@ -290,6 +290,22 @@ export async function getServicesByMasterPg(masterId: string) {
   return result.rows.map(mapService);
 }
 
+export async function getMastersByServicePg(serviceId: string) {
+  const pool = requireDb();
+  const result = await pool.query<MasterRow>(
+    `
+      SELECT m.*
+      FROM master_services ms
+      INNER JOIN masters m ON m.id = ms.master_id
+      WHERE ms.service_id = $1
+      ORDER BY m.name ASC
+    `,
+    [serviceId],
+  );
+
+  return result.rows.map(mapMaster);
+}
+
 export async function createBookingPg(booking: Omit<Booking, 'id' | 'created_at' | 'updated_at'>) {
   const pool = requireDb();
   const result = await pool.query<BookingRow>(

@@ -1,7 +1,7 @@
 import { Button, Card, Placeholder, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import type { Master } from '../../../shared/types';
-import { supabase } from '../services/supabase';
+import { getMastersByServiceApi } from '../services/api';
 import { backButtonStyle, pageShellStyle, surfaceCardStyle, titleStyle } from './AppTheme';
 
 interface Props {
@@ -17,26 +17,12 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
 
   useEffect(() => {
     loadMasters();
-  }, []);
+  }, [serviceId]);
 
   async function loadMasters() {
     try {
-      const { data, error } = await supabase
-        .from('master_services')
-        .select('master_id, masters(*)')
-        .eq('service_id', serviceId);
-
-      if (error) {
-        throw error;
-      }
-
-      const mastersData = (data || [])
-        .map((item: { master_id: string; masters: Master | Master[] }) => {
-          return Array.isArray(item.masters) ? item.masters[0] : item.masters;
-        })
-        .filter((master: Master | undefined) => master?.is_active) as Master[];
-
-      setMasters(mastersData);
+      const data = await getMastersByServiceApi(serviceId);
+      setMasters((data || []).filter((master) => master?.is_active));
     } catch (err) {
       console.error('Ошибка загрузки мастеров:', err);
       setError('Не удалось загрузить список мастеров');

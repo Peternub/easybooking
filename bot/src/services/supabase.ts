@@ -17,6 +17,7 @@ import {
   getBookingsForDateRangePg,
   getClientBookingsPg,
   getMasterByIdPg,
+  getMastersByServicePg,
   getMastersPg,
   getServiceByIdPg,
   getServicesByMasterPg,
@@ -112,6 +113,28 @@ export async function getServicesByMaster(masterId: string) {
       )
       .filter(Boolean) || []
   ) as Service[];
+}
+
+export async function getMastersByService(serviceId: string) {
+  if (hasPostgresConfig()) {
+    return getMastersByServicePg(serviceId);
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client
+    .from('master_services')
+    .select('master_id, masters(*)')
+    .eq('service_id', serviceId);
+
+  if (error) throw error;
+
+  return (
+    data
+      ?.map((item: { masters: Master | Master[] | null }) =>
+        Array.isArray(item.masters) ? item.masters[0] : item.masters,
+      )
+      .filter(Boolean) || []
+  ) as Master[];
 }
 
 export async function getMasterSchedule(masterId: string) {

@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import type { Master, Service } from '../../../shared/types';
+import { getMasterByIdApi, getServiceByIdApi } from '../services/api';
 import { supabase } from '../services/supabase';
 import {
   backButtonStyle,
@@ -41,12 +42,12 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
   async function loadData() {
     try {
       const [masterData, serviceData] = await Promise.all([
-        supabase.from('masters').select('*').eq('id', masterId).single(),
-        supabase.from('services').select('*').eq('id', serviceId).single(),
+        getMasterByIdApi(masterId),
+        getServiceByIdApi(serviceId),
       ]);
 
-      if (masterData.data) setMaster(masterData.data);
-      if (serviceData.data) setService(serviceData.data);
+      setMaster(masterData);
+      setService(serviceData);
     } catch (error) {
       console.error('Ошибка загрузки данных:', error);
     } finally {
@@ -448,3 +449,5 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     </div>
   );
 }
+
+
