@@ -17,6 +17,7 @@ import {
   createMaster,
   createService,
   deleteMasterAbsence,
+  getAdminClients,
   getAdminMasters,
   getAdminReviews,
   getAdminServices,
@@ -270,6 +271,16 @@ function startApiServer(bot: Bot) {
         } catch (error) {
           console.error('Ошибка загрузки отзывов:', error);
           return jsonResponse({ message: 'Не удалось загрузить отзывы' }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname === '/api/admin/clients' && req.method === 'GET') {
+        try {
+          const clients = await getAdminClients();
+          return jsonResponse(clients, 200, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка загрузки клиентов:', error);
+          return jsonResponse({ message: 'Не удалось загрузить клиентов' }, 500, corsHeaders);
         }
       }
 

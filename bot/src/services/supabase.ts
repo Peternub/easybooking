@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type {
   Booking,
   BookingWithDetails,
+  ClientWithStats,
   Master,
   MasterAbsence,
   MasterSchedule,
@@ -17,6 +18,7 @@ import {
   createMasterPg,
   createServicePg,
   createReviewPg,
+  getAdminClientsPg,
   getAdminReviewsPg,
   deleteMasterAbsencePg,
   addServiceToMasterPg,
@@ -657,6 +659,49 @@ export async function getAdminReviews() {
       service_name: service?.name || 'Услуга не найдена',
     };
   });
+}
+
+export async function getAdminClients() {
+  if (hasPostgresConfig()) {
+    return getAdminClientsPg();
+  }
+
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from('clients').select(`
+      *,
+      bookings:bookings(count)
+    `);
+
+  if (error) {
+    throw error;
+  }
+
+  const clientsWithStats = await Promise.all(
+    ((data || []) as Array<
+      ClientWithStats & {
+        bookings?: { count: number }[];
+      }
+    >).map(async (entry) => {
+      const { data: lastBooking } = await client
+        .from('bookings')
+        .select('booking_date')
+        .eq('client_id', entry.id)
+        .order('booking_date', { ascending: false })
+        .limit(1)
+        .single();
+
+      return {
+        ...entry,
+        total_bookings: entry.bookings?.[0]?.count || 0,
+        completed_bookings: entry.completed_bookings || 0,
+        cancelled_bookings: entry.cancelled_bookings || 0,
+        total_spent: entry.total_spent || 0,
+        last_visit: lastBooking?.booking_date || null,
+      };
+    }),
+  );
+
+  return clientsWithStats;
 }
 
 export async function hasReview(bookingId: string) {

@@ -1,13 +1,8 @@
 import { Input, Spinner, Text } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
-import type { Client } from '../../../../shared/types';
-import { supabase } from '../../services/supabase';
+import type { ClientWithStats } from '../../../../shared/types';
+import { getAdminClientsApi } from '../../services/api';
 import { AdminCard, AdminChip, AdminEmptyState } from './AdminTheme';
-
-interface ClientWithStats extends Client {
-  total_bookings: number;
-  last_visit: string | null;
-}
 
 export function ClientsView() {
   const [clients, setClients] = useState<ClientWithStats[]>([]);
@@ -20,36 +15,11 @@ export function ClientsView() {
 
   async function loadClients() {
     try {
-      const { data, error } = await supabase.from('clients').select(`
-          *,
-          bookings:bookings(count)
-        `);
-
-      if (error) {
-        throw error;
-      }
-
-      const clientsWithStats = await Promise.all(
-        (data || []).map(async (client: Client & { bookings?: { count: number }[] }) => {
-          const { data: lastBooking } = await supabase
-            .from('bookings')
-            .select('booking_date')
-            .eq('client_id', client.id)
-            .order('booking_date', { ascending: false })
-            .limit(1)
-            .single();
-
-          return {
-            ...client,
-            total_bookings: client.bookings?.[0]?.count || 0,
-            last_visit: lastBooking?.booking_date || null,
-          };
-        }),
-      );
-
-      setClients(clientsWithStats);
+      const data = await getAdminClientsApi();
+      setClients(data);
     } catch (error) {
       console.error('Ошибка загрузки клиентов:', error);
+      alert('Не удалось загрузить клиентов');
     } finally {
       setLoading(false);
     }
@@ -104,6 +74,7 @@ export function ClientsView() {
                     {client.telegram_id && (
                       <AdminChip label={`ID ${client.telegram_id}`} tone="orange" />
                     )}
+                    {client.last_visit && <AdminChip label={`Последний визит: ${client.last_visit}`} tone="green" />}
                   </div>
                 </div>
 

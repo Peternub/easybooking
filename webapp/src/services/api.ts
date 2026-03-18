@@ -1,4 +1,4 @@
-import type { Master, MasterAbsence, Service } from '../../../shared/types';
+import type { ClientWithStats, Master, MasterAbsence, Service } from '../../../shared/types';
 
 const apiBaseUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
 
@@ -198,4 +198,8 @@ export function deleteMasterAbsenceApi(masterId: string, absenceId: string) {
 
 export function getAdminReviewsApi() {
   return fetchJson<AdminReviewApi[]>('/api/admin/reviews');
+}
+
+export function getAdminClientsApi() {
+  return fetchJson<ClientWithStats[]>('/api/admin/clients');
 }

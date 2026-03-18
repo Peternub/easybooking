@@ -1,4 +1,12 @@
-import type { Booking, BookingWithDetails, Master, MasterAbsence, Review, Service } from '../../../shared/types.js';
+import type {
+  Booking,
+  BookingWithDetails,
+  ClientWithStats,
+  Master,
+  MasterAbsence,
+  Review,
+  Service,
+} from '../../../shared/types.js';
 import { db } from './db.js';
 
 type MasterRow = {
@@ -75,6 +83,22 @@ type AdminReviewRow = ReviewRow & {
   client_username: string | null;
   master_name: string | null;
   service_name: string | null;
+};
+
+type ClientStatsRow = {
+  id: string;
+  telegram_id: number | null;
+  name: string;
+  username: string | null;
+  phone: string | null;
+  notes: string | null;
+  created_at: string | Date;
+  updated_at: string | Date;
+  total_bookings: number;
+  completed_bookings: number;
+  cancelled_bookings: number;
+  total_spent: number;
+  last_visit: string | Date | null;
 };
 
 type PromoCodeRow = {
@@ -222,6 +246,24 @@ function mapReview(row: ReviewRow): Review {
   };
 }
 
+function mapClientWithStats(row: ClientStatsRow): ClientWithStats {
+  return {
+    id: row.id,
+    telegram_id: row.telegram_id,
+    name: row.name,
+    username: row.username,
+    phone: row.phone,
+    notes: row.notes,
+    created_at: toIsoString(row.created_at) || '',
+    updated_at: toIsoString(row.updated_at) || '',
+    total_bookings: Number(row.total_bookings || 0),
+    completed_bookings: Number(row.completed_bookings || 0),
+    cancelled_bookings: Number(row.cancelled_bookings || 0),
+    total_spent: Number(row.total_spent || 0),
+    last_visit: toIsoString(row.last_visit),
+  };
+}
+
 export async function getAdminReviewsPg() {
   const pool = requireDb();
   const result = await pool.query<AdminReviewRow>(
@@ -253,6 +295,27 @@ export async function getAdminReviewsPg() {
     master_name: row.master_name || 'Мастер не найден',
     service_name: row.service_name || 'Услуга не найдена',
   }));
+}
+
+export async function getAdminClientsPg() {
+  const pool = requireDb();
+  const result = await pool.query<ClientStatsRow>(
+    `
+      SELECT
+        c.*,
+        COUNT(b.id)::int AS total_bookings,
+        COUNT(*) FILTER (WHERE b.status = 'completed')::int AS completed_bookings,
+        COUNT(*) FILTER (WHERE b.status = 'cancelled')::int AS cancelled_bookings,
+        COALESCE(SUM(CASE WHEN b.status = 'completed' THEN COALESCE(b.final_price, 0) ELSE 0 END), 0)::int AS total_spent,
+        MAX(b.booking_date) AS last_visit
+      FROM clients c
+      LEFT JOIN bookings b ON b.client_id = c.id
+      GROUP BY c.id
+      ORDER BY c.created_at DESC
+    `,
+  );
+
+  return result.rows.map(mapClientWithStats);
 }
 
 function mapMasterAbsence(row: MasterAbsenceRow): MasterAbsence {
