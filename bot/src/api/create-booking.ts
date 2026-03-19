@@ -1,4 +1,4 @@
-import type { Bot } from 'grammy';
+﻿import type { Bot } from 'grammy';
 import { handleNotifyBooking } from './notify-booking.js';
 import { createBooking, getMasterById, getServiceById } from '../services/data.js';
 import { validatePromoCode } from '../services/promo-codes.js';
@@ -28,7 +28,7 @@ export async function handleCreateBooking(bot: Bot, data: CreateBookingRequest) 
     const promo = await validatePromoCode(data.promoCode.trim(), data.clientTelegramId);
 
     if (!promo) {
-      return { success: false, message: 'Промокод недействителен или истёк срок действия' };
+      return { success: false, message: 'Промокод недействителен или истек срок действия' };
     }
 
     promoCode = promo.code;
