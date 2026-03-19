@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   Booking,
   BookingReadable,
   BookingWithDetails,
@@ -1344,3 +1344,4 @@ export async function getInactiveClientsPg(daysInactive = 60) {
 
   return result.rows.map((row) => row.client_telegram_id);
 }
+
