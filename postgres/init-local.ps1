@@ -8,13 +8,26 @@
 
 $ErrorActionPreference = "Stop"
 
-function Require-Command {
-  param([string]$Name)
-
-  $command = Get-Command $Name -ErrorAction SilentlyContinue
-  if (-not $command) {
-    throw "Команда '$Name' не найдена. Сначала установите PostgreSQL и убедитесь, что psql добавлен в PATH."
+function Get-PsqlCommand {
+  $command = Get-Command "psql" -ErrorAction SilentlyContinue
+  if ($command) {
+    return $command.Source
   }
+
+  $commonPaths = @(
+    "C:\Program Files\PostgreSQL\18\bin\psql.exe",
+    "C:\Program Files\PostgreSQL\17\bin\psql.exe",
+    "C:\Program Files\PostgreSQL\16\bin\psql.exe",
+    "C:\Program Files\PostgreSQL\15\bin\psql.exe"
+  )
+
+  foreach ($path in $commonPaths) {
+    if (Test-Path $path) {
+      return $path
+    }
+  }
+
+  throw "Команда 'psql' не найдена. PostgreSQL установлен, но путь к psql не найден."
 }
 
 function Invoke-Psql {
@@ -23,7 +36,7 @@ function Invoke-Psql {
     [string]$Sql
   )
 
-  & psql `
+  & $script:PsqlCommand `
     --host $HostName `
     --port $Port `
     --username $UserName `
@@ -31,7 +44,7 @@ function Invoke-Psql {
     --command $Sql
 }
 
-Require-Command "psql"
+$script:PsqlCommand = Get-PsqlCommand
 
 if (-not (Test-Path $SchemaPath)) {
   throw "Файл схемы не найден: $SchemaPath"
@@ -41,7 +54,7 @@ Write-Host "Проверяю подключение к PostgreSQL..." -Foregroun
 Invoke-Psql -Database "postgres" -Sql "SELECT version();"
 
 Write-Host "Создаю базу $DatabaseName, если её ещё нет..." -ForegroundColor Cyan
-$dbExists = & psql `
+$dbExists = & $script:PsqlCommand `
   --host $HostName `
   --port $Port `
   --username $UserName `
@@ -55,7 +68,7 @@ if ($dbExists.Trim() -ne "1") {
 }
 
 Write-Host "Применяю схему из $SchemaPath..." -ForegroundColor Cyan
-& psql `
+& $script:PsqlCommand `
   --host $HostName `
   --port $Port `
   --username $UserName `
