@@ -69,6 +69,7 @@ if (-not (Test-Path $SchemaPath)) {
 }
 
 $env:PGPASSWORD = Get-DatabasePassword
+$env:PGCLIENTENCODING = "UTF8"
 
 try {
   Write-Host "Проверяю подключение к PostgreSQL..." -ForegroundColor Cyan
@@ -116,4 +117,5 @@ try {
 }
 finally {
   Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
+  Remove-Item Env:PGCLIENTENCODING -ErrorAction SilentlyContinue
 }
