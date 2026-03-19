@@ -1,4 +1,4 @@
-// API endpoint для отправки уведомлений о новой записи
+﻿// API endpoint для отправки уведомлений о новой записи
 
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
