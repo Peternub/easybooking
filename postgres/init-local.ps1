@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$HostName = "localhost",
   [int]$Port = 5432,
   [string]$UserName = "postgres",
@@ -66,4 +66,4 @@ Write-Host ""
 Write-Host "Готово." -ForegroundColor Green
 Write-Host "База: $DatabaseName"
 Write-Host "Дальше пропишите в bot/.env:"
-Write-Host "POSTGRES_URL=postgresql://$UserName:ВАШ_ПАРОЛЬ@$HostName:$Port/$DatabaseName"
+Write-Host "POSTGRES_URL=postgresql://${UserName}:ВАШ_ПАРОЛЬ@${HostName}:${Port}/${DatabaseName}"
