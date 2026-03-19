@@ -1,4 +1,4 @@
-// Обработчик данных из Web App
+﻿// Обработчик данных из Web App
 
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -69,11 +69,11 @@ export async function handleWebApp(ctx: Context) {
         master_id: masterId,
         service_id: serviceId,
         booking_date: date,
-          booking_time: time,
-          status: 'active',
-          source: 'online',
-          cancellation_reason: null,
-          original_price: service.price,
+        booking_time: time,
+        status: 'active',
+        source: 'online',
+        cancellation_reason: null,
+        original_price: service.price,
         discount_amount: 0,
         final_price: service.price,
         promo_code: null,
