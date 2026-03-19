@@ -1,4 +1,4 @@
-// Регистрация всех обработчиков бота
+﻿// Регистрация всех обработчиков бота
 
 import type { Bot } from 'grammy';
 import { handleMyBookings } from './bookings.js';
