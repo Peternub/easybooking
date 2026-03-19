@@ -1,4 +1,4 @@
-// Обработчик команды /start
+﻿// Обработчик команды /start
 
 import type { CommandContext, Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
