@@ -1,4 +1,4 @@
-// Уведомления для неактивных клиентов
+﻿// Уведомления для неактивных клиентов
 
 import type { Bot } from 'grammy';
 import { createPromoCode, getInactiveClients } from '../services/promo-codes.js';
@@ -18,7 +18,7 @@ export async function sendInactiveClientNotifications(bot: Bot) {
 
     for (const clientId of inactiveClients) {
       try {
-        // Создаём промокод на 10% со сроком действия 7 дней
+        // Создаем промокод на 10% со сроком действия 7 дней
         const promo = await createPromoCode(clientId, 10, 7);
 
         const validUntil = new Date(promo.valid_until);
