@@ -1,4 +1,4 @@
-export const config = {
+﻿export const config = {
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || '',
     adminId: Number(process.env.TELEGRAM_ADMIN_ID) || 0,
