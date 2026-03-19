@@ -1,4 +1,4 @@
-// Обработчик просмотра записей
+﻿// Обработчик просмотра записей
 
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -20,19 +20,19 @@ export async function handleMyBookings(ctx: CommandContext<Context>) {
 
     const upcomingBookings = bookings.filter((b) => {
       if (b.status !== 'active') return false;
-      
+
       // Если дата больше сегодняшней - показываем
       if (b.booking_date > today) return true;
-      
+
       // Если дата сегодняшняя - проверяем время
       if (b.booking_date === today && b.booking_time > currentTime) return true;
-      
+
       return false;
     });
 
     if (upcomingBookings.length === 0) {
       await ctx.reply(
-        'У вас нет предстоящих записей. Нажмите "Записаться на услугу" чтобы создать запись.',
+        'У вас нет предстоящих записей. Нажмите "Записаться на услугу", чтобы создать запись.',
       );
       return;
     }
