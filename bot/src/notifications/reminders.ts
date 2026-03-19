@@ -1,4 +1,4 @@
-// Отправка напоминаний и запросов на отзывы
+﻿// Отправка напоминаний и запросов на отзывы
 
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
