@@ -1,4 +1,4 @@
-// API endpoint для проверки промокода
+﻿// API endpoint для проверки промокода
 
 import { validatePromoCode } from '../services/promo-codes.js';
 
@@ -16,7 +16,7 @@ export async function handleValidatePromo(data: { code: string; clientTelegramId
 
     return {
       valid: false,
-      message: 'Промокод недействителен или истёк срок действия',
+      message: 'Промокод недействителен или истек срок действия',
     };
   } catch (error) {
     console.error('Ошибка проверки промокода:', error);
