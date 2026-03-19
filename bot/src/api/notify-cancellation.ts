@@ -1,4 +1,4 @@
-// API endpoint для уведомления клиента об отмене записи администратором
+﻿// API endpoint для уведомления клиента об отмене записи администратором
 
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -16,7 +16,7 @@ interface NotifyCancellationData {
 
 export async function handleNotifyCancellation(bot: Bot, data: NotifyCancellationData) {
   try {
-    console.log('📢 Отправка уведомления об отмене записи:', data);
+    console.log('📣 Отправка уведомления об отмене записи:', data);
 
     const dateFormatted = format(new Date(data.bookingDate), 'd MMMM yyyy', { locale: ru });
     const timeFormatted = data.bookingTime.substring(0, 5);
