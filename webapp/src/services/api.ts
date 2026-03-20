@@ -1,6 +1,6 @@
-import type { BookingReadable, ClientWithStats, Master, MasterAbsence, Service } from '../../../shared/types';
+﻿import type { BookingReadable, ClientWithStats, Master, MasterAbsence, Service } from '../../../shared/types';
 
-const apiBaseUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+const apiBaseUrl = import.meta.env.VITE_BOT_API_URL || '';
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -248,3 +248,4 @@ export function createAdminBookingApi(payload: AdminBookingPayload) {
     body: payload,
   });
 }
+

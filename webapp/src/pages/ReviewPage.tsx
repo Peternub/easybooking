@@ -1,4 +1,4 @@
-import { Button, Text, Title } from '@telegram-apps/telegram-ui';
+﻿import { Button, Text, Title } from '@telegram-apps/telegram-ui';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { inputStyle, pageShellStyle, softPanelStyle, titleStyle } from '../components/AppTheme';
@@ -40,7 +40,7 @@ export function ReviewPage() {
         throw new Error('Не удалось определить пользователя Telegram');
       }
 
-      const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+      const botApiUrl = import.meta.env.VITE_BOT_API_URL || '';
       const response = await fetch(`${botApiUrl}/api/submit-review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -200,3 +200,4 @@ export function ReviewPage() {
     </div>
   );
 }
+

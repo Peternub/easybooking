@@ -1,4 +1,4 @@
-import { Button, Card, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
+п»їimport { Button, Card, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
@@ -69,7 +69,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     const clientTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id;
 
     try {
-      const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+      const botApiUrl = import.meta.env.VITE_BOT_API_URL || '';
       const response = await fetch(`${botApiUrl}/api/validate-promo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,7 +125,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     }
 
     try {
-      const botApiUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:3001';
+      const botApiUrl = import.meta.env.VITE_BOT_API_URL || '';
       const response = await fetch(`${botApiUrl}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -145,7 +145,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        alert(result.message || 'Не удалось создать запись');
+        alert(result.message || 'пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ');
         setSubmitting(false);
         return;
       }
@@ -416,6 +416,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
     </div>
   );
 }
+
 
 
 
