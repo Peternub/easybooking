@@ -942,6 +942,7 @@ async function upsertManualClientPg(
       SELECT *
       FROM clients
       WHERE phone = $1
+        AND (telegram_id IS NULL OR telegram_id <= 0)
       ORDER BY created_at ASC
       LIMIT 1
     `,
@@ -951,7 +952,7 @@ async function upsertManualClientPg(
   if (existingClientResult.rows.length > 0) {
     const existingClient = mapClient(existingClientResult.rows[0]);
     const clientTelegramId =
-      existingClient.telegram_id && existingClient.telegram_id !== 0
+      existingClient.telegram_id && existingClient.telegram_id <= 0
         ? existingClient.telegram_id
         : generateManualTelegramId();
 
@@ -1044,6 +1045,7 @@ export async function getClientBookingsPg(telegramId: number) {
   return queryBookingsWithDetails(
     `
       WHERE b.client_telegram_id = $1
+        AND b.source = 'online'
       ORDER BY b.booking_date DESC, b.booking_time DESC
     `,
     [telegramId],

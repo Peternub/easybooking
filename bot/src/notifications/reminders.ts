@@ -111,6 +111,7 @@ export async function sendReminders24h(bot: Bot) {
     const bookings = await getBookingsAroundNow(23, 25, ['active']);
 
     for (const booking of bookings) {
+      if (booking.source !== 'online') continue;
       if (booking.reminder_24h_sent_at) continue;
 
       const bookingDateTime = getBookingDateTime(booking, config.app.timezone);
@@ -145,6 +146,7 @@ export async function sendReminders1h(bot: Bot) {
     const bookings = await getBookingsAroundNow(0, 2, ['active']);
 
     for (const booking of bookings) {
+      if (booking.source !== 'online') continue;
       if (booking.reminder_1h_sent_at) continue;
 
       const bookingDateTime = getBookingDateTime(booking, config.app.timezone);
@@ -178,6 +180,7 @@ export async function sendReviewRequests(bot: Bot) {
     const bookings = await getBookingsAroundNow(-2, 0, ['active', 'completed']);
 
     for (const booking of bookings) {
+      if (booking.source !== 'online') continue;
       if (booking.review_request_sent_at) continue;
 
       const bookingDateTime = getBookingDateTime(booking, config.app.timezone);

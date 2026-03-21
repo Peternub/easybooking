@@ -20,6 +20,10 @@ export async function handleSubmitReview(data: SubmitReviewData) {
 
   const booking = await getBookingById(bookingId);
 
+  if (booking.source !== 'online') {
+    return { success: false, message: 'Отзыв доступен только для онлайн-записей' };
+  }
+
   if (booking.client_telegram_id !== clientTelegramId) {
     return { success: false, message: 'Эта запись принадлежит другому клиенту' };
   }
