@@ -1,7 +1,17 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { checkAdminAccessApi } from '../../services/api';
 
-export function useAdminAccess() {
+type AdminAccessContextValue = {
+  isAdmin: boolean;
+  loading: boolean;
+};
+
+const AdminAccessContext = createContext<AdminAccessContextValue>({
+  isAdmin: false,
+  loading: true,
+});
+
+export function AdminAccessProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -51,5 +61,17 @@ export function useAdminAccess() {
     void checkAccess();
   }, []);
 
-  return { isAdmin, loading };
+  const value = useMemo(
+    () => ({
+      isAdmin,
+      loading,
+    }),
+    [isAdmin, loading],
+  );
+
+  return <AdminAccessContext.Provider value={value}>{children}</AdminAccessContext.Provider>;
+}
+
+export function useAdminAccess() {
+  return useContext(AdminAccessContext);
 }
