@@ -1,5 +1,7 @@
-import { addDays, format, isPast, parse, startOfDay } from 'date-fns';
+import { addDays, format, parse } from 'date-fns';
+import { config } from '../config.js';
 import { getBookedTimesForDate, getMasterAbsences, getMasterById } from '../services/data.js';
+import { getCurrentDateInTimezone, isDateTimeInPast } from '../utils/timezone.js';
 
 interface AbsenceRange {
   start_date: string;
@@ -7,17 +9,12 @@ interface AbsenceRange {
 }
 
 function isDateInsideAbsence(date: string, absences: AbsenceRange[]) {
-  return absences.some((absence) => {
-    const checkDate = new Date(date);
-    const startDate = new Date(absence.start_date);
-    const endDate = new Date(absence.end_date);
-    return checkDate >= startDate && checkDate <= endDate;
-  });
+  return absences.some((absence) => date >= absence.start_date && date <= absence.end_date);
 }
 
 export async function getAvailableDates(masterId: string) {
   const dates: string[] = [];
-  const today = startOfDay(new Date());
+  const today = parse(getCurrentDateInTimezone(config.app.timezone), 'yyyy-MM-dd', new Date());
 
   for (let index = 0; index < 14; index++) {
     const date = addDays(today, index);
@@ -30,7 +27,7 @@ export async function getAvailableDates(masterId: string) {
 
 export async function getAvailableSlots(masterId: string, date: string) {
   const master = await getMasterById(masterId);
-  const dateObj = new Date(date);
+  const dateObj = parse(date, 'yyyy-MM-dd', new Date());
   const dayOfWeek = dateObj.getDay();
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const dayName = dayNames[dayOfWeek] as keyof typeof master.work_schedule;
@@ -59,9 +56,8 @@ export async function getAvailableSlots(masterId: string, date: string) {
   const bookedTimes = new Set(await getBookedTimesForDate(masterId, date));
 
   return allSlots.map((time) => {
-    const slotDateTime = parse(`${date} ${time}`, 'yyyy-MM-dd HH:mm', new Date());
     const isBooked = bookedTimes.has(time);
-    const isTimePast = isPast(slotDateTime);
+    const isTimePast = isDateTimeInPast(date, time, config.app.timezone);
 
     return {
       time,

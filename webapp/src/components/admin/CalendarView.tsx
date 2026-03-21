@@ -4,6 +4,10 @@ import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import type { BookingReadable, Master } from '../../../../shared/types';
 import { getAdminBookingsApi, getAdminMastersApi } from '../../services/api';
+import {
+  getEffectiveBookingStatus,
+  isUpcomingBooking,
+} from '../../utils/bookingTime';
 import { AdminCard, AdminChip, AdminEmptyState } from './AdminTheme';
 
 function getStatusText(status: string) {
@@ -37,24 +41,6 @@ function getStatusTone(status: string): 'green' | 'orange' | 'blue' | 'red' | 'n
     default:
       return 'neutral';
   }
-}
-
-function getEffectiveBookingStatus(booking: BookingReadable): BookingReadable['status'] {
-  if (!['active', 'pending'].includes(booking.status)) {
-    return booking.status;
-  }
-
-  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
-  return bookingDateTime.getTime() <= Date.now() ? 'completed' : booking.status;
-}
-
-function isUpcomingBooking(booking: BookingReadable): boolean {
-  if (!['active', 'pending'].includes(booking.status)) {
-    return false;
-  }
-
-  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
-  return bookingDateTime.getTime() > Date.now();
 }
 
 export function CalendarView() {

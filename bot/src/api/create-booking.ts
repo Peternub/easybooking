@@ -1,7 +1,9 @@
-﻿import type { Bot } from 'grammy';
+import type { Bot } from 'grammy';
 import { handleNotifyBooking } from './notify-booking.js';
+import { config } from '../config.js';
 import { createBooking, getMasterById, getServiceById } from '../services/data.js';
 import { validatePromoCode } from '../services/promo-codes.js';
+import { isDateTimeInPast } from '../utils/timezone.js';
 
 interface CreateBookingRequest {
   clientTelegramId: number;
@@ -16,6 +18,10 @@ interface CreateBookingRequest {
 }
 
 export async function handleCreateBooking(bot: Bot, data: CreateBookingRequest) {
+  if (isDateTimeInPast(data.bookingDate, data.bookingTime, config.app.timezone)) {
+    return { success: false, message: 'Нельзя создать запись на прошедшее время' };
+  }
+
   const [master, service] = await Promise.all([
     getMasterById(data.masterId),
     getServiceById(data.serviceId),

@@ -17,6 +17,11 @@ import { ru } from 'date-fns/locale';
 import { useEffect, useMemo, useState } from 'react';
 import type { BookingReadable } from '../../../../shared/types';
 import { getAdminBookingsApi } from '../../services/api';
+import {
+  formatDateForTimezone,
+  getEffectiveBookingStatus,
+  isUpcomingBooking,
+} from '../../utils/bookingTime';
 import { AdminCard, AdminChip, AdminDetailRow, AdminEmptyState } from './AdminTheme';
 import { BookingForm } from './BookingForm';
 
@@ -87,24 +92,6 @@ function getDayKey(date: Date) {
   return format(date, 'yyyy-MM-dd');
 }
 
-function getEffectiveBookingStatus(booking: BookingReadable): BookingReadable['status'] {
-  if (!['active', 'pending'].includes(booking.status)) {
-    return booking.status;
-  }
-
-  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
-  return bookingDateTime.getTime() <= Date.now() ? 'completed' : booking.status;
-}
-
-function isUpcomingBooking(booking: BookingReadable): boolean {
-  if (!['active', 'pending'].includes(booking.status)) {
-    return false;
-  }
-
-  const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
-  return bookingDateTime.getTime() > Date.now();
-}
-
 export function BookingsList() {
   const [bookings, setBookings] = useState<BookingReadable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,8 +106,8 @@ export function BookingsList() {
 
   async function loadBookings() {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const monthAhead = addMonths(new Date(), 3).toISOString().split('T')[0];
+      const today = formatDateForTimezone(new Date());
+      const monthAhead = formatDateForTimezone(addMonths(new Date(), 3));
       const data = await getAdminBookingsApi(today, monthAhead, ['active', 'pending']);
       setBookings(data.filter(isUpcomingBooking));
     } catch (error) {

@@ -1,4 +1,6 @@
+import { config } from '../config.js';
 import { createManualBooking, getMasterById, getServiceById } from '../services/data.js';
+import { isDateTimeInPast } from '../utils/timezone.js';
 
 interface CreateAdminBookingRequest {
   clientName: string;
@@ -21,6 +23,14 @@ export async function handleCreateAdminBooking(data: CreateAdminBookingRequest) 
       success: false,
       status: 400,
       message: 'Заполните все обязательные поля',
+    };
+  }
+
+  if (isDateTimeInPast(bookingDate, bookingTime, config.app.timezone)) {
+    return {
+      success: false,
+      status: 400,
+      message: 'Нельзя создать запись на прошедшее время',
     };
   }
 

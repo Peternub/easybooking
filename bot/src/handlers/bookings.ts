@@ -4,7 +4,9 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { CommandContext, Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
+import { config } from '../config.js';
 import { getClientBookings } from '../services/data.js';
+import { getCurrentDateInTimezone, isDateTimeInFuture, normalizeTime } from '../utils/timezone.js';
 
 export async function handleMyBookings(ctx: CommandContext<Context>) {
   const userId = ctx.from?.id;
@@ -14,9 +16,7 @@ export async function handleMyBookings(ctx: CommandContext<Context>) {
     const bookings = await getClientBookings(userId);
 
     // Фильтруем только активные записи, которые еще не прошли
-    const now = new Date();
-    const today = format(now, 'yyyy-MM-dd');
-    const currentTime = format(now, 'HH:mm:ss');
+    const today = getCurrentDateInTimezone(config.app.timezone);
 
     const upcomingBookings = bookings.filter((b) => {
       if (b.status !== 'active') return false;
@@ -25,7 +25,12 @@ export async function handleMyBookings(ctx: CommandContext<Context>) {
       if (b.booking_date > today) return true;
 
       // Если дата сегодняшняя - проверяем время
-      if (b.booking_date === today && b.booking_time > currentTime) return true;
+      if (
+        b.booking_date === today &&
+        isDateTimeInFuture(b.booking_date, normalizeTime(b.booking_time), config.app.timezone)
+      ) {
+        return true;
+      }
 
       return false;
     });
