@@ -67,7 +67,7 @@ export function SelectMaster({ serviceId, onSelect, onBack }: Props) {
   return (
     <div style={pageShellStyle}>
       <Button mode="plain" onClick={onBack} style={backButtonStyle}>
-        Назад
+        {'< \u041a \u0443\u0441\u043b\u0443\u0433\u0430\u043c'}
       </Button>
 
       <Title level="1" style={titleStyle}>

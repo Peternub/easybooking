@@ -1,4 +1,4 @@
-﻿import { Button, Card, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
+import { Button, Card, Spinner, Text, Title } from '@telegram-apps/telegram-ui';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
@@ -257,7 +257,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       )}
 
       <Button mode="plain" onClick={onBack} style={backButtonStyle}>
-        Назад
+        {'< \u041a \u0432\u044b\u0431\u043e\u0440\u0443 \u0432\u0440\u0435\u043c\u0435\u043d\u0438'}
       </Button>
 
       <Title level="1" style={titleStyle}>
@@ -333,6 +333,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           Имя и фамилия *
         </Text>
         <input
+          className="app-input"
           type="text"
           value={clientName}
           onChange={(event) => setClientName(event.target.value)}
@@ -353,6 +354,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
           Номер телефона *
         </Text>
         <input
+          className="app-input"
           type="tel"
           value={clientPhone}
           onChange={(event) => setClientPhone(event.target.value)}
@@ -370,10 +372,11 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
             display: 'block',
           }}
         >
-          Промокод
+          Промокод (необязательно)
         </Text>
         <div style={{ display: 'flex', gap: '8px' }}>
           <input
+            className="app-input"
             type="text"
             value={promoCode}
             onChange={(event) => {
@@ -381,7 +384,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
               setPromoError('');
               setPromoDiscount(0);
             }}
-            placeholder="Введите промокод"
+            placeholder="Введите промокод, если он есть"
             style={{ ...inputStyle, textTransform: 'uppercase' }}
           />
           <Button mode="outline" onClick={handlePromoCodeCheck} disabled={!promoCode.trim()}>

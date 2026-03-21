@@ -65,6 +65,23 @@ textarea {
   font: inherit;
 }
 
+.app-input::placeholder,
+.app-textarea::placeholder {
+  color: rgba(125, 102, 83, 0.52);
+  opacity: 1;
+}
+
+.app-input:-webkit-autofill,
+.app-input:-webkit-autofill:hover,
+.app-input:-webkit-autofill:focus,
+.app-textarea:-webkit-autofill,
+.app-textarea:-webkit-autofill:hover,
+.app-textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--app-text);
+  box-shadow: 0 0 0 1000px var(--app-surface) inset;
+  transition: background-color 9999s ease-out;
+}
+
 img {
   display: block;
   max-width: 100%;

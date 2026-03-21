@@ -41,6 +41,12 @@ export const inputStyle: CSSProperties = {
 export const backButtonStyle: CSSProperties = {
   marginBottom: '8px',
   color: 'var(--app-accent-strong)',
+  alignSelf: 'flex-start',
+  padding: '8px 12px',
+  borderRadius: '999px',
+  border: '1px solid rgba(166, 124, 82, 0.2)',
+  backgroundColor: 'rgba(255, 250, 243, 0.78)',
+  fontWeight: 600,
 };
 
 export const softPanelStyle: CSSProperties = {
