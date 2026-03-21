@@ -73,7 +73,7 @@ export function SelectDateTime({ masterId, onSelect, onBack }: Props) {
   return (
     <div style={pageShellStyle}>
       <Button mode="plain" onClick={onBack} style={backButtonStyle}>
-        {selectedDate ? '< \u041a \u0432\u044b\u0431\u043e\u0440\u0443 \u0434\u0430\u0442\u044b' : '< \u041a \u0432\u044b\u0431\u043e\u0440\u0443 \u043c\u0430\u0441\u0442\u0435\u0440\u0430'}
+        Назад
       </Button>
 
       <Title level="1" style={titleStyle}>

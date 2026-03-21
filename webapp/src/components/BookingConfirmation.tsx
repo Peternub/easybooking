@@ -257,7 +257,7 @@ export function BookingConfirmation({ serviceId, masterId, date, time, onBack }:
       )}
 
       <Button mode="plain" onClick={onBack} style={backButtonStyle}>
-        {'< \u041a \u0432\u044b\u0431\u043e\u0440\u0443 \u0432\u0440\u0435\u043c\u0435\u043d\u0438'}
+        Назад
       </Button>
 
       <Title level="1" style={titleStyle}>
