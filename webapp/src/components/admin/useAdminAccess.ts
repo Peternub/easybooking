@@ -7,7 +7,7 @@ export function useAdminAccess() {
 
   useEffect(() => {
     const cacheKey = 'easybooking_admin_access';
-    const cachedAccess = sessionStorage.getItem(cacheKey) === 'true';
+    const cachedAccess = localStorage.getItem(cacheKey) === 'true';
 
     if (cachedAccess) {
       setIsAdmin(true);
@@ -36,9 +36,9 @@ export function useAdminAccess() {
         setIsAdmin(nextIsAdmin);
 
         if (nextIsAdmin) {
-          sessionStorage.setItem(cacheKey, 'true');
+          localStorage.setItem(cacheKey, 'true');
         } else {
-          sessionStorage.removeItem(cacheKey);
+          localStorage.removeItem(cacheKey);
         }
       } catch (error) {
         console.error('Ошибка проверки доступа в админку:', error);
