@@ -24,7 +24,10 @@ export async function handleSubmitReview(data: SubmitReviewData) {
     return { success: false, message: 'Отзыв доступен только для онлайн-записей' };
   }
 
-  if (booking.client_telegram_id !== clientTelegramId) {
+  const bookingClientTelegramId = Number(booking.client_telegram_id);
+  const reviewClientTelegramId = Number(clientTelegramId);
+
+  if (!Number.isFinite(bookingClientTelegramId) || bookingClientTelegramId !== reviewClientTelegramId) {
     return { success: false, message: 'Эта запись принадлежит другому клиенту' };
   }
 
@@ -34,7 +37,7 @@ export async function handleSubmitReview(data: SubmitReviewData) {
 
   await createReview({
     booking_id: bookingId,
-    client_telegram_id: clientTelegramId,
+    client_telegram_id: reviewClientTelegramId,
     master_id: booking.master_id,
     service_id: booking.service_id,
     rating,

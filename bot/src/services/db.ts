@@ -1,5 +1,7 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
 import { config, hasPostgresConfig } from '../config.js';
+
+types.setTypeParser(20, (value) => Number(value));
 
 function createPool() {
   if (config.postgres.url) {

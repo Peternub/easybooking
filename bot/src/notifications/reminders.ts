@@ -43,35 +43,11 @@ function getNowInTimezone(timeZone: string) {
 }
 
 function getBookingDateTime(booking: BookingWithDetails, timeZone: string) {
+  void timeZone;
   const [year, month, day] = booking.booking_date.split('-').map(Number);
   const [hours, minutes, seconds = 0] = booking.booking_time.split(':').map(Number);
 
-  const sourceDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
-
-  const parts = Object.fromEntries(
-    formatter.formatToParts(sourceDate).map((part) => [part.type, part.value]),
-  );
-
-  return new Date(
-    Date.UTC(
-      Number(parts.year),
-      Number(parts.month) - 1,
-      Number(parts.day),
-      Number(parts.hour),
-      Number(parts.minute),
-      Number(parts.second),
-    ),
-  );
+  return new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
 }
 
 function getMinutesUntil(date: Date, now: Date) {

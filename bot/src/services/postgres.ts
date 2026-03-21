@@ -207,6 +207,26 @@ function toDateString(value: string | Date) {
   return value;
 }
 
+function toNumber(value: string | number | null | undefined) {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return Number(value);
+  }
+
+  return 0;
+}
+
+function toNullableNumber(value: string | number | null | undefined) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  return toNumber(value);
+}
+
 function mapMaster(row: MasterRow): Master {
   return {
     id: row.id,
@@ -239,7 +259,7 @@ function mapService(row: ServiceRow): Service {
 function mapBooking(row: BookingRow): Booking {
   return {
     id: row.id,
-    client_telegram_id: row.client_telegram_id,
+    client_telegram_id: toNumber(row.client_telegram_id),
     client_name: row.client_name,
     client_phone: row.client_phone,
     client_username: row.client_username,
@@ -276,7 +296,7 @@ function mapReview(row: ReviewRow): Review {
   return {
     id: row.id,
     booking_id: row.booking_id,
-    client_telegram_id: row.client_telegram_id,
+    client_telegram_id: toNumber(row.client_telegram_id),
     master_id: row.master_id,
     service_id: row.service_id,
     rating: row.rating,
@@ -288,7 +308,7 @@ function mapReview(row: ReviewRow): Review {
 function mapClientWithStats(row: ClientStatsRow): ClientWithStats {
   return {
     id: row.id,
-    telegram_id: row.telegram_id,
+    telegram_id: toNullableNumber(row.telegram_id),
     name: row.name,
     username: row.username,
     phone: row.phone,
@@ -306,7 +326,7 @@ function mapClientWithStats(row: ClientStatsRow): ClientWithStats {
 function mapClient(row: ClientRow): Client {
   return {
     id: row.id,
-    telegram_id: row.telegram_id,
+    telegram_id: toNullableNumber(row.telegram_id),
     name: row.name,
     username: row.username,
     phone: row.phone,
