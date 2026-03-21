@@ -1,22 +1,9 @@
-import {
+﻿import {
   AdminActionLink,
-  AdminDeniedState,
-  AdminLoadingState,
   adminPageStyle,
 } from '../components/admin/AdminTheme';
-import { useAdminAccess } from '../components/admin/useAdminAccess';
 
 export function AdminPanel() {
-  const { isAdmin, loading } = useAdminAccess();
-
-  if (loading) {
-    return <AdminLoadingState />;
-  }
-
-  if (!isAdmin) {
-    return <AdminDeniedState />;
-  }
-
   return (
     <div style={adminPageStyle}>
       <AdminActionLink

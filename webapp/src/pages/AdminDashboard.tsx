@@ -1,16 +1,13 @@
-import { Button, Tabbar } from '@telegram-apps/telegram-ui';
+﻿import { Button, Tabbar } from '@telegram-apps/telegram-ui';
 import { useState } from 'react';
 import {
   AdminCard,
-  AdminDeniedState,
-  AdminLoadingState,
   adminPageStyle,
 } from '../components/admin/AdminTheme';
 import { CalendarView } from '../components/admin/CalendarView';
 import { ClientsView } from '../components/admin/ClientsView';
 import { ReviewsView } from '../components/admin/ReviewsView';
 import { SettingsView } from '../components/admin/SettingsView';
-import { useAdminAccess } from '../components/admin/useAdminAccess';
 
 type TabType = 'calendar' | 'clients' | 'reviews' | 'settings';
 
@@ -23,15 +20,6 @@ const tabLabels: Record<TabType, string> = {
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
-  const { isAdmin, loading } = useAdminAccess();
-
-  if (loading) {
-    return <AdminLoadingState />;
-  }
-
-  if (!isAdmin) {
-    return <AdminDeniedState />;
-  }
 
   return (
     <div style={{ paddingBottom: '88px' }}>
