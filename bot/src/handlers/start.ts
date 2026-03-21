@@ -5,6 +5,15 @@ import { InlineKeyboard } from 'grammy';
 import { config } from '../config.js';
 import { isAdmin } from '../services/data.js';
 
+function buildWebAppUrl(path = ''): string {
+  const normalizedBase = config.app.webappUrl.endsWith('/')
+    ? config.app.webappUrl
+    : `${config.app.webappUrl}/`;
+  const url = new URL(path.replace(/^\//, ''), normalizedBase);
+  url.searchParams.set('v', String(Date.now()));
+  return url.toString();
+}
+
 export async function handleStart(ctx: CommandContext<Context>) {
   const userId = ctx.from?.id;
   if (!userId) return;
@@ -21,20 +30,20 @@ export async function handleStart(ctx: CommandContext<Context>) {
 
   // Используем webApp кнопку для получения данных через sendData()
   const keyboard = new InlineKeyboard()
-    .webApp('📱 Записаться на услугу', config.app.webappUrl)
+    .webApp('📱 Записаться на услугу', buildWebAppUrl())
     .row()
     .text('📋 Мои записи', 'my_bookings');
 
   if (userIsAdmin) {
     keyboard
       .row()
-      .webApp('📅 Записи', `${config.app.webappUrl}/admin-bookings`)
+      .webApp('📅 Записи', buildWebAppUrl('/admin-bookings'))
       .row()
-      .webApp('👥 Мастера', `${config.app.webappUrl}/admin-masters`)
+      .webApp('👥 Мастера', buildWebAppUrl('/admin-masters'))
       .row()
-      .webApp('💼 Услуги', `${config.app.webappUrl}/admin-services`)
+      .webApp('💼 Услуги', buildWebAppUrl('/admin-services'))
       .row()
-      .webApp('⭐ Отзывы', `${config.app.webappUrl}/admin-reviews`);
+      .webApp('⭐ Отзывы', buildWebAppUrl('/admin-reviews'));
   }
 
   await ctx.reply(message, { reply_markup: keyboard });
