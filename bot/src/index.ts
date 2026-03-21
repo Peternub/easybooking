@@ -30,6 +30,7 @@ import {
   getMastersByService,
   getServices,
   getServiceById,
+  isAdmin,
   removeServiceFromMaster,
   toggleMasterActive,
   toggleServiceActive,
@@ -232,6 +233,23 @@ function startApiServer(bot: Bot) {
           return jsonResponse(services, 200, corsHeaders);
         } catch (error) {
           return jsonResponse({ message: String(error) }, 500, corsHeaders);
+        }
+      }
+
+      if (url.pathname === '/api/admin/access' && req.method === 'POST') {
+        try {
+          const data = await req.json();
+          const telegramId = Number(data?.telegramId);
+
+          if (!telegramId) {
+            return jsonResponse({ isAdmin: false, message: 'Не передан Telegram ID' }, 400, corsHeaders);
+          }
+
+          const adminAccess = await isAdmin(telegramId);
+          return jsonResponse({ isAdmin: adminAccess }, 200, corsHeaders);
+        } catch (error) {
+          console.error('Ошибка проверки доступа в админку:', error);
+          return jsonResponse({ isAdmin: false, message: 'Не удалось проверить доступ' }, 500, corsHeaders);
         }
       }
 

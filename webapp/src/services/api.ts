@@ -126,6 +126,13 @@ export function getAdminServicesApi() {
   return fetchJson<Service[]>('/api/admin/services');
 }
 
+export function checkAdminAccessApi(telegramId: number) {
+  return requestJson<{ isAdmin: boolean }>('/api/admin/access', {
+    method: 'POST',
+    body: { telegramId },
+  });
+}
+
 export function createServiceApi(service: ServicePayload) {
   return requestJson<Service>('/api/admin/services', {
     method: 'POST',
