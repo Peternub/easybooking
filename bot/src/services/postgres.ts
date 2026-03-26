@@ -1344,26 +1344,4 @@ export async function usePromoCodePg(code: string, bookingId: string) {
   return result.rows[0];
 }
 
-export async function getInactiveClientsPg(daysInactive = 60) {
-  const pool = requireDb();
-  const result = await pool.query<{ client_telegram_id: number }>(
-    `
-      SELECT b.client_telegram_id
-      FROM bookings b
-      WHERE b.client_telegram_id IS NOT NULL
-        AND b.status = 'active'
-      GROUP BY b.client_telegram_id
-      HAVING MAX(b.booking_date) < CURRENT_DATE - ($1::int * INTERVAL '1 day')
-        AND NOT EXISTS (
-          SELECT 1
-          FROM promo_codes p
-          WHERE p.client_telegram_id = b.client_telegram_id
-            AND p.created_at >= NOW() - ($1::int * INTERVAL '1 day')
-        )
-    `,
-    [daysInactive],
-  );
-
-  return result.rows.map((row) => row.client_telegram_id);
-}
 
