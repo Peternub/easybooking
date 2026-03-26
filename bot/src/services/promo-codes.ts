@@ -1,9 +1,4 @@
-import {
-  createPromoCodePg,
-  getInactiveClientsPg,
-  usePromoCodePg,
-  validatePromoCodePg,
-} from './postgres.js';
+import { createPromoCodePg, usePromoCodePg, validatePromoCodePg } from './postgres.js';
 
 export function generatePromoCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -32,8 +27,4 @@ export async function validatePromoCode(code: string, clientTelegramId: number) 
 
 export async function usePromoCode(code: string, bookingId: string) {
   return usePromoCodePg(code, bookingId);
-}
-
-export async function getInactiveClients(daysInactive = 60) {
-  return getInactiveClientsPg(daysInactive);
 }
